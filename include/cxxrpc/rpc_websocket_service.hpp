@@ -233,12 +233,12 @@ namespace cxxrpc {
 			{
 				auto self = this->shared_from_this();
 				m_websocket.async_write(boost::asio::buffer(*context),
-					std::bind(&rpc_websocket_service<Websocket>::handle_write,
+					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 						self, session, std::placeholders::_1));
 			}
 		}
 
-		void handle_write(int session, boost::system::error_code ec)
+		void rpc_write_handle(int session, boost::system::error_code ec)
 		{
 			if (ec)
 			{
@@ -263,7 +263,7 @@ namespace cxxrpc {
 					auto context_pair = m_message_queue.front();
 					auto self = this->shared_from_this();
 					m_websocket.async_write(boost::asio::buffer(*context_pair.first),
-						std::bind(&rpc_websocket_service<Websocket>::handle_write,
+						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 							self, context_pair.second, std::placeholders::_1));
 				}
 			}
