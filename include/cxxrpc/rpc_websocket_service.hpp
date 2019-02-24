@@ -213,17 +213,6 @@ namespace cxxrpc {
 		}
 
 	protected:
-		void reset_call_ops()
-		{
-			for (auto& c : m_call_ops)
-			{
-				if (!c) continue;
-				c->result_back(make_error_code(
-					boost::asio::error::operation_aborted));
-				c.reset();
-			}
-		}
-
 		void rpc_write(boost::local_shared_ptr<std::string> context, int session)
 		{
 			bool write_in_progress = !m_message_queue.empty();
@@ -266,6 +255,17 @@ namespace cxxrpc {
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 							self, context_pair.second, std::placeholders::_1));
 				}
+			}
+		}
+
+		void reset_call_ops()
+		{
+			for (auto& c : m_call_ops)
+			{
+				if (!c) continue;
+				c->result_back(make_error_code(
+					boost::asio::error::operation_aborted));
+				c.reset();
 			}
 		}
 
