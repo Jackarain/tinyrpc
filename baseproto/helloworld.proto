@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package helloworld;
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+
+message WorldRequest {
+  string name = 1;
+}
+
+message WorldReply {
+  string message = 1;
+}
+
