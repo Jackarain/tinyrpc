@@ -66,7 +66,7 @@ public:
 	void test_proc(boost::asio::yield_context yield)
 	{
 		helloworld::HelloRequest req;
-		req.set_name("name");
+		req.set_name("client request 1");
 
 		helloworld::HelloReply reply;
 
@@ -77,7 +77,7 @@ public:
 		if (ec)
 			return;
 
-		req.set_name("name2");
+		req.set_name("client request 1");
 		rpc_->call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
@@ -86,7 +86,7 @@ public:
 
 
 		helloworld::WorldRequest req2;
-		req2.set_name("helloworld::WorldRequest");
+		req2.set_name("client world 1");
 		helloworld::WorldReply reply2;
 		rpc_->call(req2, reply2, yield[ec]);
 
@@ -95,13 +95,13 @@ public:
 
 	void hello_request(const helloworld::HelloRequest& req, helloworld::HelloReply& reply)
 	{
-		reply.set_message("server hello reply message");
+		reply.set_message("hello reply message to server");
 		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
 	}
 
 	void world_request(const helloworld::WorldRequest& req, helloworld::WorldReply& reply)
 	{
-		reply.set_message("server world reply message");
+		reply.set_message("world reply message to server");
 		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
 	}
 
