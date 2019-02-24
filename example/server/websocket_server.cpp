@@ -169,7 +169,7 @@ void do_listen(
 
 int main(int argc, char* argv[])
 {
-    if (argc != 4)
+    if (argc != 3)
     {
         std::cerr <<
             "Usage: websocket-server <address> <port>\n" <<
