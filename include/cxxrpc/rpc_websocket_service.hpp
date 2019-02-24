@@ -169,7 +169,7 @@ namespace cxxrpc {
 				void(boost::system::error_code)> init(h);
 
 			auto& ptr = m_call_ops[session];
-			ptr.reset(new rpc_call_op{ msg, init.completion_handler });
+			ptr.reset(new rpc_call_op<decltype(init.completion_handler)>{ msg, init.completion_handler });
 
 			return init.result.get();
 		}
