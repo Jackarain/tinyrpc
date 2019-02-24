@@ -64,11 +64,17 @@ public:
 		// 生过错误的rpc链接上通信. 这只不ec不作判断仅仅打印输出, 实际中必须判断.
 		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 
+		if (ec)
+			return;
+
 		// 第二次rpc异步调用.
 		req.set_name("alice");
 		rpc_->call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << "" << ec.message() << std::endl;
+
+		if (ec)
+			return;
 
 		// 第三次rpc异步调用.
 		helloworld::WorldRequest req2;

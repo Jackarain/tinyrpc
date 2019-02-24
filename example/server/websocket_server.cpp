@@ -74,11 +74,15 @@ public:
 		rpc_->call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << "" << ec.message() << std::endl;
+		if (ec)
+			return;
 
 		req.set_name("name2");
 		rpc_->call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << "" << ec.message() << std::endl;
+		if (ec)
+			return;
 
 
 		helloworld::WorldRequest req2;

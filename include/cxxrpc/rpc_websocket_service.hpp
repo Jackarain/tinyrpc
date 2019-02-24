@@ -5,9 +5,14 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <deque>
+
+#include "boost/beast/core.hpp"
+#include "boost/beast/websocket.hpp"
 
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
+#include "boost/asio/strand.hpp"
 
 #include "boost/smart_ptr/local_shared_ptr.hpp"
 #include "boost/smart_ptr/make_local_shared.hpp"
@@ -91,6 +96,9 @@ namespace cxxrpc {
 
 		using call_op_ptr = boost::local_shared_ptr<rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
+		using strand = boost::asio::strand<boost::asio::io_context::executor_type>;
+		using write_context = std::pair<boost::local_shared_ptr<std::string>, int>;
+		using write_message_queue = std::deque<write_context>;
 
 	public:
 		rpc_websocket_service(Websocket&& ws)
@@ -119,7 +127,7 @@ namespace cxxrpc {
 			boost::asio::spawn(m_websocket.get_executor(),
 				[self, this](boost::asio::yield_context yield)
 			{
-				rpc_service_loop(yield);
+				rpc_read_loop(yield);
 			});
 		}
 
@@ -189,14 +197,11 @@ namespace cxxrpc {
 				rb.set_session(session);
 			}
 
-			boost::system::error_code ec;
-			m_websocket.async_write(boost::asio::buffer(rb.SerializeAsString()), yield[ec]);
-			if (ec)
-			{
-				if (yield.ec_) *yield.ec_ = ec;
-				return false;
-			}
+			auto self = this->shared_from_this();
+			auto context = boost::make_local_shared<std::string>(rb.SerializeAsString());
+			rpc_write(context, session);
 
+			boost::system::error_code ec;
 			start_call_op(session, ret, yield[ec]);
 			if (ec)
 			{
@@ -219,7 +224,52 @@ namespace cxxrpc {
 			}
 		}
 
-		void rpc_service_loop(boost::asio::yield_context yield)
+		void rpc_write(boost::local_shared_ptr<std::string> context, int session)
+		{
+			bool write_in_progress = !m_message_queue.empty();
+			m_message_queue.emplace_back(std::make_pair(context, session));
+
+			if (!write_in_progress)
+			{
+				auto self = this->shared_from_this();
+				m_websocket.async_write(boost::asio::buffer(*context),
+					std::bind(&rpc_websocket_service<Websocket>::handle_write,
+						self, session, std::placeholders::_1));
+			}
+		}
+
+		void handle_write(int session, boost::system::error_code ec)
+		{
+			if (ec)
+			{
+				auto h = m_call_ops[session]; // O(1) 查找.
+				if (!h)
+				{
+					// 不可能达到这里, 因为m_call_op是可增长的容器.
+					BOOST_ASSERT(0);
+					return;
+				}
+
+				// 并'唤醒'call处的协程.
+				h->result_back(std::move(ec));
+				h.reset();
+				m_recycle.push_back(session);
+			}
+			else
+			{
+				m_message_queue.pop_front();
+				if (!m_message_queue.empty())
+				{
+					auto context_pair = m_message_queue.front();
+					auto self = this->shared_from_this();
+					m_websocket.async_write(boost::asio::buffer(*context_pair.first),
+						std::bind(&rpc_websocket_service<Websocket>::handle_write,
+							self, context_pair.second, std::placeholders::_1));
+				}
+			}
+		}
+
+		void rpc_read_loop(boost::asio::yield_context yield)
 		{
 			boost::system::error_code ec;
 
@@ -227,7 +277,6 @@ namespace cxxrpc {
 			{
 				m_abort = true;
 
-				// LOG_WARN << m_websocket.get_real_endpoint() << " reason: " << reason;
 				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ec]);
 
 				// TODO: 这里暂时所有错误返回都使用操作被中止, 未来可定制rpc错误分类.
@@ -245,6 +294,8 @@ namespace cxxrpc {
 				rpc_service_ptl::rpc_base_ptl rb;
 				if (!rb.ParseFromString(boost::beast::buffers_to_string(buf.data())))
 					return fail("parse protocol error");
+
+				auto session = rb.session();
 
 				// 远程调用过来, 找到对应的event并响应.
 				if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
@@ -268,21 +319,20 @@ namespace cxxrpc {
 					// send back return.
 					rpc_service_ptl::rpc_base_ptl rpc_ret;
 					rpc_ret.set_call(rpc_service_ptl::rpc_base_ptl::callee);
-					rpc_ret.set_session(rb.session());
+					rpc_ret.set_session(session);
 					rpc_ret.set_message(ret->GetTypeName());
 					rpc_ret.set_payload(ret->SerializeAsString());
 
-					m_websocket.async_write(boost::asio::buffer(rpc_ret.SerializeAsString()), yield[ec]);
-					if (ec)
-						return fail("caller write " + ec.message());
-
+					auto self = this->shared_from_this();
+					auto context = boost::make_local_shared<std::string>(rpc_ret.SerializeAsString());
+					rpc_write(context, session);
 					continue;
 				}
 
 				// 本地调用远程, 远程返回的return.
 				if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
 				{
-					auto h = m_call_ops[rb.session()]; // O(1) 查找.
+					auto h = m_call_ops[session]; // O(1) 查找.
 					if (!h)
 					{
 						// 不可能达到这里, 因为m_call_op是可增长的容器.
@@ -297,7 +347,7 @@ namespace cxxrpc {
 					h->result_back(std::move(ec));
 
 					h.reset();
-					m_recycle.push_back(rb.session());
+					m_recycle.push_back(session);
 
 					continue;
 				}
@@ -308,6 +358,7 @@ namespace cxxrpc {
 
 	private:
 		Websocket m_websocket;
+		write_message_queue m_message_queue;
 		remote_function m_remote_functions;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
