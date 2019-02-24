@@ -115,11 +115,10 @@ include_directories(
 )
 link_libraries(baseproto)
 
-link_libraries(Boost::thread
-			   Boost::coroutine
+link_libraries(	Boost::coroutine
+		Boost::context
+		Boost::thread
 )
-
-link_libraries(${OPENSSL_LIBRARIES})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
