@@ -44,7 +44,7 @@ if (MSVC)
 	add_definitions(-DBOOST_USE_WINAPI_VERSION=0x0601)
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
 	add_definitions(-DNOMINMAX)
-	add_definitions(-D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING)
+	add_definitions(-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /bigobj")
 
