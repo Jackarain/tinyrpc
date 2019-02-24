@@ -73,14 +73,14 @@ public:
 		boost::system::error_code ec;
 		rpc_->call(req, reply, yield[ec]);
 
-		std::cout << reply.message() << "" << ec.message() << std::endl;
+		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 		if (ec)
 			return;
 
 		req.set_name("name2");
 		rpc_->call(req, reply, yield[ec]);
 
-		std::cout << reply.message() << "" << ec.message() << std::endl;
+		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 		if (ec)
 			return;
 
@@ -90,19 +90,19 @@ public:
 		helloworld::WorldReply reply2;
 		rpc_->call(req2, reply2, yield[ec]);
 
-		std::cout << reply2.message() << "" << ec.message() << std::endl;
+		std::cout << reply2.message() << ", ec: " << ec.message() << std::endl;
 	}
 
 	void hello_request(const helloworld::HelloRequest& req, helloworld::HelloReply& reply)
 	{
 		reply.set_message("server hello reply message");
-		std::cout << reply.message() << std::endl;
+		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
 	}
 
 	void world_request(const helloworld::WorldRequest& req, helloworld::WorldReply& reply)
 	{
 		reply.set_message("server world reply message");
-		std::cout << reply.message() << std::endl;
+		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
 	}
 
 private:

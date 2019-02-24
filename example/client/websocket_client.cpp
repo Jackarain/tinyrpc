@@ -71,7 +71,7 @@ public:
 		req.set_name("alice");
 		rpc_->call(req, reply, yield[ec]);
 
-		std::cout << reply.message() << "" << ec.message() << std::endl;
+		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 
 		if (ec)
 			return;
@@ -82,7 +82,7 @@ public:
 		helloworld::WorldReply reply2;
 		rpc_->call(req2, reply2, yield[ec]);
 
-		std::cout << reply2.message() << "" << ec.message() << std::endl;
+		std::cout << reply2.message() << ", ec: " << ec.message() << std::endl;
 	}
 
 	// 远程调用HelloRequest过来, 通过修改reply实现返回给远程主机.
