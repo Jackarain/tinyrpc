@@ -174,8 +174,8 @@ namespace cxxrpc {
 			return init.result.get();
 		}
 
-		template<class T, class R>
-		bool call(T& msg, R& ret, boost::asio::yield_context yield)
+		template<class T, class R, class Handler>
+		void call(T& msg, R& ret, Handler&& handler)
 		{
 			rpc_service_ptl::rpc_base_ptl rb;
 
@@ -201,15 +201,9 @@ namespace cxxrpc {
 			auto context = boost::make_local_shared<std::string>(rb.SerializeAsString());
 			rpc_write(context, session);
 
-			boost::system::error_code ec;
-			start_call_op(session, ret, yield[ec]);
-			if (ec)
-			{
-				if (yield.ec_) *yield.ec_ = ec;
-				return false;
-			}
+			start_call_op(session, ret, handler);
 
-			return true;
+			return;
 		}
 
 	protected:
