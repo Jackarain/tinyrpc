@@ -100,7 +100,7 @@ namespace cxxrpc {
 		using call_op_ptr = boost::local_shared_ptr<rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
 		using strand = boost::asio::strand<boost::asio::io_context::executor_type>;
-		using write_context = std::pair<boost::local_shared_ptr<std::string>, int>;
+		using write_context = boost::local_shared_ptr<std::string>;
 		using write_message_queue = std::deque<write_context>;
 
 	public:
@@ -202,7 +202,7 @@ namespace cxxrpc {
 
 			auto self = this->shared_from_this();
 			auto context = boost::make_local_shared<std::string>(rb.SerializeAsString());
-			rpc_write(context, session);
+			rpc_write(context);
 
 			start_call_op(session, ret, handler);
 
@@ -210,47 +210,32 @@ namespace cxxrpc {
 		}
 
 	protected:
-		void rpc_write(boost::local_shared_ptr<std::string> context, int session)
+		void rpc_write(boost::local_shared_ptr<std::string> context)
 		{
 			bool write_in_progress = !m_message_queue.empty();
-			m_message_queue.emplace_back(std::make_pair(context, session));
+			m_message_queue.emplace_back(context);
 
 			if (!write_in_progress)
 			{
 				auto self = this->shared_from_this();
 				m_websocket.async_write(boost::asio::buffer(*context),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
-						self, session, std::placeholders::_1));
+						self, std::placeholders::_1));
 			}
 		}
 
-		void rpc_write_handle(int session, boost::system::error_code ec)
+		void rpc_write_handle(boost::system::error_code ec)
 		{
-			if (ec)
-			{
-				auto h = m_call_ops[session]; // O(1) 查找.
-				if (!h)
-				{
-					// 不可能达到这里, 因为m_call_op是可增长的容器.
-					BOOST_ASSERT(0);
-					return;
-				}
-
-				// 并'唤醒'call处的协程.
-				h->result_back(std::move(ec));
-				h.reset();
-				m_recycle.push_back(session);
-			}
-			else
+			if (!ec)
 			{
 				m_message_queue.pop_front();
 				if (!m_message_queue.empty())
 				{
-					auto context_pair = m_message_queue.front();
+					auto context = m_message_queue.front();
 					auto self = this->shared_from_this();
-					m_websocket.async_write(boost::asio::buffer(*context_pair.first),
+					m_websocket.async_write(boost::asio::buffer(*context),
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
-							self, context_pair.second, std::placeholders::_1));
+							self, std::placeholders::_1));
 				}
 			}
 		}
@@ -320,7 +305,7 @@ namespace cxxrpc {
 
 					auto self = this->shared_from_this();
 					auto context = boost::make_local_shared<std::string>(rpc_ret.SerializeAsString());
-					rpc_write(context, session);
+					rpc_write(context);
 					continue;
 				}
 
