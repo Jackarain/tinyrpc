@@ -166,10 +166,10 @@ namespace cxxrpc {
 		}
 
 		template<class Handler>
-		void start_call_op(int session, ::google::protobuf::Message& msg, Handler&& h)
+		void start_call_op(int session, ::google::protobuf::Message& msg, Handler&& handler)
 		{
 			boost::asio::async_completion<Handler,
-				void(boost::system::error_code)> init(h);
+				void(boost::system::error_code)> init(handler);
 
 			auto& ptr = m_call_ops[session];
 			ptr.reset(new rpc_call_op<decltype(init.completion_handler)>{ msg, init.completion_handler });
