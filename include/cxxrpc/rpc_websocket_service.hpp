@@ -14,6 +14,13 @@
 #include <functional>
 #include <deque>
 
+#include "boost/system/system_error.hpp"
+#include "boost/system/error_code.hpp"
+
+#ifndef BOOST_SYSTEM_NOEXCEPT
+#define BOOST_SYSTEM_NOEXCEPT BOOST_NOEXCEPT
+#endif
+
 #include "boost/beast/core.hpp"
 #include "boost/beast/websocket.hpp"
 
@@ -22,6 +29,82 @@
 
 #include "rpc_service_ptl.pb.h"
 
+namespace cxxrpc {
+
+	//////////////////////////////////////////////////////////////////////////
+	namespace detail {
+		class error_category_impl;
+	}
+
+	template<class error_category>
+	const boost::system::error_category& error_category_single()
+	{
+		static error_category error_category_instance;
+		return reinterpret_cast<const boost::system::error_category&>(error_category_instance);
+	}
+
+	inline const boost::system::error_category& error_category()
+	{
+		return error_category_single<detail::error_category_impl>();
+	}
+
+	namespace errc {
+		enum errc_t
+		{
+			parse_rpc_service_ptl_failed = 1,
+			unknow_protocol_descriptor = 2,
+			parse_payload_failed = 3,
+		};
+
+		inline boost::system::error_code make_error_code(errc_t e)
+		{
+			return boost::system::error_code(static_cast<int>(e), cxxrpc::error_category());
+		}
+	}
+}
+
+namespace boost {
+	namespace system {
+		template <>
+		struct is_error_code_enum<cxxrpc::errc::errc_t>
+		{
+			static const bool value = true;
+		};
+
+	} // namespace system
+} // namespace boost
+
+namespace cxxrpc {
+	namespace detail {
+
+		class error_category_impl
+			: public boost::system::error_category
+		{
+			virtual const char* name() const BOOST_SYSTEM_NOEXCEPT
+			{
+				return "CXXRPC";
+			}
+
+			virtual std::string message(int e) const
+			{
+				switch (e)
+				{
+				case errc::parse_rpc_service_ptl_failed:
+					return "Parse protobuf rpc_service_ptl failed";
+				case errc::unknow_protocol_descriptor:
+					return "unknow protocol descriptor";
+				case errc::parse_payload_failed:
+					return "Parse protobuf payload failed";
+				default:
+					return "Unknown CXXRPC error";
+				}
+			}
+		};
+	}
+}
+
+
+	//////////////////////////////////////////////////////////////////////////
 namespace cxxrpc {
 
 	template <class Websocket>
@@ -240,13 +323,12 @@ namespace cxxrpc {
 			}
 		}
 
-		void reset_call_ops()
+		void reset_call_ops(boost::system::error_code&& ec)
 		{
 			for (auto& c : m_call_ops)
 			{
 				if (!c) continue;
-				c->result_back(make_error_code(
-					boost::asio::error::operation_aborted));
+				c->result_back(std::forward<boost::system::error_code>(ec));
 				c.reset();
 			}
 		}
@@ -255,13 +337,13 @@ namespace cxxrpc {
 		{
 			boost::system::error_code ec;
 
-			auto fail = [&](const std::string& reason)
+			auto fail = [&](boost::system::error_code&& ec)
 			{
 				m_abort = true;
+				boost::system::error_code ignore_ec;
+				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ignore_ec]);
 
-				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ec]);
-
-				reset_call_ops();
+				reset_call_ops(std::move(ec));
 			};
 
 			while (!m_abort)
@@ -269,11 +351,11 @@ namespace cxxrpc {
 				boost::beast::multi_buffer buf;
 				m_websocket.async_read(buf, yield[ec]);
 				if (ec)
-					return fail("read " + ec.message());
+					return fail(std::move(ec));
 
 				rpc_service_ptl::rpc_base_ptl rb;
 				if (!rb.ParseFromString(boost::beast::buffers_to_string(buf.data())))
-					return fail("parse protocol error");
+					return fail(make_error_code(errc::parse_rpc_service_ptl_failed));
 
 				auto session = rb.session();
 
@@ -283,13 +365,13 @@ namespace cxxrpc {
 					const auto descriptor =
 						::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
 					if (!descriptor)
-						return fail("caller parse protocol descriptor error");
+						return fail(make_error_code(errc::unknow_protocol_descriptor));
 
 					auto& e = m_remote_functions[descriptor->index()];	// O(1) 查找.
 
 					std::unique_ptr<::google::protobuf::Message> msg(e.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
-						return fail("caller parse protocol payload error");
+						return fail(make_error_code(errc::parse_payload_failed));
 
 					std::unique_ptr<::google::protobuf::Message> ret(e.ret_->New());
 
@@ -323,7 +405,7 @@ namespace cxxrpc {
 					// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
 					auto& ret = h->result();
 					if (!ret.ParseFromString(rb.payload()))
-						return fail("callee parse protocol payload error");
+						return fail(make_error_code(errc::parse_payload_failed));
 					h->result_back(std::move(ec));
 
 					m_call_ops[session].reset();
@@ -333,7 +415,7 @@ namespace cxxrpc {
 				}
 			}
 
-			reset_call_ops();
+			reset_call_ops(std::move(ec));
 		}
 
 	private:
