@@ -67,7 +67,7 @@ namespace cxxrpc {
 		class type_erasure_handler
 		{
 		public:
-			type_erasure_handler(Handler& handler)
+			type_erasure_handler(Handler&& handler)
 				: handler_(std::move(handler))
 			{}
 			~type_erasure_handler()
@@ -145,7 +145,7 @@ namespace cxxrpc {
 		}
 
 		template<class T1, class T2, class Handler>
-		void rpc_bind(Handler handler)
+		void rpc_bind(Handler&& handler)
 		{
 			auto desc = T1::descriptor();
 			if (m_remote_functions.empty())
@@ -159,7 +159,7 @@ namespace cxxrpc {
 			value.msg_.reset(new T1);
 			value.ret_.reset(new T2);
 
-			value.handler_ = type_erasure_handler<Handler, T1, T2>(handler);
+			value.handler_ = type_erasure_handler<Handler, T1, T2>(std::forward<Handler>(handler));
 			value.func_call_ = type_erasure_handler<Handler, T1, T2>::true_func_call;
 
 			m_remote_functions[desc->index()] = value;
@@ -204,7 +204,7 @@ namespace cxxrpc {
 			auto context = boost::make_local_shared<std::string>(rb.SerializeAsString());
 			rpc_write(context);
 
-			start_call_op(session, ret, handler);
+			start_call_op(session, ret, std::forward<Handler>(handler));
 
 			return;
 		}
@@ -326,7 +326,7 @@ namespace cxxrpc {
 						return fail("callee parse protocol payload error");
 					h->result_back(std::move(ec));
 
-					h.reset();
+					m_call_ops[session].reset();
 					m_recycle.push_back(session);
 
 					continue;
