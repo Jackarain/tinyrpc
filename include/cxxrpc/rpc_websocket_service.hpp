@@ -280,8 +280,6 @@ namespace cxxrpc {
 
 				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ec]);
 
-				// TODO: 这里暂时所有错误返回都使用操作被中止, 未来可定制rpc错误分类.
-				// 根据不同的实际错误原因返回, 比如解析body失败.
 				reset_call_ops();
 			};
 
