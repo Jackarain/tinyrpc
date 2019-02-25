@@ -63,7 +63,7 @@ namespace cxxrpc {
 			::google::protobuf::Message& data_;
 		};
 
-		template <typename Handler, typename T1, typename T2>
+		template <typename Handler, typename Request, typename Reply>
 		class type_erasure_handler
 		{
 		public:
@@ -76,9 +76,9 @@ namespace cxxrpc {
 			static void true_func_call(std::any handler,
 				const ::google::protobuf::Message& req, ::google::protobuf::Message& ret)
 			{
-				auto this_object = std::any_cast<type_erasure_handler<Handler, T1, T2>>(handler);
+				auto this_object = std::any_cast<type_erasure_handler<Handler, Request, Reply>>(handler);
 				this_object.handler_(
-					static_cast<const T1&>(req), static_cast<T2&>(ret));
+					static_cast<const Request&>(req), static_cast<Reply&>(ret));
 			}
 
 			Handler handler_;
@@ -144,10 +144,10 @@ namespace cxxrpc {
 			}
 		}
 
-		template<class T1, class T2, class Handler>
+		template<class Request, class Reply, class Handler>
 		void rpc_bind(Handler&& handler)
 		{
-			auto desc = T1::descriptor();
+			auto desc = Request::descriptor();
 			if (m_remote_functions.empty())
 			{
 				auto fdesc = desc->file();
@@ -156,11 +156,11 @@ namespace cxxrpc {
 
 			rpc_event_type value;
 
-			value.msg_.reset(new T1);
-			value.ret_.reset(new T2);
+			value.msg_.reset(new Request);
+			value.ret_.reset(new Reply);
 
-			value.handler_ = type_erasure_handler<Handler, T1, T2>(std::forward<Handler>(handler));
-			value.func_call_ = type_erasure_handler<Handler, T1, T2>::true_func_call;
+			value.handler_ = type_erasure_handler<Handler, Request, Reply>(std::forward<Handler>(handler));
+			value.func_call_ = type_erasure_handler<Handler, Request, Reply>::true_func_call;
 
 			m_remote_functions[desc->index()] = value;
 		}
