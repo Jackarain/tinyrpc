@@ -17,10 +17,6 @@
 #include "boost/beast/core.hpp"
 #include "boost/beast/websocket.hpp"
 
-#include "boost/bind.hpp"
-#include "boost/function.hpp"
-#include "boost/asio/strand.hpp"
-
 #include "boost/smart_ptr/local_shared_ptr.hpp"
 #include "boost/smart_ptr/make_local_shared.hpp"
 
