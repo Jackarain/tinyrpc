@@ -23,7 +23,7 @@ using ws = websocket::stream<tcp::socket>;
 class rpc_session : public std::enable_shared_from_this<rpc_session>
 {
 public:
-	rpc_session(websocket::stream<tcp::socket>&& s)
+	rpc_session(ws&& s)
 		: rpc_(std::make_shared<rpc_websocket_service<ws>>(std::move(s)))
 	{}
 
