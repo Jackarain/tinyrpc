@@ -264,7 +264,7 @@ namespace cxxrpc {
 		}
 
 		template<class T, class R, class Handler>
-		void call(T& msg, R& ret, Handler&& handler)
+		void call(const T& msg, R& ret, Handler&& handler)
 		{
 			rpc_service_ptl::rpc_base_ptl rb;
 
