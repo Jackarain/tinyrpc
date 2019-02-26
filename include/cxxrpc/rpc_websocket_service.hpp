@@ -127,8 +127,8 @@ namespace cxxrpc {
 		class rpc_call_op : public rpc_operation
 		{
 		public:
-			rpc_call_op(::google::protobuf::Message& data, Handler& h)
-				: handler_(std::move(h))
+			rpc_call_op(::google::protobuf::Message& data, Handler&& h)
+				: handler_(std::forward<Handler>(h))
 				, data_(data)
 			{}
 
@@ -152,7 +152,7 @@ namespace cxxrpc {
 		{
 		public:
 			type_erasure_handler(Handler&& handler)
-				: handler_(std::move(handler))
+				: handler_(std::forward<Handler>(handler))
 			{}
 			~type_erasure_handler()
 			{}
@@ -254,9 +254,11 @@ namespace cxxrpc {
 		{
 			boost::asio::async_completion<Handler,
 				void(boost::system::error_code)> init(handler);
+			using completion_handler_type = decltype(init.completion_handler);
 
 			auto& ptr = m_call_ops[session];
-			ptr.reset(new rpc_call_op<decltype(init.completion_handler)>{ msg, init.completion_handler });
+			ptr.reset(new rpc_call_op<completion_handler_type>(msg,
+				std::forward<completion_handler_type>(init.completion_handler)));
 
 			return init.result.get();
 		}
