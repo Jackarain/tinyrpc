@@ -134,7 +134,7 @@ namespace cxxrpc {
 
 			virtual void result_back(boost::system::error_code&& ec) override
 			{
-				handler_(ec);
+				handler_(std::forward<boost::system::error_code>(ec));
 			}
 
 			virtual ::google::protobuf::Message& result() override
@@ -346,7 +346,7 @@ namespace cxxrpc {
 				boost::system::error_code ignore_ec;
 				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ignore_ec]);
 
-				reset_call_ops(std::move(ec));
+				reset_call_ops(std::forward<boost::system::error_code>(ec));
 			};
 
 			while (!m_abort)
@@ -354,7 +354,7 @@ namespace cxxrpc {
 				boost::beast::multi_buffer buf;
 				m_websocket.async_read(buf, yield[ec]);
 				if (ec)
-					return fail(std::move(ec));
+					return fail(std::forward<boost::system::error_code>(ec));
 
 				rpc_service_ptl::rpc_base_ptl rb;
 				if (!rb.ParseFromString(boost::beast::buffers_to_string(buf.data())))
@@ -418,7 +418,7 @@ namespace cxxrpc {
 				}
 			}
 
-			reset_call_ops(std::move(ec));
+			reset_call_ops(std::forward<boost::system::error_code>(ec));
 		}
 
 	private:
