@@ -296,7 +296,7 @@ namespace cxxrpc {
 		}
 
 	protected:
-		void rpc_write(boost::local_shared_ptr<std::string> context)
+		void rpc_write(boost::local_shared_ptr<std::string>& context)
 		{
 			bool write_in_progress = !m_message_queue.empty();
 			m_message_queue.emplace_back(context);
