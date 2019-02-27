@@ -28,8 +28,8 @@
 
 #include "helloworld.pb.h"
 
-#include "cxxrpc/rpc_websocket_service.hpp"
-using namespace cxxrpc;
+#include "tinyrpc/rpc_websocket_service.hpp"
+using namespace tinyrpc;
 
 
 using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
