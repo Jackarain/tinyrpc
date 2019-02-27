@@ -115,7 +115,7 @@ namespace tinyrpc {
 		class rpc_operation
 		{
 		public:
-			virtual void result_back(boost::system::error_code&&) = 0;
+			virtual void operator()(boost::system::error_code&&) = 0;
 			virtual ::google::protobuf::Message& result() = 0;
 		};
 
@@ -128,12 +128,12 @@ namespace tinyrpc {
 				, data_(data)
 			{}
 
-			virtual void result_back(boost::system::error_code&& ec) override
+			void operator()(boost::system::error_code&& ec) override
 			{
 				handler_(std::forward<boost::system::error_code>(ec));
 			}
 
-			virtual ::google::protobuf::Message& result() override
+			::google::protobuf::Message& result() override
 			{
 				return data_;
 			}
@@ -143,8 +143,14 @@ namespace tinyrpc {
 			::google::protobuf::Message& data_;
 		};
 
+		struct any_handler
+		{
+			virtual ~any_handler() = default;
+			virtual void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) = 0;
+		};
+
 		template <typename Handler, typename Request, typename Reply>
-		class type_erasure_handler
+		class type_erasure_handler : public any_handler
 		{
 		public:
 			type_erasure_handler(Handler&& handler)
@@ -153,27 +159,20 @@ namespace tinyrpc {
 			~type_erasure_handler()
 			{}
 
-			static void true_func_call(std::any handler,
-				const ::google::protobuf::Message& req, ::google::protobuf::Message& ret)
+			void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) override
 			{
-				auto this_object = std::any_cast<type_erasure_handler<Handler, Request, Reply>>(handler);
-				this_object.handler_(
-					static_cast<const Request&>(req), static_cast<Reply&>(ret));
+				handler_(static_cast<const Request&>(req), static_cast<Reply&>(ret));
 			}
 
 			Handler handler_;
 		};
-
-		typedef void(*type_erasure_call_function)(std::any handler,
-			const ::google::protobuf::Message& req, ::google::protobuf::Message& ret);
 
 		struct rpc_event_type
 		{
 			boost::local_shared_ptr<::google::protobuf::Message> msg_;
 			boost::local_shared_ptr<::google::protobuf::Message> ret_;
 
-			type_erasure_call_function func_call_;
-			std::any handler_;
+			boost::local_shared_ptr<any_handler> any_call_;
 		};
 		using remote_function = std::vector<rpc_event_type>;
 
@@ -238,9 +237,7 @@ namespace tinyrpc {
 
 			value.msg_.reset(new Request);
 			value.ret_.reset(new Reply);
-
-			value.handler_ = type_erasure_handler<Handler, Request, Reply>(std::forward<Handler>(handler));
-			value.func_call_ = type_erasure_handler<Handler, Request, Reply>::true_func_call;
+			value.any_call_.reset(new type_erasure_handler<Handler, Request, Reply>(std::forward<Handler>(handler)));
 
 			m_remote_functions[desc->index()] = value;
 		}
@@ -324,11 +321,11 @@ namespace tinyrpc {
 
 		void reset_call_ops(boost::system::error_code&& ec)
 		{
-			for (auto& c : m_call_ops)
+			for (auto& h : m_call_ops)
 			{
-				if (!c) continue;
-				c->result_back(std::forward<boost::system::error_code>(ec));
-				c.reset();
+				if (!h) continue;
+				(*h)(std::forward<boost::system::error_code>(ec));
+				h.reset();
 			}
 		}
 
@@ -375,7 +372,7 @@ namespace tinyrpc {
 					std::unique_ptr<::google::protobuf::Message> ret(e.ret_->New());
 
 					// call function.
-					e.func_call_(e.handler_, *msg, *ret);
+					(*e.any_call_)(*msg, *ret);
 
 					// send back return.
 					rpc_service_ptl::rpc_base_ptl rpc_ret;
@@ -405,7 +402,7 @@ namespace tinyrpc {
 					auto& ret = h->result();
 					if (!ret.ParseFromString(rb.payload()))
 						return fail(make_error_code(errc::parse_payload_failed));
-					h->result_back(std::move(ec));
+					(*h)(std::move(ec));
 
 					m_call_ops[session].reset();
 					m_recycle.push_back(session);
