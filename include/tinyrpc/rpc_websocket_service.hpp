@@ -19,9 +19,6 @@
 #include "boost/beast/core.hpp"
 #include "boost/beast/websocket.hpp"
 
-#include "boost/smart_ptr/local_shared_ptr.hpp"
-#include "boost/smart_ptr/make_local_shared.hpp"
-
 #include "rpc_service_ptl.pb.h"
 
 namespace tinyrpc {
@@ -187,10 +184,10 @@ namespace tinyrpc {
 		};
 		using rpc_remote_method = std::vector<rpc_method_type>;
 
-		using call_op_ptr = boost::local_shared_ptr<rpc_operation>;
+		using call_op_ptr = std::unique_ptr<rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
 		using strand = boost::asio::strand<boost::asio::io_context::executor_type>;
-		using write_context = boost::local_shared_ptr<std::string>;
+		using write_context = std::unique_ptr<std::string>;
 		using write_message_queue = std::deque<write_context>;
 
 	public:
@@ -291,7 +288,7 @@ namespace tinyrpc {
 			}
 
 			auto self = this->shared_from_this();
-			auto context = boost::make_local_shared<std::string>(rb.SerializeAsString());
+			auto context = std::make_unique<std::string>(rb.SerializeAsString());
 			rpc_write(context);
 
 			start_call_op(session, ret, std::forward<Handler>(handler));
@@ -300,15 +297,16 @@ namespace tinyrpc {
 		}
 
 	protected:
-		void rpc_write(boost::local_shared_ptr<std::string>& context)
+		void rpc_write(std::unique_ptr<std::string>& context)
 		{
 			bool write_in_progress = !m_message_queue.empty();
-			m_message_queue.emplace_back(context);
+			m_message_queue.emplace_back(std::move(context));
 
 			if (!write_in_progress)
 			{
+				auto& front = m_message_queue.front();
 				auto self = this->shared_from_this();
-				m_websocket.async_write(boost::asio::buffer(*context),
+				m_websocket.async_write(boost::asio::buffer(*front),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 						self, std::placeholders::_1));
 			}
@@ -321,7 +319,7 @@ namespace tinyrpc {
 				m_message_queue.pop_front();
 				if (!m_message_queue.empty())
 				{
-					auto context = m_message_queue.front();
+					auto& context = m_message_queue.front();
 					auto self = this->shared_from_this();
 					m_websocket.async_write(boost::asio::buffer(*context),
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -393,7 +391,7 @@ namespace tinyrpc {
 					rpc_ret.set_payload(ret->SerializeAsString());
 
 					auto self = this->shared_from_this();
-					auto context = boost::make_local_shared<std::string>(rpc_ret.SerializeAsString());
+					auto context = std::make_unique<std::string>(rpc_ret.SerializeAsString());
 					rpc_write(context);
 					continue;
 				}
@@ -401,7 +399,7 @@ namespace tinyrpc {
 				// 本地调用远程, 远程返回的return.
 				if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
 				{
-					auto h = m_call_ops[session]; // O(1) 查找.
+					auto& h = m_call_ops[session]; // O(1) 查找.
 					if (!h)
 					{
 						// 不可能达到这里, 因为m_call_op是可增长的容器.
