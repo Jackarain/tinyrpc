@@ -344,8 +344,13 @@ namespace tinyrpc {
 			auto fail = [&](boost::system::error_code&& ec)
 			{
 				m_abort = true;
-				boost::system::error_code ignore_ec;
-				m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ignore_ec]);
+
+				if (ec != boost::asio::error::eof &&
+					ec != boost::asio::error::connection_reset)
+				{
+					boost::system::error_code ignore_ec;
+					m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ignore_ec]);
+				}
 
 				reset_call_ops(std::forward<boost::system::error_code>(ec));
 			};
