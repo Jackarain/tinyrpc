@@ -149,13 +149,11 @@ namespace tinyrpc {
 		};
 
 		template <typename Handler, typename Request, typename Reply>
-		class type_erasure_handler : public any_handler
+		class rpc_remote_handler : public any_handler
 		{
 		public:
-			type_erasure_handler(Handler&& handler)
+			rpc_remote_handler(Handler&& handler)
 				: handler_(std::forward<Handler>(handler))
-			{}
-			~type_erasure_handler()
 			{}
 
 			void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) override
@@ -166,14 +164,28 @@ namespace tinyrpc {
 			Handler handler_;
 		};
 
-		struct rpc_event_type
+		struct rpc_method_type
 		{
-			boost::local_shared_ptr<::google::protobuf::Message> msg_;
-			boost::local_shared_ptr<::google::protobuf::Message> ret_;
+			rpc_method_type() = default;
+			rpc_method_type(rpc_method_type&& rhs)
+			{
+				msg_ = std::move(rhs.msg_);
+				ret_ = std::move(rhs.ret_);
+				any_call_ = std::move(rhs.any_call_);
+			}
+			rpc_method_type& operator=(rpc_method_type&& rhs)
+			{
+				msg_ = std::move(rhs.msg_);
+				ret_ = std::move(rhs.ret_);
+				any_call_ = std::move(rhs.any_call_);
+				return *this;
+			}
 
-			boost::local_shared_ptr<any_handler> any_call_;
+			std::unique_ptr<::google::protobuf::Message> msg_;
+			std::unique_ptr<::google::protobuf::Message> ret_;
+			std::unique_ptr<any_handler> any_call_;
 		};
-		using remote_function = std::vector<rpc_event_type>;
+		using rpc_remote_method = std::vector<rpc_method_type>;
 
 		using call_op_ptr = boost::local_shared_ptr<rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
@@ -226,19 +238,19 @@ namespace tinyrpc {
 		void rpc_bind(Handler&& handler)
 		{
 			auto desc = Request::descriptor();
-			if (m_remote_functions.empty())
+			if (m_remote_methods.empty())
 			{
 				auto fdesc = desc->file();
-				m_remote_functions.resize(fdesc->message_type_count());
+				m_remote_methods.resize(fdesc->message_type_count());
 			}
 
-			rpc_event_type value;
+			rpc_method_type value;
 
-			value.msg_.reset(new Request);
-			value.ret_.reset(new Reply);
-			value.any_call_.reset(new type_erasure_handler<Handler, Request, Reply>(std::forward<Handler>(handler)));
+			value.msg_ = std::make_unique<Request>();
+			value.ret_ = std::make_unique<Reply>();
+			value.any_call_ = std::make_unique<rpc_remote_handler<Handler, Request, Reply>>(std::forward<Handler>(handler));
 
-			m_remote_functions[desc->index()] = value;
+			m_remote_methods[desc->index()] = std::move(value);
 		}
 
 		template<class Handler>
@@ -362,7 +374,7 @@ namespace tinyrpc {
 					if (!descriptor)
 						return fail(make_error_code(errc::unknow_protocol_descriptor));
 
-					auto& e = m_remote_functions[descriptor->index()];	// O(1) 查找.
+					auto& e = m_remote_methods[descriptor->index()];	// O(1) 查找.
 
 					std::unique_ptr<::google::protobuf::Message> msg(e.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
@@ -416,7 +428,7 @@ namespace tinyrpc {
 	private:
 		Websocket m_websocket;
 		write_message_queue m_message_queue;
-		remote_function m_remote_functions;
+		rpc_remote_method m_remote_methods;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
 		std::atomic_bool m_abort;
