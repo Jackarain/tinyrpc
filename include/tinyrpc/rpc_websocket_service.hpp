@@ -227,7 +227,7 @@ namespace tinyrpc {
 			if (m_websocket.is_open())
 			{
 				boost::system::error_code ignore_ec;
-				m_websocket.close(boost::beast::websocket::close_code::normal, ignore_ec);
+				m_websocket.lowest_layer().close(ignore_ec);
 			}
 		}
 
