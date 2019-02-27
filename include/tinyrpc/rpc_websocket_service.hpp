@@ -191,12 +191,12 @@ namespace tinyrpc {
 		virtual ~rpc_websocket_service()
 		{}
 
-		boost::asio::io_context::executor_type get_executor()
+		boost::asio::io_context::executor_type get_executor() noexcept
 		{
 			return m_websocket.get_executor();
 		}
 
-		Websocket& websocket()
+		Websocket& websocket() noexcept
 		{
 			return m_websocket;
 		}
