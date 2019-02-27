@@ -17,10 +17,6 @@
 #include "boost/system/system_error.hpp"
 #include "boost/system/error_code.hpp"
 
-#ifndef BOOST_SYSTEM_NOEXCEPT
-#define BOOST_SYSTEM_NOEXCEPT BOOST_NOEXCEPT
-#endif
-
 #include "boost/beast/core.hpp"
 #include "boost/beast/websocket.hpp"
 
@@ -80,9 +76,9 @@ namespace tinyrpc {
 		class error_category_impl
 			: public boost::system::error_category
 		{
-			virtual const char* name() const BOOST_SYSTEM_NOEXCEPT
+			virtual const char* name() const noexcept
 			{
-				return "CXXRPC";
+				return "TinyRPC";
 			}
 
 			virtual std::string message(int e) const
@@ -96,7 +92,7 @@ namespace tinyrpc {
 				case errc::parse_payload_failed:
 					return "Parse protobuf payload failed";
 				default:
-					return "Unknown CXXRPC error";
+					return "Unknown TinyRPC error";
 				}
 			}
 		};
