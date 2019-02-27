@@ -2,8 +2,8 @@
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB cxxrpc_SRCS
+file(GLOB websocket_server_SRCS
 	websocket_server.cpp
 )
 
-add_executable(websocket-server ${cxxrpc_SRCS} ${PROTO_RPC_TEST_SRC} ${PROTO_RPC_TEST_HDRS})
+add_executable(websocket-server ${websocket_server_SRCS} ${PROTO_RPC_TEST_SRC} ${PROTO_RPC_TEST_HDRS})
