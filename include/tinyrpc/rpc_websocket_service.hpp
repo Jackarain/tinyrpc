@@ -288,8 +288,7 @@ namespace tinyrpc {
 			}
 
 			auto self = this->shared_from_this();
-			auto context = std::make_unique<std::string>(rb.SerializeAsString());
-			rpc_write(context);
+			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
 
 			start_call_op(session, ret, std::forward<Handler>(handler));
 
@@ -297,7 +296,7 @@ namespace tinyrpc {
 		}
 
 	protected:
-		void rpc_write(std::unique_ptr<std::string>& context)
+		void rpc_write(std::unique_ptr<std::string>&& context)
 		{
 			bool write_in_progress = !m_message_queue.empty();
 			m_message_queue.emplace_back(std::move(context));
@@ -391,8 +390,7 @@ namespace tinyrpc {
 					rpc_ret.set_payload(ret->SerializeAsString());
 
 					auto self = this->shared_from_this();
-					auto context = std::make_unique<std::string>(rpc_ret.SerializeAsString());
-					rpc_write(context);
+					rpc_write(std::make_unique<std::string>(rpc_ret.SerializeAsString()));
 					continue;
 				}
 
