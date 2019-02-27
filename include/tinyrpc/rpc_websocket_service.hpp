@@ -29,7 +29,7 @@
 
 #include "rpc_service_ptl.pb.h"
 
-namespace cxxrpc {
+namespace tinyrpc {
 
 	//////////////////////////////////////////////////////////////////////////
 	namespace detail {
@@ -58,7 +58,7 @@ namespace cxxrpc {
 
 		inline boost::system::error_code make_error_code(errc_t e)
 		{
-			return boost::system::error_code(static_cast<int>(e), cxxrpc::error_category());
+			return boost::system::error_code(static_cast<int>(e), tinyrpc::error_category());
 		}
 	}
 }
@@ -66,7 +66,7 @@ namespace cxxrpc {
 namespace boost {
 	namespace system {
 		template <>
-		struct is_error_code_enum<cxxrpc::errc::errc_t>
+		struct is_error_code_enum<tinyrpc::errc::errc_t>
 		{
 			static const bool value = true;
 		};
@@ -74,7 +74,7 @@ namespace boost {
 	} // namespace system
 } // namespace boost
 
-namespace cxxrpc {
+namespace tinyrpc {
 	namespace detail {
 
 		class error_category_impl
@@ -104,7 +104,7 @@ namespace cxxrpc {
 }
 
 
-namespace cxxrpc {
+namespace tinyrpc {
 
 	//////////////////////////////////////////////////////////////////////////
 
