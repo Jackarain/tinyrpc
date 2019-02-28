@@ -12,6 +12,8 @@
 #include <vector>
 #include <functional>
 #include <deque>
+#include <mutex>
+#include <shared_mutex>
 
 #include "boost/system/system_error.hpp"
 #include "boost/system/error_code.hpp"
@@ -228,6 +230,7 @@ namespace tinyrpc {
 		template<class Request, class Reply, class Handler>
 		void rpc_bind(Handler&& handler)
 		{
+			std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
 			auto desc = Request::descriptor();
 			if (m_remote_methods.empty())
 			{
@@ -251,9 +254,12 @@ namespace tinyrpc {
 				void(boost::system::error_code)> init(handler);
 			using completion_handler_type = decltype(init.completion_handler);
 
-			auto& ptr = m_call_ops[session];
-			ptr.reset(new rpc_call_op<completion_handler_type>(msg,
-				std::forward<completion_handler_type>(init.completion_handler)));
+			{
+				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
+				auto& ptr = m_call_ops[session];
+				ptr.reset(new rpc_call_op<completion_handler_type>(msg,
+					std::forward<completion_handler_type>(init.completion_handler)));
+			}
 
 			return init.result.get();
 		}
@@ -268,17 +274,21 @@ namespace tinyrpc {
 			rb.set_call(rpc_service_ptl::rpc_base_ptl::caller);
 
 			int session = 0;
-			if (m_recycle.empty())
+
 			{
-				session = static_cast<int>(m_call_ops.size());
-				m_call_ops.push_back(call_op_ptr{});
-				rb.set_session(session);
-			}
-			else
-			{
-				session = m_recycle.back();
-				m_recycle.pop_back();
-				rb.set_session(session);
+				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+				if (m_recycle.empty())
+				{
+					session = static_cast<int>(m_call_ops.size());
+					m_call_ops.push_back(call_op_ptr{});
+					rb.set_session(session);
+				}
+				else
+				{
+					session = m_recycle.back();
+					m_recycle.pop_back();
+					rb.set_session(session);
+				}
 			}
 
 			auto self = this->shared_from_this();
@@ -292,12 +302,15 @@ namespace tinyrpc {
 	protected:
 		void rpc_write(std::unique_ptr<std::string>&& context)
 		{
+			std::unique_lock<std::mutex> lock(m_msg_mutex);
+
 			bool write_in_progress = !m_message_queue.empty();
 			m_message_queue.emplace_back(std::move(context));
-
 			if (!write_in_progress)
 			{
 				auto& front = m_message_queue.front();
+				lock.unlock();
+
 				auto self = this->shared_from_this();
 				m_websocket.async_write(boost::asio::buffer(*front),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -309,10 +322,14 @@ namespace tinyrpc {
 		{
 			if (!ec)
 			{
+				std::unique_lock<std::mutex> lock(m_msg_mutex);
+
 				m_message_queue.pop_front();
 				if (!m_message_queue.empty())
 				{
 					auto& context = m_message_queue.front();
+					lock.unlock();
+
 					auto self = this->shared_from_this();
 					m_websocket.async_write(boost::asio::buffer(*context),
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -323,6 +340,7 @@ namespace tinyrpc {
 
 		void reset_call_ops(boost::system::error_code&& ec)
 		{
+			std::shared_lock<std::shared_mutex> lock(m_call_mutex);
 			for (auto& h : m_call_ops)
 			{
 				if (!h) continue;
@@ -351,11 +369,11 @@ namespace tinyrpc {
 
 				m_read_buffer.consume(bytes);
 
-				// rpc dispatch
-				rpc_dispatch(std::move(rb));
-
 				// start next read.
 				start_rpc_read();
+
+				// rpc dispatch
+				rpc_dispatch(std::move(rb));
 			});
 		}
 
@@ -375,25 +393,32 @@ namespace tinyrpc {
 					if (!descriptor)
 						return reset_call_ops(make_error_code(errc::unknow_protocol_descriptor));
 
-					auto& e = m_remote_methods[descriptor->index()];	// O(1) 查找.
+					std::unique_ptr<::google::protobuf::Message> reply;
 
-					std::unique_ptr<::google::protobuf::Message> msg(e.msg_->New());
-					if (!msg->ParseFromString(rb.payload()))
-						return reset_call_ops(make_error_code(errc::parse_payload_failed));
+					{
+						std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
+						auto& method = m_remote_methods[descriptor->index()];	// O(1) 查找.
 
-					std::unique_ptr<::google::protobuf::Message> ret(e.ret_->New());
+						std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
+						if (!msg->ParseFromString(rb.payload()))
+							return reset_call_ops(make_error_code(errc::parse_payload_failed));
 
-					// call function.
-					(*e.any_call_)(*msg, *ret);
+						std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
+
+						// call function.
+						(*method.any_call_)(*msg, *ret);
+
+						reply = std::move(ret);
+					}
 
 					// send back return.
-					rpc_service_ptl::rpc_base_ptl rpc_ret;
-					rpc_ret.set_call(rpc_service_ptl::rpc_base_ptl::callee);
-					rpc_ret.set_session(session);
-					rpc_ret.set_message(ret->GetTypeName());
-					rpc_ret.set_payload(ret->SerializeAsString());
+					rpc_service_ptl::rpc_base_ptl rpc_reply;
+					rpc_reply.set_call(rpc_service_ptl::rpc_base_ptl::callee);
+					rpc_reply.set_session(session);
+					rpc_reply.set_message(reply->GetTypeName());
+					rpc_reply.set_payload(reply->SerializeAsString());
 
-					rpc_write(std::make_unique<std::string>(rpc_ret.SerializeAsString()));
+					rpc_write(std::make_unique<std::string>(rpc_reply.SerializeAsString()));
 				});
 			}
 
@@ -403,12 +428,16 @@ namespace tinyrpc {
 				boost::asio::post(get_executor(), [self, this, rb = std::move(rb)]()
 				{
 					auto session = rb.session();
-					auto& h = m_call_ops[session]; // O(1) 查找.
-					if (!h)
+					call_op_ptr h;
+
 					{
-						// 不可能达到这里, 因为m_call_op是可增长的容器.
-						BOOST_ASSERT(0);
-						return;
+						std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+
+						h = std::move(m_call_ops[session]); // O(1) 查找.
+						BOOST_ASSERT(h && "call op is nullptr!");
+
+						// recycle session.
+						m_recycle.push_back(session);
 					}
 
 					// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
@@ -416,20 +445,20 @@ namespace tinyrpc {
 					if (!ret.ParseFromString(rb.payload()))
 						return reset_call_ops(make_error_code(errc::parse_payload_failed));
 					(*h)(boost::system::error_code{});
-
-					m_call_ops[session].reset();
-					m_recycle.push_back(session);
 				});
 			}
 		}
 
 	private:
 		Websocket m_websocket;
+		std::mutex m_msg_mutex;
 		write_message_queue m_message_queue;
 		boost::beast::multi_buffer m_read_buffer;
 		rpc_remote_method m_remote_methods;
+		std::shared_mutex m_methods_mutex;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
+		std::shared_mutex m_call_mutex;
 		std::atomic_bool m_abort;
 	};
 }
