@@ -384,68 +384,63 @@ namespace tinyrpc {
 			// 远程调用过来, 找到对应的event并响应.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
 			{
-				boost::asio::post(get_executor(), [self, this, rb = std::move(rb)]()
+
+				auto session = rb.session();
+
+				const auto descriptor =
+					::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
+				if (!descriptor)
+					return reset_call_ops(make_error_code(errc::unknow_protocol_descriptor));
+
+				std::unique_ptr<::google::protobuf::Message> reply;
+
 				{
-					auto session = rb.session();
+					std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
+					auto& method = m_remote_methods[descriptor->index()];	// O(1) 查找.
 
-					const auto descriptor =
-						::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
-					if (!descriptor)
-						return reset_call_ops(make_error_code(errc::unknow_protocol_descriptor));
+					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
+					if (!msg->ParseFromString(rb.payload()))
+						return reset_call_ops(make_error_code(errc::parse_payload_failed));
 
-					std::unique_ptr<::google::protobuf::Message> reply;
+					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
 
-					{
-						std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
-						auto& method = m_remote_methods[descriptor->index()];	// O(1) 查找.
+					// call function.
+					(*method.any_call_)(*msg, *ret);
 
-						std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
-						if (!msg->ParseFromString(rb.payload()))
-							return reset_call_ops(make_error_code(errc::parse_payload_failed));
+					reply = std::move(ret);
+				}
 
-						std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
+				// send back return.
+				rpc_service_ptl::rpc_base_ptl rpc_reply;
+				rpc_reply.set_call(rpc_service_ptl::rpc_base_ptl::callee);
+				rpc_reply.set_session(session);
+				rpc_reply.set_message(reply->GetTypeName());
+				rpc_reply.set_payload(reply->SerializeAsString());
 
-						// call function.
-						(*method.any_call_)(*msg, *ret);
-
-						reply = std::move(ret);
-					}
-
-					// send back return.
-					rpc_service_ptl::rpc_base_ptl rpc_reply;
-					rpc_reply.set_call(rpc_service_ptl::rpc_base_ptl::callee);
-					rpc_reply.set_session(session);
-					rpc_reply.set_message(reply->GetTypeName());
-					rpc_reply.set_payload(reply->SerializeAsString());
-
-					rpc_write(std::make_unique<std::string>(rpc_reply.SerializeAsString()));
-				});
+				rpc_write(std::make_unique<std::string>(rpc_reply.SerializeAsString()));
 			}
 
 			// 本地调用远程, 远程返回的return.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
 			{
-				boost::asio::post(get_executor(), [self, this, rb = std::move(rb)]()
+				auto session = rb.session();
+				call_op_ptr h;
+
 				{
-					auto session = rb.session();
-					call_op_ptr h;
+					std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 
-					{
-						std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+					h = std::move(m_call_ops[session]); // O(1) 查找.
+					BOOST_ASSERT(h && "call op is nullptr!");
 
-						h = std::move(m_call_ops[session]); // O(1) 查找.
-						BOOST_ASSERT(h && "call op is nullptr!");
+					// recycle session.
+					m_recycle.push_back(session);
+				}
 
-						// recycle session.
-						m_recycle.push_back(session);
-					}
-
-					// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
-					auto& ret = h->result();
-					if (!ret.ParseFromString(rb.payload()))
-						return reset_call_ops(make_error_code(errc::parse_payload_failed));
-					(*h)(boost::system::error_code{});
-				});
+				// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
+				auto& ret = h->result();
+				if (!ret.ParseFromString(rb.payload()))
+					return reset_call_ops(make_error_code(errc::parse_payload_failed));
+				(*h)(boost::system::error_code{});
 			}
 		}
 
