@@ -333,7 +333,7 @@ namespace tinyrpc {
 
 		void start_rpc_read()
 		{
-			auto self = shared_from_this();
+			auto self = this->shared_from_this();
 			m_websocket.async_read(m_read_buffer, [self, this]
 			(boost::system::error_code ec, std::size_t bytes)
 			{
@@ -361,7 +361,7 @@ namespace tinyrpc {
 
 		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb)
 		{
-			auto self = shared_from_this();
+			auto self = this->shared_from_this();
 
 			// 远程调用过来, 找到对应的event并响应.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
