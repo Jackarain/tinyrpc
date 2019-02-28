@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+﻿cmake_minimum_required(VERSION 3.2)
 project(Boost)
 
 if(WIN32)
@@ -91,6 +91,7 @@ set(BOOST_CHRONO_SRC
 set(BOOST_CONTEXT_SRC
 	libs/context/src/execution_context.cpp
 	libs/context/src/continuation.cpp
+	libs/context/src/fiber.cpp
 )
 
 if(WIN32)
