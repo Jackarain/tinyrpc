@@ -212,13 +212,7 @@ namespace tinyrpc {
 		void start()
 		{
 			m_abort = false;
-
-			auto self = this->shared_from_this();
-			boost::asio::spawn(m_websocket.get_executor(),
-				[self, this](boost::asio::yield_context yield)
-			{
-				rpc_read_loop(yield);
-			});
+			start_rpc_read();
 		}
 
 		void stop()
@@ -337,50 +331,55 @@ namespace tinyrpc {
 			}
 		}
 
-		void rpc_read_loop(boost::asio::yield_context yield)
+		void start_rpc_read()
 		{
-			boost::system::error_code ec;
-
-			auto fail = [&](boost::system::error_code&& ec)
+			auto self = shared_from_this();
+			m_websocket.async_read(m_read_buffer, [self, this]
+			(boost::system::error_code ec, std::size_t bytes)
 			{
-				m_abort = true;
-
-				if (ec != boost::asio::error::eof &&
-					ec != boost::asio::error::connection_reset)
+				if (ec)
 				{
-					boost::system::error_code ignore_ec;
-					m_websocket.async_close(boost::beast::websocket::close_code::normal, yield[ignore_ec]);
+					m_abort = true;
+					reset_call_ops(std::forward<boost::system::error_code>(ec));
+					return;
 				}
 
-				reset_call_ops(std::forward<boost::system::error_code>(ec));
-			};
-
-			while (!m_abort)
-			{
-				boost::beast::multi_buffer buf;
-				m_websocket.async_read(buf, yield[ec]);
-				if (ec)
-					return fail(std::forward<boost::system::error_code>(ec));
-
+				// parser rpc base protocol.
 				rpc_service_ptl::rpc_base_ptl rb;
-				if (!rb.ParseFromString(boost::beast::buffers_to_string(buf.data())))
-					return fail(make_error_code(errc::parse_rpc_service_ptl_failed));
+				if (!rb.ParseFromString(boost::beast::buffers_to_string(m_read_buffer.data())))
+					return reset_call_ops(make_error_code(errc::parse_rpc_service_ptl_failed));
 
-				auto session = rb.session();
+				m_read_buffer.consume(bytes);
 
-				// 远程调用过来, 找到对应的event并响应.
-				if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
+				// rpc dispatch
+				rpc_dispatch(std::move(rb));
+
+				// start next read.
+				start_rpc_read();
+			});
+		}
+
+		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb)
+		{
+			auto self = shared_from_this();
+
+			// 远程调用过来, 找到对应的event并响应.
+			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
+			{
+				boost::asio::post(get_executor(), [self, this, rb = std::move(rb)]()
 				{
+					auto session = rb.session();
+
 					const auto descriptor =
 						::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
 					if (!descriptor)
-						return fail(make_error_code(errc::unknow_protocol_descriptor));
+						return reset_call_ops(make_error_code(errc::unknow_protocol_descriptor));
 
 					auto& e = m_remote_methods[descriptor->index()];	// O(1) 查找.
 
 					std::unique_ptr<::google::protobuf::Message> msg(e.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
-						return fail(make_error_code(errc::parse_payload_failed));
+						return reset_call_ops(make_error_code(errc::parse_payload_failed));
 
 					std::unique_ptr<::google::protobuf::Message> ret(e.ret_->New());
 
@@ -394,41 +393,40 @@ namespace tinyrpc {
 					rpc_ret.set_message(ret->GetTypeName());
 					rpc_ret.set_payload(ret->SerializeAsString());
 
-					auto self = this->shared_from_this();
 					rpc_write(std::make_unique<std::string>(rpc_ret.SerializeAsString()));
-					continue;
-				}
+				});
+			}
 
-				// 本地调用远程, 远程返回的return.
-				if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
+			// 本地调用远程, 远程返回的return.
+			if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
+			{
+				boost::asio::post(get_executor(), [self, this, rb = std::move(rb)]()
 				{
+					auto session = rb.session();
 					auto& h = m_call_ops[session]; // O(1) 查找.
 					if (!h)
 					{
 						// 不可能达到这里, 因为m_call_op是可增长的容器.
 						BOOST_ASSERT(0);
-						continue;
+						return;
 					}
 
 					// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
 					auto& ret = h->result();
 					if (!ret.ParseFromString(rb.payload()))
-						return fail(make_error_code(errc::parse_payload_failed));
-					(*h)(std::move(ec));
+						return reset_call_ops(make_error_code(errc::parse_payload_failed));
+					(*h)(boost::system::error_code{});
 
 					m_call_ops[session].reset();
 					m_recycle.push_back(session);
-
-					continue;
-				}
+				});
 			}
-
-			reset_call_ops(std::forward<boost::system::error_code>(ec));
 		}
 
 	private:
 		Websocket m_websocket;
 		write_message_queue m_message_queue;
+		boost::beast::multi_buffer m_read_buffer;
 		rpc_remote_method m_remote_methods;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
