@@ -188,7 +188,6 @@ namespace tinyrpc {
 
 		using call_op_ptr = std::unique_ptr<rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
-		using strand = boost::asio::strand<boost::asio::io_context::executor_type>;
 		using write_context = std::unique_ptr<std::string>;
 		using write_message_queue = std::deque<write_context>;
 
