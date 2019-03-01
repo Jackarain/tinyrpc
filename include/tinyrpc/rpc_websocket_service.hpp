@@ -14,6 +14,7 @@
 #include <deque>
 #include <mutex>
 #include <shared_mutex>
+#include <type_traits>
 
 #include "boost/system/system_error.hpp"
 #include "boost/system/error_code.hpp"
@@ -101,6 +102,11 @@ namespace tinyrpc {
 namespace tinyrpc {
 
 	//////////////////////////////////////////////////////////////////////////
+
+#define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
+			static_assert(boost::beast::is_completion_handler< \
+				BOOST_ASIO_HANDLER_TYPE(type, sig), sig>::value, \
+					"CompletionHandler signature requirements not met")
 
 	template <class Websocket>
 	class rpc_websocket_service :
@@ -229,6 +235,8 @@ namespace tinyrpc {
 		template<class Request, class Reply, class Handler>
 		void rpc_bind(Handler&& handler)
 		{
+			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(const Request&, Reply&));
+
 			std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
 			auto desc = Request::descriptor();
 			if (m_remote_methods.empty())
@@ -266,6 +274,8 @@ namespace tinyrpc {
 		template<class T, class R, class Handler>
 		void call(const T& msg, R& ret, Handler&& handler)
 		{
+			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(boost::system::error_code));
+
 			rpc_service_ptl::rpc_base_ptl rb;
 
 			rb.set_message(msg.GetTypeName());
