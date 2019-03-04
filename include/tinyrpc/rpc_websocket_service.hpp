@@ -347,14 +347,20 @@ namespace tinyrpc {
 			}
 		}
 
-		void reset_call_ops(boost::system::error_code&& ec)
+		void abort_rpc(boost::system::error_code&& ec)
 		{
-			std::shared_lock<std::shared_mutex> lock(m_call_mutex);
-			for (auto& h : m_call_ops)
 			{
-				if (!h) continue;
-				(*h)(std::forward<boost::system::error_code>(ec));
-				h.reset();
+				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
+				for (auto& h : m_call_ops)
+				{
+					if (!h) continue;
+					(*h)(std::forward<boost::system::error_code>(ec));
+					h.reset();
+				}
+			}
+			{
+				std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
+				m_remote_methods.clear();
 			}
 		}
 
@@ -367,14 +373,14 @@ namespace tinyrpc {
 				if (ec)
 				{
 					m_abort = true;
-					reset_call_ops(std::forward<boost::system::error_code>(ec));
+					abort_rpc(std::forward<boost::system::error_code>(ec));
 					return;
 				}
 
 				// parser rpc base protocol.
 				rpc_service_ptl::rpc_base_ptl rb;
 				if (!rb.ParseFromString(boost::beast::buffers_to_string(m_read_buffer.data())))
-					return reset_call_ops(make_error_code(errc::parse_rpc_service_ptl_failed));
+					return abort_rpc(make_error_code(errc::parse_rpc_service_ptl_failed));
 
 				m_read_buffer.consume(bytes);
 
@@ -399,7 +405,7 @@ namespace tinyrpc {
 				const auto descriptor =
 					::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
 				if (!descriptor)
-					return reset_call_ops(make_error_code(errc::unknow_protocol_descriptor));
+					return abort_rpc(make_error_code(errc::unknow_protocol_descriptor));
 
 				std::unique_ptr<::google::protobuf::Message> reply;
 
@@ -409,7 +415,7 @@ namespace tinyrpc {
 
 					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
-						return reset_call_ops(make_error_code(errc::parse_payload_failed));
+						return abort_rpc(make_error_code(errc::parse_payload_failed));
 
 					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
 
@@ -448,7 +454,7 @@ namespace tinyrpc {
 				// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
 				auto& ret = h->result();
 				if (!ret.ParseFromString(rb.payload()))
-					return reset_call_ops(make_error_code(errc::parse_payload_failed));
+					return abort_rpc(make_error_code(errc::parse_payload_failed));
 				(*h)(boost::system::error_code{});
 			}
 		}
