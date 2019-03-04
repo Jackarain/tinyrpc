@@ -172,13 +172,13 @@ namespace tinyrpc {
 		struct rpc_method_type
 		{
 			rpc_method_type() = default;
-			rpc_method_type(rpc_method_type&& rhs)
+			rpc_method_type(rpc_method_type&& rhs) noexcept
 			{
 				msg_ = std::move(rhs.msg_);
 				ret_ = std::move(rhs.ret_);
 				any_call_ = std::move(rhs.any_call_);
 			}
-			rpc_method_type& operator=(rpc_method_type&& rhs)
+			rpc_method_type& operator=(rpc_method_type&& rhs) noexcept
 			{
 				msg_ = std::move(rhs.msg_);
 				ret_ = std::move(rhs.ret_);
