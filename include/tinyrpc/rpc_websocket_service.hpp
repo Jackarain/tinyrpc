@@ -150,7 +150,7 @@ namespace tinyrpc {
 		struct any_handler
 		{
 			virtual ~any_handler() = default;
-			virtual void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) = 0;
+			virtual void operator()(const ::google::protobuf::Message&, ::google::protobuf::Message&) = 0;
 		};
 
 		template <typename Handler, typename Request, typename Reply>
