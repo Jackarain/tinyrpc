@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "helloworld.pb.h"
+#include "chat.pb.h"
 
 #include "tinyrpc/rpc_websocket_service.hpp"
 using namespace tinyrpc;
@@ -35,68 +35,38 @@ public:
 
 	void run()
 	{
-		// 绑定rpc函数, 并通过模板参数指定request, reply.
-		rpc_->rpc_bind<helloworld::HelloRequest, helloworld::HelloReply>(
-			std::bind(&rpc_session::hello_request, this,
-				std::placeholders::_1, std::placeholders::_2));
-
-		// 绑定第二个rpc函数.
-		rpc_->rpc_bind<helloworld::WorldRequest, helloworld::WorldReply>(
-			std::bind(&rpc_session::world_request, this,
-				std::placeholders::_1, std::placeholders::_2));
-
 		// 启动rpc服务.
 		rpc_->start();
 	}
 
-	void test_proc(boost::asio::yield_context yield)
+	void chat_proc(boost::asio::yield_context yield)
 	{
-		helloworld::HelloRequest req;
-		req.set_name("alice");
+		chat::ChatSendMessage msg;
+		msg.set_name("alice");
 
-		helloworld::HelloReply reply;
+		chat::ChatReplyMessage reply;
 
-		// 第一次rpc异步调用.
-		boost::system::error_code ec;
-		rpc_->call(req, reply, yield[ec]);
+		while (true)
+		{
+			std::cout << msg.name() << ": ";
 
-		// 输出远程主机返回值reply, 如果发生错误, 则需return, 避免在一个发
-		// 生过错误的rpc链接上通信. 这只不ec不作判断仅仅打印输出, 实际中必须判断.
-		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
+			std::string context;
+			std::getline(std::cin, context);
 
-		if (ec)
-			return;
+			msg.set_message(context);
 
-		// 第二次rpc异步调用.
-		req.set_name("alice");
-		rpc_->call(req, reply, yield[ec]);
+			boost::system::error_code ec;
+			rpc_->call(msg, reply, yield[ec]);
+			if (ec)
+			{
+				std::cout << "error: " << ec.message() << std::endl;
+				return;
+			}
 
-		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
-
-		if (ec)
-			return;
-
-		// 第三次rpc异步调用.
-		helloworld::WorldRequest req2;
-		req2.set_name("helloworld::WorldRequest");
-		helloworld::WorldReply reply2;
-		rpc_->call(req2, reply2, yield[ec]);
-
-		std::cout << reply2.message() << ", ec: " << ec.message() << std::endl;
-	}
-
-	// 远程调用HelloRequest过来, 通过修改reply实现返回给远程主机.
-	void hello_request(const helloworld::HelloRequest& req, helloworld::HelloReply& reply)
-	{
-		reply.set_message("client hello request");
-		std::cout << "recv: " << req.name() << ", reply: " << reply.message() << std::endl;
-	}
-
-	// 远程调用WorldRequest过来.
-	void world_request(const helloworld::WorldRequest& req, helloworld::WorldReply& reply)
-	{
-		reply.set_message("client world request");
-		std::cout << "recv: " << req.name() << ", reply: " << reply.message() << std::endl;
+			// 输出远程主机返回值reply, 如果发生错误, 则需return, 避免在一个发
+			// 生过错误的rpc链接上通信. 这只不ec不作判断仅仅打印输出, 实际中必须判断.
+			std::cout << reply.name() << " reply: " << reply.message() << std::endl;
+		}
 	}
 
 private:
@@ -135,7 +105,7 @@ void do_session(
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
 	ses->run();
-	ses->test_proc(yield);
+	ses->chat_proc(yield);
 }
 
 int main(int argc, char** argv)

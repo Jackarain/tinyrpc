@@ -26,7 +26,7 @@
 #include <thread>
 #include <vector>
 
-#include "helloworld.pb.h"
+#include "chat.pb.h"
 
 #include "tinyrpc/rpc_websocket_service.hpp"
 using namespace tinyrpc;
@@ -52,57 +52,19 @@ public:
 
 	void run()
 	{
-		rpc_->rpc_bind<helloworld::HelloRequest, helloworld::HelloReply>(
-			std::bind(&rpc_session::hello_request, this,
-				std::placeholders::_1, std::placeholders::_2));
-
-		rpc_->rpc_bind<helloworld::WorldRequest, helloworld::WorldReply>(
-			std::bind(&rpc_session::world_request, this,
+		rpc_->rpc_bind<chat::ChatSendMessage, chat::ChatReplyMessage>(
+			std::bind(&rpc_session::chat_request, shared_from_this(),
 				std::placeholders::_1, std::placeholders::_2));
 
 		rpc_->start();
 	}
 
-	void test_proc(boost::asio::yield_context yield)
+	void chat_request(const chat::ChatSendMessage& req, chat::ChatReplyMessage& reply)
 	{
-		helloworld::HelloRequest req;
-		req.set_name("client request 1");
+		std::cout << req.name() << " say: " << req.message() << std::endl;
 
-		helloworld::HelloReply reply;
-
-		boost::system::error_code ec;
-		rpc_->call(req, reply, yield[ec]);
-
-		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
-		if (ec)
-			return;
-
-		req.set_name("client request 1");
-		rpc_->call(req, reply, yield[ec]);
-
-		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
-		if (ec)
-			return;
-
-
-		helloworld::WorldRequest req2;
-		req2.set_name("client world 1");
-		helloworld::WorldReply reply2;
-		rpc_->call(req2, reply2, yield[ec]);
-
-		std::cout << reply2.message() << ", ec: " << ec.message() << std::endl;
-	}
-
-	void hello_request(const helloworld::HelloRequest& req, helloworld::HelloReply& reply)
-	{
-		reply.set_message("hello reply message to server");
-		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
-	}
-
-	void world_request(const helloworld::WorldRequest& req, helloworld::WorldReply& reply)
-	{
-		reply.set_message("world reply message to server");
-		std::cout << "recv: " << req.name() << ", reply " << reply.message() << std::endl;
+		reply.set_name("server");
+		reply.set_message(req.message() + " copy!");
 	}
 
 private:
@@ -128,7 +90,6 @@ void do_session(tcp::socket& socket, boost::asio::yield_context yield)
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
 	ses->run();
-	ses->test_proc(yield);
 }
 
 void do_listen(
