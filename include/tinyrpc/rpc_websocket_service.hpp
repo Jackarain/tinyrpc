@@ -350,7 +350,7 @@ namespace tinyrpc {
 		void abort_rpc(boost::system::error_code&& ec)
 		{
 			{
-				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
+				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 				for (auto& h : m_call_ops)
 				{
 					if (!h) continue;
@@ -359,7 +359,7 @@ namespace tinyrpc {
 				}
 			}
 			{
-				std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
+				std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
 				m_remote_methods.clear();
 			}
 		}
