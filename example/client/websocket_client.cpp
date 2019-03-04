@@ -42,7 +42,11 @@ public:
 	void chat_proc(boost::asio::yield_context yield)
 	{
 		chat::ChatSendMessage msg;
-		msg.set_name("alice");
+
+		std::cout << "input your name: ";
+		std::string context;
+		std::getline(std::cin, context);
+		msg.set_name(context);
 
 		chat::ChatReplyMessage reply;
 
@@ -50,7 +54,7 @@ public:
 		{
 			std::cout << msg.name() << ": ";
 
-			std::string context;
+			context.clear();
 			std::getline(std::cin, context);
 
 			msg.set_message(context);
