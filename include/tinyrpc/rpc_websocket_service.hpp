@@ -323,7 +323,6 @@ namespace tinyrpc {
 			// 远程调用过来, 找到对应的event并响应.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
 			{
-
 				auto session = rb.session();
 
 				const auto descriptor =
