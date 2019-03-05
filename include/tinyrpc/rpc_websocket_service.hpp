@@ -273,6 +273,7 @@ namespace tinyrpc {
 
 		void abort_rpc(boost::system::error_code&& ec)
 		{
+			// clear all calling.
 			{
 				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 				for (auto& h : m_call_ops)
@@ -282,9 +283,18 @@ namespace tinyrpc {
 					h.reset();
 				}
 			}
+
+			// clear all rpc method.
 			{
 				std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
 				m_remote_methods.clear();
+			}
+
+			// close lowest layer socket.
+			if (m_websocket.is_open())
+			{
+				boost::system::error_code ignore_ec;
+				m_websocket.lowest_layer().close(ignore_ec);
 			}
 		}
 
@@ -331,14 +341,18 @@ namespace tinyrpc {
 					return abort_rpc(make_error_code(errc::unknow_protocol_descriptor));
 
 				std::unique_ptr<::google::protobuf::Message> reply;
-
+				boost::system::error_code ec;
+				do
 				{
 					std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
 					auto& method = m_remote_methods[descriptor->index()];	// O(1) 查找.
 
 					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
-						return abort_rpc(make_error_code(errc::parse_payload_failed));
+					{
+						ec = make_error_code(errc::parse_payload_failed);
+						break;
+					}
 
 					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
 
@@ -346,7 +360,10 @@ namespace tinyrpc {
 					(*method.any_call_)(*msg, *ret);
 
 					reply = std::move(ret);
-				}
+				} while (0);
+
+				if (ec)
+					return abort_rpc(std::forward<boost::system::error_code>(ec));
 
 				// send back return.
 				rpc_service_ptl::rpc_base_ptl rpc_reply;
@@ -362,22 +379,33 @@ namespace tinyrpc {
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
 			{
 				auto session = rb.session();
-				call_op_ptr h;
 
+				call_op_ptr h;
+				boost::system::error_code ec;
+				do
 				{
 					std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 
 					if (session >= m_call_ops.size())
-						return abort_rpc(make_error_code(errc::session_out_of_range));
+					{
+						ec = make_error_code(errc::session_out_of_range);
+						break;
+					}
 
 					h = std::move(m_call_ops[session]); // O(1) 查找.
 					BOOST_ASSERT(h && "call op is nullptr!"); // for debug
 					if (!h)
-						return abort_rpc(make_error_code(errc::invalid_session));
+					{
+						ec = make_error_code(errc::invalid_session);
+						break;
+					}
 
 					// recycle session.
 					m_recycle.push_back(session);
-				}
+				} while (0);
+
+				if (ec)
+					return abort_rpc(std::forward<boost::system::error_code>(ec));
 
 				// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
 				auto& ret = h->result();
