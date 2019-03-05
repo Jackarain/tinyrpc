@@ -367,8 +367,13 @@ namespace tinyrpc {
 				{
 					std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 
+					if (session >= m_call_ops.size())
+						return abort_rpc(make_error_code(errc::session_out_of_range));
+
 					h = std::move(m_call_ops[session]); // O(1) 查找.
-					BOOST_ASSERT(h && "call op is nullptr!");
+					BOOST_ASSERT(h && "call op is nullptr!"); // for debug
+					if (!h)
+						return abort_rpc(make_error_code(errc::invalid_session));
 
 					// recycle session.
 					m_recycle.push_back(session);

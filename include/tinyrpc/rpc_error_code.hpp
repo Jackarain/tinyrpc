@@ -35,6 +35,8 @@ namespace tinyrpc {
 			parse_rpc_service_ptl_failed = 1,
 			unknow_protocol_descriptor = 2,
 			parse_payload_failed = 3,
+			session_out_of_range = 4,
+			invalid_session = 5,
 		};
 
 		inline boost::system::error_code make_error_code(errc_t e)
@@ -73,9 +75,13 @@ namespace tinyrpc {
 				case errc::parse_rpc_service_ptl_failed:
 					return "Parse protobuf rpc_service_ptl failed";
 				case errc::unknow_protocol_descriptor:
-					return "unknow protocol descriptor";
+					return "Unknow protocol descriptor";
 				case errc::parse_payload_failed:
 					return "Parse protobuf payload failed";
+				case errc::session_out_of_range:
+					return "Session out of range";
+				case errc::invalid_session:
+					return "Invalid session";
 				default:
 					return "Unknown TinyRPC error";
 				}
