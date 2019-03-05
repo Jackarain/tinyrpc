@@ -24,19 +24,19 @@ class rpc_session : public std::enable_shared_from_this<rpc_session>
 {
 public:
 	rpc_session(ws&& s)
-		: rpc_(std::make_shared<rpc_websocket_service<ws>>(std::move(s)))
+		: rpc_stub_(std::make_shared<rpc_websocket_service<ws>>(std::move(s)))
 	{}
 
 	~rpc_session()
 	{
 		// 停止rpc服务.
-		rpc_->stop();
+		rpc_stub_->stop();
 	}
 
 	void run()
 	{
 		// 启动rpc服务.
-		rpc_->start();
+		rpc_stub_->start();
 	}
 
 	void chat_proc(boost::asio::yield_context yield)
@@ -60,7 +60,7 @@ public:
 			msg.set_message(context);
 
 			boost::system::error_code ec;
-			rpc_->call(msg, reply, yield[ec]);
+			rpc_stub_->call(msg, reply, yield[ec]);
 			if (ec)
 			{
 				std::cout << "error: " << ec.message() << std::endl;
@@ -74,7 +74,7 @@ public:
 	}
 
 private:
-	std::shared_ptr<rpc_websocket_service<ws>> rpc_;
+	std::shared_ptr<rpc_websocket_service<ws>> rpc_stub_;
 };
 
 
