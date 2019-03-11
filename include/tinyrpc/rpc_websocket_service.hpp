@@ -178,23 +178,6 @@ namespace tinyrpc {
 			m_remote_methods[desc->index()] = std::move(value);
 		}
 
-		template<class Handler>
-		void start_call_op(int session, ::google::protobuf::Message& msg, Handler&& handler)
-		{
-			boost::asio::async_completion<Handler,
-				void(boost::system::error_code)> init(handler);
-			using completion_handler_type = decltype(init.completion_handler);
-
-			{
-				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
-				auto& ptr = m_call_ops[session];
-				ptr.reset(new rpc_call_op<completion_handler_type>(msg,
-					std::forward<completion_handler_type>(init.completion_handler)));
-			}
-
-			return init.result.get();
-		}
-
 		template<class T, class R, class Handler>
 		void call(const T& msg, R& ret, Handler&& handler)
 		{
@@ -224,12 +207,20 @@ namespace tinyrpc {
 				}
 			}
 
-			auto self = this->shared_from_this();
+			boost::asio::async_completion<Handler,
+				void(boost::system::error_code)> init(handler);
+			using completion_handler_type = decltype(init.completion_handler);
+
+			{
+				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
+				auto& ptr = m_call_ops[session];
+				ptr.reset(new rpc_call_op<completion_handler_type>(ret,
+					std::forward<completion_handler_type>(init.completion_handler)));
+			}
+
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
 
-			start_call_op(session, ret, std::forward<Handler>(handler));
-
-			return;
+			return init.result.get();
 		}
 
 	protected:
