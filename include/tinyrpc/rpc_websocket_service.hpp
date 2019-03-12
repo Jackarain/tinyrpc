@@ -43,6 +43,7 @@ namespace tinyrpc {
 		class rpc_operation
 		{
 		public:
+			virtual ~rpc_operation() = default;
 			virtual void operator()(boost::system::error_code&&) = 0;
 			virtual ::google::protobuf::Message& result() = 0;
 		};
