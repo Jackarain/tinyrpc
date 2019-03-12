@@ -1,0 +1,29 @@
+language: cpp
+dist: trusty
+sudo: false
+os:
+  - linux
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+before_script:
+
+script:
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - make -j4
+
+branches:
+  only:
+    - master
+
+notifications:
+  recipients:
+    - jack.wgm@gmail.com
+  email:
+    on_success: change
+    on_failure: always
+
