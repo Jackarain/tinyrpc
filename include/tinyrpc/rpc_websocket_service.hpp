@@ -203,7 +203,7 @@ namespace tinyrpc {
 			using completion_handler_type = decltype(init.completion_handler);
 
 			{
-				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+				std::lock_guard<std::mutex> lock(m_call_op_mutex);
 				if (m_recycle.empty())
 				{
 					session = static_cast<int>(m_call_ops.size());
@@ -220,7 +220,6 @@ namespace tinyrpc {
 				auto& ptr = m_call_ops[session];
 				ptr.reset(new rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>(ret,
 					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
-
 			}
 
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
@@ -271,7 +270,7 @@ namespace tinyrpc {
 		{
 			// clear all calling.
 			{
-				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+				std::lock_guard<std::mutex> lock(m_call_op_mutex);
 				for (auto& h : m_call_ops)
 				{
 					if (!h) continue;
@@ -380,7 +379,7 @@ namespace tinyrpc {
 				boost::system::error_code ec;
 				do
 				{
-					std::lock_guard<std::shared_mutex> lock(m_call_mutex);
+					std::lock_guard<std::mutex> lock(m_call_op_mutex);
 
 					if (session >= m_call_ops.size())
 					{
@@ -420,7 +419,7 @@ namespace tinyrpc {
 		std::shared_mutex m_methods_mutex;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
-		std::shared_mutex m_call_mutex;
+		std::mutex m_call_op_mutex;
 		std::atomic_bool m_abort;
 	};
 }
