@@ -325,7 +325,6 @@ namespace tinyrpc {
 		{
 			auto self = this->shared_from_this();
 
-			// 远程调用过来, 找到对应的event并响应.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
 			{
 				auto session = rb.session();
@@ -340,7 +339,7 @@ namespace tinyrpc {
 				do
 				{
 					std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
-					auto& method = m_remote_methods[descriptor->index()];	// O(1) 查找.
+					auto& method = m_remote_methods[descriptor->index()];
 
 					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
 					if (!msg->ParseFromString(rb.payload()))
@@ -370,7 +369,6 @@ namespace tinyrpc {
 				rpc_write(std::make_unique<std::string>(rpc_reply.SerializeAsString()));
 			}
 
-			// 本地调用远程, 远程返回的return.
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::callee)
 			{
 				auto session = rb.session();
@@ -387,7 +385,7 @@ namespace tinyrpc {
 						break;
 					}
 
-					h = std::move(m_call_ops[session]); // O(1) 查找.
+					h = std::move(m_call_ops[session]);
 					BOOST_ASSERT(h && "call op is nullptr!"); // for debug
 					if (!h)
 					{
@@ -402,7 +400,6 @@ namespace tinyrpc {
 				if (ec)
 					return abort_rpc(std::forward<boost::system::error_code>(ec));
 
-				// 将远程返回的protobuf对象序列化到ret中, 并'唤醒'call处的协程.
 				auto& ret = h->result();
 				if (!ret.ParseFromString(rb.payload()))
 					return abort_rpc(make_error_code(errc::parse_payload_failed));
