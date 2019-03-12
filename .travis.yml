@@ -1,6 +1,7 @@
+sudo: required
 language: cpp
 dist: trusty
-sudo: false
+
 os:
   - linux
 
@@ -8,13 +9,23 @@ compiler:
   - gcc
   - clang
 
-before_install:
-before_script:
+arch:
+  packages:
+    - cmake
+    - gcc
+    - clang
 
-script:
+  script:
+    - echo $CXX_FOR_BUILD
+	- echo $CC_FOR_BUILD
     - mkdir build && cd build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
     - make -j4
+
+script:
+  - echo $CXX_FOR_BUILD
+  - echo $CC_FOR_BUILD
+  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
 
 branches:
   only:
