@@ -48,18 +48,23 @@ namespace tinyrpc {
 			virtual ::google::protobuf::Message& result() = 0;
 		};
 
-		template<class Handler>
+		template<class Handler, class ExecutorType>
 		class rpc_call_op : public rpc_operation
 		{
 		public:
-			rpc_call_op(::google::protobuf::Message& data, Handler&& h)
+			rpc_call_op(::google::protobuf::Message& data, Handler&& h, ExecutorType&& ex)
 				: handler_(std::forward<Handler>(h))
+				, executor_(std::forward<ExecutorType>(ex))
 				, data_(data)
 			{}
 
 			void operator()(boost::system::error_code&& ec) override
 			{
-				handler_(std::forward<boost::system::error_code>(ec));
+				boost::asio::post(executor_,
+					[handler = std::forward<Handler>(handler_), ec]() mutable
+				{
+					handler(ec);
+				});
 			}
 
 			::google::protobuf::Message& result() override
@@ -69,6 +74,7 @@ namespace tinyrpc {
 
 		private:
 			Handler handler_;
+			ExecutorType executor_;
 			::google::protobuf::Message& data_;
 		};
 
@@ -215,8 +221,8 @@ namespace tinyrpc {
 			{
 				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
 				auto& ptr = m_call_ops[session];
-				ptr.reset(new rpc_call_op<completion_handler_type>(ret,
-					std::forward<completion_handler_type>(init.completion_handler)));
+				ptr.reset(new rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>(ret,
+					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
 			}
 
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
