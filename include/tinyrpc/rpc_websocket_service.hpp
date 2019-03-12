@@ -198,6 +198,10 @@ namespace tinyrpc {
 
 			int session = 0;
 
+			boost::asio::async_completion<Handler,
+				void(boost::system::error_code)> init(handler);
+			using completion_handler_type = decltype(init.completion_handler);
+
 			{
 				std::lock_guard<std::shared_mutex> lock(m_call_mutex);
 				if (m_recycle.empty())
@@ -212,17 +216,11 @@ namespace tinyrpc {
 					m_recycle.pop_back();
 					rb.set_session(session);
 				}
-			}
 
-			boost::asio::async_completion<Handler,
-				void(boost::system::error_code)> init(handler);
-			using completion_handler_type = decltype(init.completion_handler);
-
-			{
-				std::shared_lock<std::shared_mutex> lock(m_call_mutex);
 				auto& ptr = m_call_ops[session];
 				ptr.reset(new rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>(ret,
 					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
+
 			}
 
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
