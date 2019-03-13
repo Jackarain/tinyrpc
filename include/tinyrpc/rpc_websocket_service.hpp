@@ -33,8 +33,7 @@ namespace tinyrpc {
 					"CompletionHandler signature requirements not met")
 
 	template <class Websocket>
-	class rpc_websocket_service :
-		public std::enable_shared_from_this<rpc_websocket_service<Websocket>>
+	class rpc_websocket_service
 	{
 		// c++11 noncopyable.
 		rpc_websocket_service(const rpc_websocket_service&) = delete;
@@ -44,7 +43,7 @@ namespace tinyrpc {
 		{
 		public:
 			virtual ~rpc_operation() = default;
-			virtual void operator()(boost::system::error_code&&) = 0;
+			virtual void operator()(const boost::system::error_code&) = 0;
 			virtual ::google::protobuf::Message& result() = 0;
 		};
 
@@ -58,7 +57,7 @@ namespace tinyrpc {
 				, data_(data)
 			{}
 
-			void operator()(boost::system::error_code&& ec) override
+			void operator()(const boost::system::error_code& ec) override
 			{
 				boost::asio::post(executor_,
 					[handler = std::forward<Handler>(handler_), ec]() mutable
@@ -129,9 +128,8 @@ namespace tinyrpc {
 		using write_message_queue = std::deque<write_context>;
 
 	public:
-		rpc_websocket_service(Websocket&& ws)
-			: m_websocket(std::move(ws))
-			, m_abort(true)
+		rpc_websocket_service(Websocket& ws)
+			: m_websocket(ws)
 		{}
 
 		virtual ~rpc_websocket_service()
@@ -147,20 +145,37 @@ namespace tinyrpc {
 			return m_websocket;
 		}
 
-		void start()
+		int dispatch(boost::beast::multi_buffer& buf)
 		{
-			m_abort = false;
-			start_rpc_read();
+			boost::system::error_code ec;
+			auto bytes = dispatch(buf, ec);
+			if (ec)
+			{
+				boost::throw_exception(boost::system::system_error(ec));
+			}
+			return bytes;
 		}
 
-		void stop()
+		int dispatch(boost::beast::multi_buffer& buf, boost::system::error_code& ec)
 		{
-			m_abort = true;
-			if (m_websocket.is_open())
+			// parser rpc base protocol.
+			rpc_service_ptl::rpc_base_ptl rb;
+			auto result = boost::beast::buffers_to_string(buf.data());
+			if (!rb.ParseFromString(result))
 			{
-				boost::system::error_code ignore_ec;
-				m_websocket.lowest_layer().close(ignore_ec);
+				ec = make_error_code(errc::parse_rpc_service_ptl_failed);
+				abort_rpc(ec);
+				return 0;
 			}
+			// rpc dispatch
+			rpc_dispatch(std::move(rb), ec);
+			if (ec)
+			{
+				abort_rpc(ec);
+				return 0;
+			}
+
+			return static_cast<int>(result.size());
 		}
 
 		template<class Request, class Reply, class Handler>
@@ -239,10 +254,9 @@ namespace tinyrpc {
 				auto& front = m_message_queue.front();
 				lock.unlock();
 
-				auto self = this->shared_from_this();
 				m_websocket.async_write(boost::asio::buffer(*front),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
-						self, std::placeholders::_1));
+						this, std::placeholders::_1));
 			}
 		}
 
@@ -258,15 +272,17 @@ namespace tinyrpc {
 					auto& context = m_message_queue.front();
 					lock.unlock();
 
-					auto self = this->shared_from_this();
 					m_websocket.async_write(boost::asio::buffer(*context),
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
-							self, std::placeholders::_1));
+							this, std::placeholders::_1));
 				}
+				return;
 			}
+
+			abort_rpc(ec);
 		}
 
-		void abort_rpc(boost::system::error_code&& ec)
+		void abort_rpc(const boost::system::error_code& ec)
 		{
 			// clear all calling.
 			{
@@ -274,7 +290,7 @@ namespace tinyrpc {
 				for (auto& h : m_call_ops)
 				{
 					if (!h) continue;
-					(*h)(std::forward<boost::system::error_code>(ec));
+					(*h)(ec);
 					h.reset();
 				}
 			}
@@ -285,46 +301,18 @@ namespace tinyrpc {
 				m_remote_methods.clear();
 			}
 
+#if 0
 			// close lowest layer socket.
 			if (m_websocket.is_open())
 			{
 				boost::system::error_code ignore_ec;
 				m_websocket.lowest_layer().close(ignore_ec);
 			}
+#endif
 		}
 
-		void start_rpc_read()
+		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb, boost::system::error_code& ec)
 		{
-			auto self = this->shared_from_this();
-			m_websocket.async_read(m_read_buffer, [self, this]
-			(boost::system::error_code ec, std::size_t bytes)
-			{
-				if (ec)
-				{
-					m_abort = true;
-					abort_rpc(std::forward<boost::system::error_code>(ec));
-					return;
-				}
-
-				// parser rpc base protocol.
-				rpc_service_ptl::rpc_base_ptl rb;
-				if (!rb.ParseFromString(boost::beast::buffers_to_string(m_read_buffer.data())))
-					return abort_rpc(make_error_code(errc::parse_rpc_service_ptl_failed));
-
-				m_read_buffer.consume(bytes);
-
-				// start next read.
-				start_rpc_read();
-
-				// rpc dispatch
-				rpc_dispatch(std::move(rb));
-			});
-		}
-
-		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb)
-		{
-			auto self = this->shared_from_this();
-
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
 			{
 				auto session = rb.session();
@@ -332,10 +320,12 @@ namespace tinyrpc {
 				const auto descriptor =
 					::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
 				if (!descriptor)
-					return abort_rpc(make_error_code(errc::unknow_protocol_descriptor));
+				{
+					ec = make_error_code(errc::unknow_protocol_descriptor);
+					return;
+				}
 
 				std::unique_ptr<::google::protobuf::Message> reply;
-				boost::system::error_code ec;
 				do
 				{
 					std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
@@ -345,7 +335,7 @@ namespace tinyrpc {
 					if (!msg->ParseFromString(rb.payload()))
 					{
 						ec = make_error_code(errc::parse_payload_failed);
-						break;
+						return;
 					}
 
 					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
@@ -355,9 +345,6 @@ namespace tinyrpc {
 
 					reply = std::move(ret);
 				} while (0);
-
-				if (ec)
-					return abort_rpc(std::forward<boost::system::error_code>(ec));
 
 				// send back return.
 				rpc_service_ptl::rpc_base_ptl rpc_reply;
@@ -374,7 +361,6 @@ namespace tinyrpc {
 				auto session = rb.session();
 
 				call_op_ptr h;
-				boost::system::error_code ec;
 				do
 				{
 					std::lock_guard<std::mutex> lock(m_call_op_mutex);
@@ -382,7 +368,7 @@ namespace tinyrpc {
 					if (session >= m_call_ops.size())
 					{
 						ec = make_error_code(errc::session_out_of_range);
-						break;
+						return;
 					}
 
 					h = std::move(m_call_ops[session]);
@@ -390,34 +376,33 @@ namespace tinyrpc {
 					if (!h)
 					{
 						ec = make_error_code(errc::invalid_session);
-						break;
+						return;
 					}
 
 					// recycle session.
 					m_recycle.push_back(session);
 				} while (0);
 
-				if (ec)
-					return abort_rpc(std::forward<boost::system::error_code>(ec));
-
 				auto& ret = h->result();
 				if (!ret.ParseFromString(rb.payload()))
-					return abort_rpc(make_error_code(errc::parse_payload_failed));
+				{
+					ec = make_error_code(errc::parse_payload_failed);
+					return;
+				}
+
 				(*h)(boost::system::error_code{});
 			}
 		}
 
 	private:
-		Websocket m_websocket;
+		Websocket& m_websocket;
 		std::mutex m_msg_mutex;
 		write_message_queue m_message_queue;
-		boost::beast::multi_buffer m_read_buffer;
 		rpc_remote_method m_remote_methods;
 		std::shared_mutex m_methods_mutex;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
 		std::mutex m_call_op_mutex;
-		std::atomic_bool m_abort;
 	};
 }
 
