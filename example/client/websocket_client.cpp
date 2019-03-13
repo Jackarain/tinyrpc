@@ -24,19 +24,29 @@ class rpc_session : public std::enable_shared_from_this<rpc_session>
 {
 public:
 	rpc_session(ws&& s)
-		: rpc_stub_(std::make_shared<rpc_websocket_service<ws>>(std::move(s)))
+		: ws_(std::move(s))
+		, rpc_stub_(ws_)
 	{}
 
 	~rpc_session()
 	{
-		// 停止rpc服务.
-		rpc_stub_->stop();
 	}
 
-	void run()
+	void run(boost::asio::yield_context yield)
 	{
-		// 启动rpc服务.
-		rpc_stub_->start();
+		boost::beast::multi_buffer buf;
+		boost::system::error_code ec;
+
+		while (true)
+		{
+			auto bytes = ws_.async_read(buf, yield[ec]);
+			if (ec)
+				return;
+			rpc_stub_.dispatch(buf, ec);
+			if (ec)
+				return;
+			buf.consume(bytes);
+		}
 	}
 
 	void chat_proc(boost::asio::yield_context yield)
@@ -60,7 +70,7 @@ public:
 			msg.set_message(context);
 
 			boost::system::error_code ec;
-			rpc_stub_->async_call(msg, reply, yield[ec]);
+			rpc_stub_.async_call(msg, reply, yield[ec]);
 			if (ec)
 			{
 				std::cout << "error: " << ec.message() << std::endl;
@@ -74,7 +84,8 @@ public:
 	}
 
 private:
-	std::shared_ptr<rpc_websocket_service<ws>> rpc_stub_;
+	ws ws_;
+	rpc_websocket_service<ws> rpc_stub_;
 };
 
 
@@ -108,7 +119,8 @@ void do_session(
 
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
-	ses->run();
+	boost::asio::spawn(ioc,
+		std::bind(&rpc_session::run, ses, std::placeholders::_1));
 	ses->chat_proc(yield);
 }
 
