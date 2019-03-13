@@ -300,15 +300,6 @@ namespace tinyrpc {
 				std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
 				m_remote_methods.clear();
 			}
-
-#if 0
-			// close lowest layer socket.
-			if (m_websocket.is_open())
-			{
-				boost::system::error_code ignore_ec;
-				m_websocket.lowest_layer().close(ignore_ec);
-			}
-#endif
 		}
 
 		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb, boost::system::error_code& ec)
