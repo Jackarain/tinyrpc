@@ -65,14 +65,14 @@ public:
 
 		// 异步调用HelloRequest远程rpc函数, 返回reply。
 		boost::system::error_code ec;
-		rpc_->call(req, reply, yield[ec]);
+		rpc_->async_call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 		if (ec)
 			return;
 
 		req.set_name("client request 1");
-		rpc_->call(req, reply, yield[ec]);
+		rpc_->async_call(req, reply, yield[ec]);
 
 		std::cout << reply.message() << ", ec: " << ec.message() << std::endl;
 		if (ec)
@@ -82,7 +82,7 @@ public:
 		helloworld::WorldRequest req2;
 		req2.set_name("client world 1");
 		helloworld::WorldReply reply2;
-		rpc_->call(req2, reply2, yield[ec]);
+		rpc_->async_call(req2, reply2, yield[ec]);
 
 		std::cout << reply2.message() << ", ec: " << ec.message() << std::endl;
 	}
