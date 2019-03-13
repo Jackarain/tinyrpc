@@ -60,7 +60,7 @@ public:
 			msg.set_message(context);
 
 			boost::system::error_code ec;
-			rpc_stub_->call(msg, reply, yield[ec]);
+			rpc_stub_->async_call(msg, reply, yield[ec]);
 			if (ec)
 			{
 				std::cout << "error: " << ec.message() << std::endl;

@@ -186,7 +186,7 @@ namespace tinyrpc {
 		}
 
 		template<class T, class R, class Handler>
-		void call(const T& msg, R& ret, Handler&& handler)
+		void async_call(const T& msg, R& ret, Handler&& handler)
 		{
 			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(boost::system::error_code));
 
