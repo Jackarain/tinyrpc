@@ -263,7 +263,10 @@ namespace tinyrpc {
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 							self, std::placeholders::_1));
 				}
+				return;
 			}
+
+			abort_rpc(std::forward<boost::system::error_code>(ec));
 		}
 
 		void abort_rpc(boost::system::error_code&& ec)
