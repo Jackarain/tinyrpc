@@ -24,6 +24,33 @@
 #include "rpc_error_code.hpp"
 
 namespace tinyrpc {
+	namespace detail {
+#if defined(TINYRPC_DISABLE_THREADS)
+		template<class Lock>
+		struct unique_lock {
+			explicit unique_lock(const Lock&) {}
+			inline void lock() {}
+			inline void unlock() {}
+		};
+		template<class Lock>
+		struct lock_guard {
+			explicit lock_guard(const Lock&) {}
+		};
+		template<class Lock>
+		struct shared_lock {
+			explicit shared_lock(const Lock&) {}
+			inline void lock() {}
+			inline void unlock() {}
+		};
+#else
+		template<class Mutex>
+		using unique_lock = std::unique_lock<Mutex>;
+		template<class Mutex>
+		using lock_guard = std::lock_guard<Mutex>;
+		template<class Mutex>
+		using shared_lock = std::shared_lock<Mutex>;
+#endif
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 
@@ -59,11 +86,15 @@ namespace tinyrpc {
 
 			void operator()(const boost::system::error_code& ec) override
 			{
+#if defined(TINYRPC_DISABLE_THREADS)
+				handler_(ec);
+#else
 				boost::asio::post(executor_,
 					[handler = std::forward<Handler>(handler_), ec]() mutable
 				{
 					handler(ec);
 				});
+#endif
 			}
 
 			::google::protobuf::Message& result() override
@@ -208,7 +239,7 @@ namespace tinyrpc {
 		{
 			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(const Request&, Reply&));
 
-			std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
+			detail::lock_guard<std::shared_mutex> l(m_methods_mutex);
 			auto desc = Request::descriptor();
 			if (m_remote_methods.empty())
 			{
@@ -243,7 +274,7 @@ namespace tinyrpc {
 			using completion_handler_type = decltype(init.completion_handler);
 
 			{
-				std::lock_guard<std::mutex> lock(m_call_op_mutex);
+				detail::lock_guard<std::mutex> l(m_call_op_mutex);
 				if (m_recycle.empty())
 				{
 					session = static_cast<int>(m_call_ops.size());
@@ -270,14 +301,14 @@ namespace tinyrpc {
 	protected:
 		void rpc_write(std::unique_ptr<std::string>&& context)
 		{
-			std::unique_lock<std::mutex> lock(m_msg_mutex);
+			detail::unique_lock<std::mutex> l(m_msg_mutex);
 
 			bool write_in_progress = !m_message_queue.empty();
 			m_message_queue.emplace_back(std::move(context));
 			if (!write_in_progress)
 			{
 				auto& front = m_message_queue.front();
-				lock.unlock();
+				l.unlock();
 
 				m_websocket.async_write(boost::asio::buffer(*front),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -289,13 +320,13 @@ namespace tinyrpc {
 		{
 			if (!ec)
 			{
-				std::unique_lock<std::mutex> lock(m_msg_mutex);
+				detail::unique_lock<std::mutex> l(m_msg_mutex);
 
 				m_message_queue.pop_front();
 				if (!m_message_queue.empty())
 				{
 					auto& context = m_message_queue.front();
-					lock.unlock();
+					l.unlock();
 
 					m_websocket.async_write(boost::asio::buffer(*context),
 						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -311,7 +342,7 @@ namespace tinyrpc {
 		{
 			// clear all calling.
 			{
-				std::lock_guard<std::mutex> lock(m_call_op_mutex);
+				detail::lock_guard<std::mutex> l(m_call_op_mutex);
 				for (auto& h : m_call_ops)
 				{
 					if (!h) continue;
@@ -322,7 +353,7 @@ namespace tinyrpc {
 
 			// clear all rpc method.
 			{
-				std::lock_guard<std::shared_mutex> lock(m_methods_mutex);
+				detail::lock_guard<std::shared_mutex> l(m_methods_mutex);
 				m_remote_methods.clear();
 			}
 		}
@@ -344,7 +375,7 @@ namespace tinyrpc {
 				std::unique_ptr<::google::protobuf::Message> reply;
 				do
 				{
-					std::shared_lock<std::shared_mutex> lock(m_methods_mutex);
+					detail::shared_lock<std::shared_mutex> l(m_methods_mutex);
 					auto& method = m_remote_methods[descriptor->index()];
 
 					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
@@ -379,7 +410,7 @@ namespace tinyrpc {
 				call_op_ptr h;
 				do
 				{
-					std::lock_guard<std::mutex> lock(m_call_op_mutex);
+					detail::lock_guard<std::mutex> l(m_call_op_mutex);
 
 					if (session >= m_call_ops.size())
 					{
