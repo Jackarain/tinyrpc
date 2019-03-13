@@ -2,12 +2,15 @@ sudo: required
 language: cpp
 dist: trusty
 
+git:
+  depth: 5
+
 os:
   - linux
 
 compiler:
-  - gcc
-  - clang
+  - g++
+  - clang++
 
 arch:
   packages:
@@ -16,16 +19,12 @@ arch:
     - clang
 
   script:
-    - echo $CXX_FOR_BUILD
-	- echo $CC_FOR_BUILD
     - mkdir build && cd build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
     - make -j4
 
 script:
-  - echo $CXX_FOR_BUILD
-  - echo $CC_FOR_BUILD
-  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
+  - "curl -s https://raw.githubusercontent.com/Jackarain/arch-travis/master/arch-travis.sh | bash"
 
 branches:
   only:
