@@ -77,14 +77,14 @@ namespace tinyrpc {
 
 			rpc_call_op(const rpc_call_op& other)
 				: handler_(std::forward<Handler>(other.handler_))
-				, executor_(executor)
-				, data_(data)
+				, executor_(other.executor_)
+				, data_(other.data_)
 			{}
 
 			rpc_call_op(rpc_call_op&& other)
 				: handler_(std::forward<Handler>(other.handler_))
-				, executor_(executor)
-				, data_(data)
+				, executor_(other.executor_)
+				, data_(other.data_)
 			{}
 
 			void operator()(const boost::system::error_code& ec) override
