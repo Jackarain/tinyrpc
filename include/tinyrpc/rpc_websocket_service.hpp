@@ -291,30 +291,30 @@ namespace tinyrpc {
 			rb.set_payload(msg.SerializeAsString());
 			rb.set_call(rpc_service_ptl::rpc_base_ptl::caller);
 
-			int session = 0;
-
 			boost::asio::async_completion<Handler,
 				void(boost::system::error_code)> init(handler);
-			using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
 
 			{
+				using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
+				using rpc_call_op_type = detail::rpc_call_op<completion_handler_type, executor_type>;
+
+				auto&& op = std::make_unique<rpc_call_op_type>(ret,
+					std::forward<completion_handler_type>(init.completion_handler), this->get_executor());
+
 				detail::lock_guard<std::mutex> l(m_call_op_mutex);
 				if (m_recycle.empty())
 				{
-					session = static_cast<int>(m_call_ops.size());
-					m_call_ops.push_back(call_op_ptr{});
-					rb.set_session(session);
+					auto session = m_call_ops.size();
+					m_call_ops.emplace_back(std::move(op));
+					rb.set_session(static_cast<google::protobuf::uint32>(session));
 				}
 				else
 				{
-					session = m_recycle.back();
+					auto session = m_recycle.back();
 					m_recycle.pop_back();
-					rb.set_session(session);
+					rb.set_session(static_cast<google::protobuf::uint32>(session));
+					m_call_ops[session] = std::move(op);
 				}
-
-				auto& ptr = m_call_ops[session];
-				ptr.reset(new detail::rpc_call_op<completion_handler_type, executor_type>(ret,
-					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
 			}
 
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
