@@ -1,6 +1,7 @@
 
 # c++ rpc 基于boost.beast、protobuf的异步rpc实现.
 
+[![Build Status](https://travis-ci.org/Jackarain/tinyrpc.svg?branch=master)](https://travis-ci.org/Jackarain/tinyrpc)
 ## 介绍
 
 使用boost.beast为websocket底层使用, 数据协议使用protobuf，实现纯异步的rpc调用.
