@@ -200,14 +200,19 @@ namespace tinyrpc {
 
 			boost::asio::async_completion<Handler,
 				void(boost::system::error_code)> init(handler);
-			using completion_handler_type = decltype(init.completion_handler);
 
 			{
+				using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
+				using rpc_call_op_type = rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>;
+
+				auto&& op = std::make_unique<rpc_call_op_type>(ret,
+					std::forward<completion_handler_type>(init.completion_handler), this->get_executor());
+
 				std::lock_guard<std::mutex> lock(m_call_op_mutex);
 				if (m_recycle.empty())
 				{
 					session = static_cast<int>(m_call_ops.size());
-					m_call_ops.push_back(call_op_ptr{});
+					m_call_ops.emplace_back(std::move(op));
 					rb.set_session(session);
 				}
 				else
@@ -215,11 +220,8 @@ namespace tinyrpc {
 					session = m_recycle.back();
 					m_recycle.pop_back();
 					rb.set_session(session);
+					m_call_ops[session] = std::move(op);
 				}
-
-				auto& ptr = m_call_ops[session];
-				ptr.reset(new rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>(ret,
-					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
 			}
 
 			rpc_write(std::make_unique<std::string>(rb.SerializeAsString()));
