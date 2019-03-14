@@ -100,6 +100,8 @@ void do_session(tcp::socket& socket, boost::asio::yield_context yield)
     if(ec)
         return fail(ec, "accept");
 
+	s.binary(true);
+
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
 	ses->run(yield);

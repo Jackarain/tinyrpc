@@ -117,6 +117,8 @@ void do_session(
 	if (ec)
 		return fail(ec, "handshake");
 
+	s.binary(true);
+
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
 	boost::asio::spawn(ioc,
