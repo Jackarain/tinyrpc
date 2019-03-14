@@ -24,6 +24,9 @@
 #include "rpc_error_code.hpp"
 
 namespace tinyrpc {
+
+	//////////////////////////////////////////////////////////////////////////
+
 	namespace detail {
 #if defined(TINYRPC_DISABLE_THREADS)
 		template<class Lock>
@@ -50,21 +53,8 @@ namespace tinyrpc {
 		template<class Mutex>
 		using shared_lock = std::shared_lock<Mutex>;
 #endif
-	}
 
-	//////////////////////////////////////////////////////////////////////////
-
-#define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
-			static_assert(boost::beast::is_completion_handler< \
-				BOOST_ASIO_HANDLER_TYPE(type, sig), sig>::value, \
-					"CompletionHandler signature requirements not met")
-
-	template <class Websocket>
-	class rpc_websocket_service
-	{
-		// c++11 noncopyable.
-		rpc_websocket_service(const rpc_websocket_service&) = delete;
-		rpc_websocket_service& operator=(const rpc_websocket_service&) = delete;
+		//////////////////////////////////////////////////////////////////////////
 
 		class rpc_operation
 		{
@@ -78,9 +68,22 @@ namespace tinyrpc {
 		class rpc_call_op : public rpc_operation
 		{
 		public:
-			rpc_call_op(::google::protobuf::Message& data, Handler&& h, ExecutorType&& ex)
+			rpc_call_op(::google::protobuf::Message& data, Handler&& h, ExecutorType executor)
 				: handler_(std::forward<Handler>(h))
-				, executor_(std::forward<ExecutorType>(ex))
+				, executor_(executor)
+				, data_(data)
+			{}
+
+
+			rpc_call_op(const rpc_call_op& other)
+				: handler_(std::forward<Handler>(other.handler_))
+				, executor_(executor)
+				, data_(data)
+			{}
+
+			rpc_call_op(rpc_call_op&& other)
+				: handler_(std::forward<Handler>(other.handler_))
+				, executor_(executor)
 				, data_(data)
 			{}
 
@@ -108,6 +111,8 @@ namespace tinyrpc {
 			::google::protobuf::Message& data_;
 		};
 
+		//////////////////////////////////////////////////////////////////////////
+
 		struct any_handler
 		{
 			virtual ~any_handler() = default;
@@ -130,33 +135,51 @@ namespace tinyrpc {
 			Handler handler_;
 		};
 
-		struct rpc_method_type
+		struct rpc_method_handler
 		{
-			rpc_method_type() = default;
-			rpc_method_type(rpc_method_type&& rhs) noexcept
+			rpc_method_handler() = default;
+			rpc_method_handler(rpc_method_handler&& rhs) noexcept
 			{
 				msg_ = std::move(rhs.msg_);
 				ret_ = std::move(rhs.ret_);
-				any_call_ = std::move(rhs.any_call_);
+				handler_ = std::move(rhs.handler_);
 			}
-			rpc_method_type& operator=(rpc_method_type&& rhs) noexcept
+			rpc_method_handler& operator=(rpc_method_handler&& rhs) noexcept
 			{
 				msg_ = std::move(rhs.msg_);
 				ret_ = std::move(rhs.ret_);
-				any_call_ = std::move(rhs.any_call_);
+				handler_ = std::move(rhs.handler_);
 				return *this;
 			}
 
 			std::unique_ptr<::google::protobuf::Message> msg_;
 			std::unique_ptr<::google::protobuf::Message> ret_;
-			std::unique_ptr<any_handler> any_call_;
+			std::unique_ptr<any_handler> handler_;
 		};
-		using rpc_remote_method = std::vector<rpc_method_type>;
+	}
 
-		using call_op_ptr = std::unique_ptr<rpc_operation>;
+	//////////////////////////////////////////////////////////////////////////
+
+#define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
+			static_assert(boost::beast::is_completion_handler< \
+				BOOST_ASIO_HANDLER_TYPE(type, sig), sig>::value, \
+					"CompletionHandler signature requirements not met")
+
+	template <class Websocket>
+	class rpc_websocket_service
+	{
+		// c++11 noncopyable.
+		rpc_websocket_service(const rpc_websocket_service&) = delete;
+		rpc_websocket_service& operator=(const rpc_websocket_service&) = delete;
+
+		using rpc_remote_method = std::vector<detail::rpc_method_handler>;
+
+		using call_op_ptr = std::unique_ptr<detail::rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
 		using write_context = std::unique_ptr<std::string>;
 		using write_message_queue = std::deque<write_context>;
+
+		using executor_type = typename Websocket::executor_type;
 
 	public:
 		rpc_websocket_service(Websocket& ws)
@@ -191,7 +214,7 @@ namespace tinyrpc {
 			return *this;
 		}
 
-		boost::asio::io_context::executor_type get_executor() noexcept
+		executor_type get_executor() noexcept
 		{
 			return m_websocket.get_executor();
 		}
@@ -247,11 +270,12 @@ namespace tinyrpc {
 				m_remote_methods.resize(fdesc->message_type_count());
 			}
 
-			rpc_method_type value;
+			detail::rpc_method_handler value;
 
 			value.msg_ = std::make_unique<Request>();
 			value.ret_ = std::make_unique<Reply>();
-			value.any_call_ = std::make_unique<rpc_remote_handler<Handler, Request, Reply>>(std::forward<Handler>(handler));
+			value.handler_ = std::make_unique<
+				detail::rpc_remote_handler<std::decay_t<Handler>, Request, Reply>>(std::forward<Handler>(handler));
 
 			m_remote_methods[desc->index()] = std::move(value);
 		}
@@ -271,7 +295,7 @@ namespace tinyrpc {
 
 			boost::asio::async_completion<Handler,
 				void(boost::system::error_code)> init(handler);
-			using completion_handler_type = decltype(init.completion_handler);
+			using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
 
 			{
 				detail::lock_guard<std::mutex> l(m_call_op_mutex);
@@ -289,7 +313,7 @@ namespace tinyrpc {
 				}
 
 				auto& ptr = m_call_ops[session];
-				ptr.reset(new rpc_call_op<completion_handler_type, boost::asio::io_context::executor_type>(ret,
+				ptr.reset(new detail::rpc_call_op<completion_handler_type, executor_type>(ret,
 					std::forward<completion_handler_type>(init.completion_handler), this->get_executor()));
 			}
 
@@ -388,7 +412,7 @@ namespace tinyrpc {
 					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
 
 					// call function.
-					(*method.any_call_)(*msg, *ret);
+					(*method.handler_)(*msg, *ret);
 
 					reply = std::move(ret);
 				} while (0);
@@ -407,7 +431,7 @@ namespace tinyrpc {
 			{
 				auto session = rb.session();
 
-				call_op_ptr h;
+				call_op_ptr handler;
 				do
 				{
 					detail::lock_guard<std::mutex> l(m_call_op_mutex);
@@ -418,9 +442,9 @@ namespace tinyrpc {
 						return;
 					}
 
-					h = std::move(m_call_ops[session]);
-					BOOST_ASSERT(h && "call op is nullptr!"); // for debug
-					if (!h)
+					handler = std::move(m_call_ops[session]);
+					BOOST_ASSERT(handler && "call op is nullptr!"); // for debug
+					if (!handler)
 					{
 						ec = make_error_code(errc::invalid_session);
 						return;
@@ -430,14 +454,14 @@ namespace tinyrpc {
 					m_recycle.push_back(session);
 				} while (0);
 
-				auto& ret = h->result();
+				auto& ret = handler->result();
 				if (!ret.ParseFromString(rb.payload()))
 				{
 					ec = make_error_code(errc::parse_payload_failed);
 					return;
 				}
 
-				(*h)(boost::system::error_code{});
+				(*handler)(boost::system::error_code{});
 			}
 		}
 
