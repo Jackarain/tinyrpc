@@ -74,7 +74,6 @@ namespace tinyrpc {
 				, data_(data)
 			{}
 
-
 			rpc_call_op(const rpc_call_op& other)
 				: handler_(std::forward<Handler>(other.handler_))
 				, executor_(other.executor_)
@@ -135,25 +134,43 @@ namespace tinyrpc {
 			Handler handler_;
 		};
 
+		template<class...>
+		struct types { using type = types; };
+
 		struct rpc_method_handler
 		{
 			rpc_method_handler() = default;
+
+			template<class Request, class Reply, class Handler>
+			explicit rpc_method_handler(Handler&& handler, types<Request, Reply, Handler>)
+			{
+				static Request req;
+				static Reply reply;
+
+				msg_ = &req;
+				ret_ = &reply;
+
+				using handler_type = detail::rpc_remote_handler<std::decay_t<Handler>, Request, Reply>;
+				handler_ = std::make_unique<handler_type>(std::forward<Handler>(handler));
+			}
+
 			rpc_method_handler(rpc_method_handler&& rhs) noexcept
 			{
-				msg_ = std::move(rhs.msg_);
-				ret_ = std::move(rhs.ret_);
+				msg_ = rhs.msg_;
+				ret_ = rhs.ret_;
 				handler_ = std::move(rhs.handler_);
 			}
+
 			rpc_method_handler& operator=(rpc_method_handler&& rhs) noexcept
 			{
-				msg_ = std::move(rhs.msg_);
-				ret_ = std::move(rhs.ret_);
+				msg_ = rhs.msg_;
+				ret_ = rhs.ret_;
 				handler_ = std::move(rhs.handler_);
 				return *this;
 			}
 
-			std::unique_ptr<::google::protobuf::Message> msg_;
-			std::unique_ptr<::google::protobuf::Message> ret_;
+			::google::protobuf::Message* msg_;
+			::google::protobuf::Message* ret_;
 			std::unique_ptr<any_handler> handler_;
 		};
 	}
@@ -270,14 +287,10 @@ namespace tinyrpc {
 				m_remote_methods.resize(fdesc->message_type_count());
 			}
 
-			detail::rpc_method_handler value;
+			detail::rpc_method_handler method =
+				detail::rpc_method_handler(std::forward<Handler>(handler), detail::types<Request, Reply, Handler>{});
 
-			value.msg_ = std::make_unique<Request>();
-			value.ret_ = std::make_unique<Reply>();
-			value.handler_ = std::make_unique<
-				detail::rpc_remote_handler<std::decay_t<Handler>, Request, Reply>>(std::forward<Handler>(handler));
-
-			m_remote_methods[desc->index()] = std::move(value);
+			m_remote_methods[desc->index()] = std::move(method);
 		}
 
 		template<class T, class R, class Handler>
