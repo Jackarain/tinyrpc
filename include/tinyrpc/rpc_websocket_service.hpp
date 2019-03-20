@@ -112,70 +112,117 @@ namespace tinyrpc {
 
 		//////////////////////////////////////////////////////////////////////////
 
-		struct any_handler
+		struct rpc_bind_handler
 		{
-			virtual ~any_handler() = default;
+			virtual ~rpc_bind_handler() = default;
 			virtual void operator()(const ::google::protobuf::Message&, ::google::protobuf::Message&) = 0;
+			virtual void reset() = 0;
+
+			virtual void* allocate(size_t s) = 0;
+			virtual void deallocate(void* p) = 0;
+
+			::google::protobuf::Message* msg_;
+			::google::protobuf::Message* ret_;
 		};
+
+		template<typename Handler, typename AllocType>
+		AllocType* handler_allocate(Handler& handler, size_t n)
+		{
+			typedef typename ::boost::asio::associated_allocator<
+				Handler>::type associated_allocator_type;
+			typedef typename ::boost::asio::detail::get_hook_allocator<
+				Handler, associated_allocator_type>::type hook_allocator_type;
+			BOOST_ASIO_REBIND_ALLOC(hook_allocator_type, AllocType) a(
+				::boost::asio::detail::get_hook_allocator<
+				Handler, associated_allocator_type>::get(
+					handler, ::boost::asio::get_associated_allocator(handler)));
+			return a.allocate(n);
+		}
+
+		template<typename Handler, typename AllocType>
+		void handler_deallocate(Handler& handler, AllocType* p)
+		{
+			typedef typename ::boost::asio::associated_allocator<
+				Handler>::type associated_allocator_type;
+			typedef typename ::boost::asio::detail::get_hook_allocator<
+				Handler, associated_allocator_type>::type hook_allocator_type;
+			BOOST_ASIO_REBIND_ALLOC(hook_allocator_type, AllocType) a(
+				::boost::asio::detail::get_hook_allocator<
+				Handler, associated_allocator_type>::get(
+					handler, ::boost::asio::get_associated_allocator(handler)));
+			a.deallocate(static_cast<AllocType*>(p), 1);
+		}
 
 		template <typename Handler, typename Request, typename Reply>
-		class rpc_remote_handler : public any_handler
+		class rpc_remote_handler : public rpc_bind_handler
 		{
 		public:
+			struct handler_ptr
+			{
+				Handler* h;
+				rpc_remote_handler* v;
+				rpc_remote_handler* p;
+				~handler_ptr()
+				{
+					reset();
+				}
+
+				static rpc_remote_handler* allocate(Handler& handler)
+				{
+					return handler_allocate<Handler, rpc_remote_handler>(handler, 1);
+				}
+				void reset()
+				{
+					if (p)
+					{
+						p->~rpc_remote_handler();
+						p = 0;
+					}
+					if (v)
+					{
+						handler_deallocate<Handler, rpc_remote_handler>(*h, v);
+						v = 0;
+					}
+				}
+			};
+
 			rpc_remote_handler(Handler&& handler)
 				: handler_(std::forward<Handler>(handler))
-			{}
-
-			void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) override
-			{
-				handler_(static_cast<const Request&>(req), static_cast<Reply&>(ret));
-			}
-
-			Handler handler_;
-		};
-
-		template<class...>
-		struct types { using type = types; };
-
-		struct rpc_method_handler
-		{
-			rpc_method_handler() = default;
-
-			template<class Request, class Reply, class Handler>
-			explicit rpc_method_handler(Handler&& handler, types<Request, Reply, Handler>)
 			{
 				static Request req;
 				static Reply reply;
 
 				msg_ = &req;
 				ret_ = &reply;
-
-				using handler_type = detail::rpc_remote_handler<std::decay_t<Handler>, Request, Reply>;
-				handler_ = std::make_unique<handler_type>(std::forward<Handler>(handler));
 			}
 
-			rpc_method_handler(rpc_method_handler&& rhs) noexcept
+			void operator()(const ::google::protobuf::Message& req, ::google::protobuf::Message& ret) override
 			{
-				msg_ = rhs.msg_;
-				ret_ = rhs.ret_;
-				handler_ = std::move(rhs.handler_);
+				handler_(static_cast<const Request&>(req), static_cast<Reply&>(ret));
 			}
 
-			rpc_method_handler& operator=(rpc_method_handler&& rhs) noexcept
+			void reset() override
 			{
-				msg_ = rhs.msg_;
-				ret_ = rhs.ret_;
-				handler_ = std::move(rhs.handler_);
-				return *this;
+				handler_ptr p = { std::addressof(handler_), this, this };
+				p.reset();
 			}
 
-			::google::protobuf::Message* msg_;
-			::google::protobuf::Message* ret_;
-			std::unique_ptr<any_handler> handler_;
+			void* allocate(size_t s) override
+			{
+				return static_cast<void*>(handler_allocate<Handler, char>(handler_, s));
+			}
+
+			void deallocate(void* p) override
+			{
+				handler_deallocate<Handler, char>(handler_, static_cast<char*>(p));
+			}
+
+			Handler handler_;
 		};
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	static void* inside_protobuf_alloc_context = nullptr;
 
 #define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
 			static_assert(boost::beast::is_completion_handler< \
@@ -189,7 +236,7 @@ namespace tinyrpc {
 		rpc_websocket_service(const rpc_websocket_service&) = delete;
 		rpc_websocket_service& operator=(const rpc_websocket_service&) = delete;
 
-		using rpc_remote_method = std::vector<detail::rpc_method_handler>;
+		using rpc_remote_method = std::vector<detail::rpc_bind_handler*>;
 
 		using call_op_ptr = std::unique_ptr<detail::rpc_operation>;
 		using call_op = std::vector<call_op_ptr>;
@@ -204,7 +251,9 @@ namespace tinyrpc {
 		{}
 
 		virtual ~rpc_websocket_service()
-		{}
+		{
+			clean_remote_methods();
+		}
 
 		rpc_websocket_service(rpc_websocket_service&& rhs) noexcept
 		{
@@ -279,7 +328,7 @@ namespace tinyrpc {
 		{
 			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(const Request&, Reply&));
 
-			detail::lock_guard<std::shared_mutex> l(m_methods_mutex);
+			detail::lock_guard<std::mutex> l(m_methods_mutex);
 			auto desc = Request::descriptor();
 			if (m_remote_methods.empty())
 			{
@@ -287,10 +336,15 @@ namespace tinyrpc {
 				m_remote_methods.resize(fdesc->message_type_count());
 			}
 
-			detail::rpc_method_handler method =
-				detail::rpc_method_handler(std::forward<Handler>(handler), detail::types<Request, Reply, Handler>{});
+			// using handler_type = std::decay_t<Handler>;
+			using rpc_remote_handler_type = detail::rpc_remote_handler<Handler, Request, Reply>;
 
-			m_remote_methods[desc->index()] = std::move(method);
+			typename rpc_remote_handler_type::handler_ptr p = {
+				std::addressof(handler), rpc_remote_handler_type::handler_ptr::allocate(handler), 0 };
+			p.p = new (p.v) rpc_remote_handler_type(std::forward<Handler>(handler));
+
+			m_remote_methods[desc->index()] = p.p;
+			p.v = p.p = 0;
 		}
 
 		template<class T, class R, class Handler>
@@ -375,6 +429,17 @@ namespace tinyrpc {
 			abort_rpc(ec);
 		}
 
+		void clean_remote_methods()
+		{
+			detail::lock_guard<std::mutex> l(m_methods_mutex);
+			for (auto& h : m_remote_methods)
+			{
+				if (h)
+					h->reset();
+			}
+			m_remote_methods.clear();
+		}
+
 		void abort_rpc(const boost::system::error_code& ec)
 		{
 			// clear all calling.
@@ -389,10 +454,19 @@ namespace tinyrpc {
 			}
 
 			// clear all rpc method.
-			{
-				detail::lock_guard<std::shared_mutex> l(m_methods_mutex);
-				m_remote_methods.clear();
-			}
+			clean_remote_methods();
+		}
+
+		static void* rpc_pb_alloc(size_t s)
+		{
+			detail::rpc_bind_handler* method = (detail::rpc_bind_handler*)inside_protobuf_alloc_context;
+			return (void*)method->allocate(s);
+		}
+
+		static void rpc_pb_free(void* p, size_t)
+		{
+			detail::rpc_bind_handler* method = (detail::rpc_bind_handler*)inside_protobuf_alloc_context;
+			method->deallocate(p);
 		}
 
 		void rpc_dispatch(rpc_service_ptl::rpc_base_ptl&& rb, boost::system::error_code& ec)
@@ -409,33 +483,49 @@ namespace tinyrpc {
 					return;
 				}
 
-				std::unique_ptr<::google::protobuf::Message> reply;
+				rpc_service_ptl::rpc_base_ptl rpc_reply;
+
 				do
 				{
-					detail::shared_lock<std::shared_mutex> l(m_methods_mutex);
+					detail::unique_lock<std::mutex> l(m_methods_mutex);
 					auto& method = m_remote_methods[descriptor->index()];
 
-					std::unique_ptr<::google::protobuf::Message> msg(method.msg_->New());
+					::google::protobuf::ArenaOptions option;
+
+					inside_protobuf_alloc_context = (void*)method;
+					option.block_alloc = rpc_pb_alloc;
+					option.block_dealloc = rpc_pb_free;
+
+					::google::protobuf::Arena arena(option);
+
+					::google::protobuf::Message* msg(method->msg_->New(&arena));
 					if (!msg->ParseFromString(rb.payload()))
 					{
 						ec = make_error_code(errc::parse_payload_failed);
+						arena.Reset();
 						return;
 					}
 
-					std::unique_ptr<::google::protobuf::Message> ret(method.ret_->New());
+					::google::protobuf::Message* reply(method->ret_->New(&arena));
+
+					l.unlock();
 
 					// call function.
-					(*method.handler_)(*msg, *ret);
+					(*method)(*msg, *reply);
 
-					reply = std::move(ret);
+					l.lock();
+
+					inside_protobuf_alloc_context = (void*)method;
+
+					rpc_reply.set_message(reply->GetTypeName());
+					rpc_reply.set_payload(reply->SerializeAsString());
+
+					arena.Reset();
 				} while (0);
 
 				// send back return.
-				rpc_service_ptl::rpc_base_ptl rpc_reply;
 				rpc_reply.set_call(rpc_service_ptl::rpc_base_ptl::callee);
 				rpc_reply.set_session(session);
-				rpc_reply.set_message(reply->GetTypeName());
-				rpc_reply.set_payload(reply->SerializeAsString());
 
 				rpc_write(std::make_unique<std::string>(rpc_reply.SerializeAsString()));
 			}
@@ -483,7 +573,7 @@ namespace tinyrpc {
 		std::mutex m_msg_mutex;
 		write_message_queue m_message_queue;
 		rpc_remote_method m_remote_methods;
-		std::shared_mutex m_methods_mutex;
+		std::mutex m_methods_mutex;
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
 		std::mutex m_call_op_mutex;
