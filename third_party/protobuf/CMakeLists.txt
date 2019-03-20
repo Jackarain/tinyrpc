@@ -204,29 +204,29 @@ file(GLOB LIBPROTOBUF_LITE_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/wire_format_lite.h
 )
 
-add_library(libprotobuf-lite STATIC
+add_library(protobuf-lite STATIC
 	${LIBPROTOBUF_LITE_FILES}
 	${LIBPROTOBUF_LITE_INCLUDES}
 )
 
-add_library(libprotobuf STATIC
+add_library(protobuf STATIC
 	${LIBPROTOBUF_LITE_FILES}
 	${LIBPROTOBUF_LITE_INCLUDES}
 	${LIBPROTOBUF_FILES}
 	${LIBPROTOBUF_INCLUDES}
 )
 
-target_link_libraries(libprotobuf ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(libprotobuf-lite ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(protobuf ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(protobuf-lite ${CMAKE_THREAD_LIBS_INIT})
 
-add_library(protobuf::libprotobuf-lite ALIAS libprotobuf-lite)
-add_library(protobuf::libprotobuf ALIAS libprotobuf)
+add_library(protobuf::libprotobuf-lite ALIAS protobuf-lite)
+add_library(protobuf::libprotobuf ALIAS protobuf)
 
-target_include_directories(libprotobuf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(libprotobuf-lite PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(protobuf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(protobuf-lite PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_target_properties(libprotobuf PROPERTIES FOLDER "third_party")
-set_target_properties(libprotobuf-lite PROPERTIES FOLDER "third_party")
+set_target_properties(protobuf PROPERTIES FOLDER "third_party")
+set_target_properties(protobuf-lite PROPERTIES FOLDER "third_party")
 
 
 set(libprotoc_files
@@ -395,18 +395,18 @@ set(libprotoc_headers
 option(ENABLE_BUILC_PROTOC "build protobuf protoc" OFF)
 
 if (ENABLE_BUILC_PROTOC)
-	add_library(libprotoc STATIC ${libprotoc_files} ${libprotoc_headers})
-	target_link_libraries(libprotoc libprotobuf)
-	add_library(protobuf::libprotoc ALIAS libprotoc)
+	add_library(protoc STATIC ${libprotoc_files} ${libprotoc_headers})
+	target_link_libraries(protoc protobuf)
+	add_library(protobuf::protoc ALIAS protoc)
 
 	file(GLOB PROTOC_FILES
 		${CMAKE_CURRENT_SOURCE_DIR}/src/google/protobuf/compiler/main.cc
 	)
 
 	add_executable(protoc ${PROTOC_FILES})
-	target_link_libraries(protoc libprotobuf libprotoc)
+	target_link_libraries(protoc protobuf protoc)
 	add_executable(protobuf::protoc ALIAS protoc)
 
-	set_target_properties(libprotoc PROPERTIES FOLDER "third_party")
+	set_target_properties(protoc PROPERTIES FOLDER "third_party")
 	set_target_properties(protoc PROPERTIES FOLDER "third_party")
 endif()

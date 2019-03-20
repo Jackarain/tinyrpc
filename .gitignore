@@ -246,11 +246,12 @@ ModelManifest.xml
 
 vs2017/
 build/
-tcmalloc/
-clang/
-gcc/
-ninja/
-linux/
+tcmalloc-build/
+clang-build/
+gcc-build/
+ninja-build/
+linux-build/
+withopenssl-build/
 
 # kdev
 .kdev4/
@@ -272,6 +273,3 @@ doc/flibpq_public_npay_merchant.sql
 doc/name
 doc/package-lock.json
 doc/package.json
-
-withopenssl
-clang-build/
