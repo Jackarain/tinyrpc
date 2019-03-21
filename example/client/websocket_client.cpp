@@ -77,8 +77,6 @@ public:
 				return;
 			}
 
-			// 输出远程主机返回值reply, 如果发生错误, 则需return, 避免在一个发
-			// 生过错误的rpc链接上通信. 这只不ec不作判断仅仅打印输出, 实际中必须判断.
 			std::cout << reply.name() << " reply: " << reply.message() << std::endl;
 		}
 	}
