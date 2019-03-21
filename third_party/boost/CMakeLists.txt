@@ -91,7 +91,7 @@ set(BOOST_CHRONO_SRC
 set(BOOST_CONTEXT_SRC
 	libs/context/src/execution_context.cpp
 	libs/context/src/continuation.cpp
-	libs/context/src/fiber.cpp
+#	libs/context/src/fiber.cpp
 )
 
 if(WIN32)
@@ -110,10 +110,11 @@ if(WIN32)
 else()
 	set(ASSEMBLER gas)
 	set(ASM_FILE_EXT "S")
+
 	if (APPLE)
-	set(EXEUCTABLEFORMAT "macho")
+		set(EXEUCTABLEFORMAT "macho")
 	else()
-	set(EXEUCTABLEFORMAT "elf")
+		set(EXEUCTABLEFORMAT "elf")
 	endif()
 
 	list(APPEND BOOST_CONTEXT_SRC libs/context/src/posix/stack_traits.cpp)
@@ -286,7 +287,7 @@ list(APPEND BOOST_FIBER_SRC
 	libs/fiber/src/numa/freebsd/topology.cpp
 	libs/fiber/src/numa/freebsd/pin_thread.cpp
 )
-else()
+elseif(LINUX)
 list(APPEND BOOST_FIBER_SRC
 	libs/fiber/src/numa/linux/topology.cpp
 	libs/fiber/src/numa/linux/pin_thread.cpp
