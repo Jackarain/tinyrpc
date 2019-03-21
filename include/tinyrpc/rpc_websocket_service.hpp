@@ -379,7 +379,6 @@ namespace tinyrpc {
 			if (rb.call() == rpc_service_ptl::rpc_base_ptl::caller)
 			{
 				auto session = rb.session();
-
 				const auto descriptor =
 					::google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(rb.message());
 				if (!descriptor)
@@ -389,31 +388,28 @@ namespace tinyrpc {
 				}
 
 				rpc_service_ptl::rpc_base_ptl rpc_reply;
+				::google::protobuf::Message* msg = nullptr;
+				detail::rpc_bind_handler* method = nullptr;
 
-				do
 				{
-					detail::unique_lock<std::mutex> l(m_methods_mutex);
-					auto& method = m_remote_methods[descriptor->index()];
+					detail::lock_guard<std::mutex> l(m_methods_mutex);
+					method = m_remote_methods[descriptor->index()].get();
+					BOOST_ASSERT(method && "method is nullptr!");
+					msg = method->msg_->New();
+					BOOST_ASSERT(msg && "New message fail!");
+				}
 
-					::google::protobuf::Message* msg(method->msg_->New());
-					if (!msg->ParseFromString(rb.payload()))
-					{
-						ec = make_error_code(errc::parse_payload_failed);
-						return;
-					}
+				if (!msg->ParseFromString(rb.payload()))
+				{
+					ec = make_error_code(errc::parse_payload_failed);
+					return;
+				}
 
-					::google::protobuf::Message* reply(method->ret_->New());
+				std::unique_ptr<::google::protobuf::Message> reply(method->ret_->New());
+				(*method)(*msg, *reply);
 
-					l.unlock();
-
-					// call function.
-					(*method)(*msg, *reply);
-
-					l.lock();
-
-					rpc_reply.set_message(reply->GetTypeName());
-					rpc_reply.set_payload(reply->SerializeAsString());
-				} while (0);
+				rpc_reply.set_message(reply->GetTypeName());
+				rpc_reply.set_payload(reply->SerializeAsString());
 
 				// send back return.
 				rpc_reply.set_call(rpc_service_ptl::rpc_base_ptl::callee);
