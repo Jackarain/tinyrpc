@@ -58,7 +58,6 @@ file(GLOB LIBPROTOBUF_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/generated_message_table_driven.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/gzip_stream.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/printer.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/strtod.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/tokenizer.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/zero_copy_stream_impl.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/map_field.cc
@@ -114,7 +113,6 @@ file(GLOB LIBPROTOBUF_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/generated_message_reflection.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/gzip_stream.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/printer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/strtod.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/tokenizer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/io/zero_copy_stream_impl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/google//protobuf/map_field.h
