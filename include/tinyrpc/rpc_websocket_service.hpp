@@ -388,14 +388,14 @@ namespace tinyrpc {
 				}
 
 				rpc_service_ptl::rpc_base_ptl rpc_reply;
-				::google::protobuf::Message* msg = nullptr;
+				std::unique_ptr<::google::protobuf::Message> msg = nullptr;
 				detail::rpc_bind_handler* method = nullptr;
 
 				{
 					detail::lock_guard<std::mutex> l(m_methods_mutex);
 					method = m_remote_methods[descriptor->index()].get();
 					BOOST_ASSERT(method && "method is nullptr!");
-					msg = method->msg_->New();
+					msg.reset(method->msg_->New());
 					BOOST_ASSERT(msg && "New message fail!");
 				}
 
