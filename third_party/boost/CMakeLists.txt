@@ -1,6 +1,8 @@
 ﻿cmake_minimum_required(VERSION 3.2)
 project(Boost)
 
+include(CMakeDetermineASMCompiler)
+
 if(WIN32)
 ENABLE_LANGUAGE(ASM_MASM)
 else()
