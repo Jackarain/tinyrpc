@@ -326,24 +326,24 @@ namespace tinyrpc {
 
 		void rpc_write_handle(boost::system::error_code ec)
 		{
-			if (!ec)
+			if (ec)
 			{
-				detail::unique_lock<std::mutex> l(m_msg_mutex);
-
-				m_message_queue.pop_front();
-				if (!m_message_queue.empty())
-				{
-					auto& context = m_message_queue.front();
-					l.unlock();
-
-					m_websocket.async_write(boost::asio::buffer(*context),
-						std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
-							this, std::placeholders::_1));
-				}
+				abort_rpc(ec);
 				return;
 			}
 
-			abort_rpc(ec);
+			detail::unique_lock<std::mutex> l(m_msg_mutex);
+
+			m_message_queue.pop_front();
+			if (!m_message_queue.empty())
+			{
+				auto& context = m_message_queue.front();
+				l.unlock();
+
+				m_websocket.async_write(boost::asio::buffer(*context),
+					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
+						this, std::placeholders::_1));
+			}
 		}
 
 		void clean_remote_methods()
