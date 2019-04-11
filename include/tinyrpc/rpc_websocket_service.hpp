@@ -168,7 +168,7 @@ namespace tinyrpc {
 		using executor_type = typename Websocket::executor_type;
 
 	public:
-		rpc_websocket_service(Websocket& ws)
+		explicit rpc_websocket_service(Websocket& ws)
 			: m_websocket(ws)
 		{}
 
