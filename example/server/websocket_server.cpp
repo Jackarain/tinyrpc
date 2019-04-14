@@ -139,7 +139,7 @@ void do_listen(
             fail(ec, "accept");
         else
             boost::asio::spawn(
-                acceptor.get_executor().context(),
+                acceptor.get_executor(),
                 std::bind(
                     &do_session,
                     std::move(socket),
