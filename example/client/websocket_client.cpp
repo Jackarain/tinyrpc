@@ -20,6 +20,11 @@ namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.h
 
 using ws = websocket::stream<tcp::socket>;
 
+void fail(boost::system::error_code ec, char const* what)
+{
+	std::cerr << what << ": " << ec.message() << "\n";
+}
+
 class rpc_session : public std::enable_shared_from_this<rpc_session>
 {
 public:
@@ -41,10 +46,10 @@ public:
 		{
 			auto bytes = ws_.async_read(buf, yield[ec]);
 			if (ec)
-				return;
+				return fail(ec, "async_read");
 			rpc_stub_.dispatch(buf, ec);
 			if (ec)
-				return;
+				return fail(ec, "dispatch");
 			buf.consume(bytes);
 		}
 	}
@@ -85,12 +90,6 @@ private:
 	ws ws_;
 	rpc_websocket_service<ws> rpc_stub_;
 };
-
-
-void fail(boost::system::error_code ec, char const* what)
-{
-	std::cerr << what << ": " << ec.message() << "\n";
-}
 
 void do_session(
 	std::string const& host,
