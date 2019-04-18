@@ -91,13 +91,13 @@ private:
 
 void do_session(tcp::socket& socket, boost::asio::yield_context yield)
 {
-    boost::system::error_code ec;
+	boost::system::error_code ec;
 
-    ws s{std::move(socket)};
+	ws s{ std::move(socket) };
 
-    s.async_accept(yield[ec]);
-    if(ec)
-        return fail(ec, "accept");
+	s.async_accept(yield[ec]);
+	if (ec)
+		return fail(ec, "accept");
 
 	s.binary(true);
 
@@ -107,68 +107,68 @@ void do_session(tcp::socket& socket, boost::asio::yield_context yield)
 }
 
 void do_listen(
-    boost::asio::io_context& ioc,
-    tcp::endpoint endpoint,
-    boost::asio::yield_context yield)
+	boost::asio::io_context& ioc,
+	tcp::endpoint endpoint,
+	boost::asio::yield_context yield)
 {
-    boost::system::error_code ec;
+	boost::system::error_code ec;
 
-    tcp::acceptor acceptor(ioc);
-    acceptor.open(endpoint.protocol(), ec);
-    if(ec)
-        return fail(ec, "open");
+	tcp::acceptor acceptor(ioc);
+	acceptor.open(endpoint.protocol(), ec);
+	if (ec)
+		return fail(ec, "open");
 
-    acceptor.set_option(boost::asio::socket_base::reuse_address(true), ec);
-    if(ec)
-        return fail(ec, "set_option");
+	acceptor.set_option(boost::asio::socket_base::reuse_address(true), ec);
+	if (ec)
+		return fail(ec, "set_option");
 
-    acceptor.bind(endpoint, ec);
-    if(ec)
-        return fail(ec, "bind");
+	acceptor.bind(endpoint, ec);
+	if (ec)
+		return fail(ec, "bind");
 
-    acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
-    if(ec)
-        return fail(ec, "listen");
+	acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
+	if (ec)
+		return fail(ec, "listen");
 
-    for(;;)
-    {
-        tcp::socket socket(ioc);
-        acceptor.async_accept(socket, yield[ec]);
-        if(ec)
-            fail(ec, "accept");
-        else
-            boost::asio::spawn(
-                acceptor.get_executor(),
-                std::bind(
-                    &do_session,
-                    std::move(socket),
-                    std::placeholders::_1));
-    }
+	for (;;)
+	{
+		tcp::socket socket(ioc);
+		acceptor.async_accept(socket, yield[ec]);
+		if (ec)
+			fail(ec, "accept");
+		else
+			boost::asio::spawn(
+				acceptor.get_executor(),
+				std::bind(
+					&do_session,
+					std::move(socket),
+					std::placeholders::_1));
+	}
 }
 
 int main(int argc, char* argv[])
 {
-    if (argc != 3)
-    {
-        std::cerr <<
-            "Usage: websocket-server <address> <port>\n" <<
-            "Example:\n" <<
-            "    websocket-server 0.0.0.0 8000\n";
-        return EXIT_FAILURE;
-    }
-    auto const address = boost::asio::ip::make_address(argv[1]);
-    auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
+	if (argc != 3)
+	{
+		std::cerr <<
+			"Usage: websocket-server <address> <port>\n" <<
+			"Example:\n" <<
+			"    websocket-server 0.0.0.0 8000\n";
+		return EXIT_FAILURE;
+	}
+	auto const address = boost::asio::ip::make_address(argv[1]);
+	auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
 
-    boost::asio::io_context ioc;
+	boost::asio::io_context ioc;
 
-    boost::asio::spawn(ioc,
-        std::bind(
-            &do_listen,
-            std::ref(ioc),
-            tcp::endpoint{address, port},
-            std::placeholders::_1));
+	boost::asio::spawn(ioc,
+		std::bind(
+			&do_listen,
+			std::ref(ioc),
+			tcp::endpoint{ address, port },
+			std::placeholders::_1));
 
-    ioc.run();
+	ioc.run();
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

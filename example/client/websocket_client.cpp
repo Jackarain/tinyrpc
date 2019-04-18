@@ -113,6 +113,8 @@ void do_session(
 
 	s.binary(true);
 
+	boost::asio::ip::tcp::socket ss(ioc);
+
 	// 完成websocket握手事宜之后开始进入rpc服务.
 	auto ses = std::make_shared<rpc_session>(std::move(s));
 	boost::asio::spawn(ioc,
