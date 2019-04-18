@@ -77,10 +77,7 @@ public:
 			boost::system::error_code ec;
 			rpc_stub_.async_call(msg, reply, yield[ec]);
 			if (ec)
-			{
-				std::cout << "error: " << ec.message() << std::endl;
-				return;
-			}
+				return fail(ec, "async_call");
 
 			std::cout << reply.name() << " reply: " << reply.message() << std::endl;
 		}
