@@ -204,28 +204,12 @@ namespace tinyrpc {
 		}
 
 		rpc_websocket_service(rpc_websocket_service&& rhs) noexcept
+			: m_websocket(rhs.m_websocket)
 		{
-			m_websocket = rhs.m_websocket;
-			m_msg_mutex = std::move(rhs.m_msg_mutex);
 			m_message_queue = std::move(rhs.m_message_queue);
 			m_remote_methods = std::move(rhs.m_remote_methods);
-			m_methods_mutex = std::move(rhs.m_methods_mutex);
 			m_call_ops = std::move(rhs.m_call_ops);
 			m_recycle = std::move(rhs.m_recycle);
-			m_call_op_mutex = std::move(rhs.m_call_op_mutex);
-		}
-
-		rpc_websocket_service& operator=(rpc_websocket_service&& rhs) noexcept
-		{
-			m_websocket = rhs.m_websocket;
-			m_msg_mutex = std::move(rhs.m_msg_mutex);
-			m_message_queue = std::move(rhs.m_message_queue);
-			m_remote_methods = std::move(rhs.m_remote_methods);
-			m_methods_mutex = std::move(rhs.m_methods_mutex);
-			m_call_ops = std::move(rhs.m_call_ops);
-			m_recycle = std::move(rhs.m_recycle);
-			m_call_op_mutex = std::move(rhs.m_call_op_mutex);
-			return *this;
 		}
 
 		executor_type get_executor() noexcept
