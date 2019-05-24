@@ -1,10 +1,10 @@
 
-# c++ rpc 基于boost.beast、protobuf的异步rpc实现.
+# c++ rpc 基于boost.beast、jsonrpc/protobuf的异步rpc实现.
 
 [![Build Status](https://travis-ci.org/Jackarain/tinyrpc.svg?branch=master)](https://travis-ci.org/Jackarain/tinyrpc)
 ## 介绍
 
-使用boost.beast为websocket底层使用, 数据协议使用protobuf，实现纯异步的rpc调用.
+使用boost.beast为websocket底层使用, 数据协议使用json/protobuf，实现纯异步的rpc调用.
 
 ## 动机
 
@@ -14,13 +14,11 @@
 ## 使用
 
 依赖boost protobuf。
-这个库本身实现只有一个.hpp头文件实现，和一个做为协议底层封装的proto，包含rpc_websocket_service.hpp和rpc_service_ptl.proto生成的.pb.h/.pb.cc。
+这个库本身实现只有几个.hpp头文件实现，和一个做为协议底层封装的proto(protobuf作为rpc协议时使用, jsonrpc不需要)，包含rpc_websocket_service.hpp和rpc_service_ptl.proto生成的.pb.h/.pb.cc。
 
 
 ## 快速上手
 
 用法参考example，你可以编译运行并调试它们，以了解它的实现原理。
-
-需要注意的是，Version1.0_LTS分支的设计与当前master有所设计不同，master版本的设计更为简单灵活，而Version1.0_LTS的设计导致rpc_stub必须管理自己的生命期，省去了master版本的dispatch消息这一步，而master分支的最新设计是rpc_stub不再自己管理生命期，完全交由使用者管理。
 
 tinyrpc 的 nodejs 实现 https://github.com/avplayer/js-tinyrpc
