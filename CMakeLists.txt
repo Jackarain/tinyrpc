@@ -116,6 +116,9 @@ add_subdirectory(third_party/boost)
 add_subdirectory(third_party/protobuf)
 include_directories(third_party/protobuf/src)
 
+add_subdirectory(third_party/jsoncpp)
+include_directories(third_party/jsoncpp)
+
 add_subdirectory(baseproto)
 include_directories(
 	${CMAKE_BINARY_DIR}/baseproto
