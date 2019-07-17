@@ -22,8 +22,9 @@
 
 #include "jsonrpc_error_code.hpp"
 #include "jsoncpp/json.h"
+#include "handler_type_check.hpp"
 
-namespace jsonrpc {
+namespace tinyrpc {
 namespace detail {
 	template<typename T>
 	void json_append(Json::Value& value, T t)
@@ -70,7 +71,7 @@ inline Json::Value string_to_json(const std::string& str, boost::system::error_c
 
 	if (!Json::parseFromStream(rbuilder, iss, &root, &errs))
 	{
-		ec = jsonrpc::errc::parse_json_failed;
+		ec = tinyrpc::errc::parse_json_failed;
 		return root;
 	}
 
@@ -110,62 +111,6 @@ inline Json::Value make_rpc_request_json(const std::string& method, const Json::
 
 
 namespace detail {
-
-#if defined(JSONRPC_DISABLE_THREADS)
-	template<class Lock>
-	struct unique_lock {
-		explicit unique_lock(const Lock&) {}
-		inline void lock() {}
-		inline void unlock() {}
-	};
-	template<class Lock>
-	struct lock_guard {
-		explicit lock_guard(const Lock&) {}
-	};
-	template<class Lock>
-	struct shared_lock {
-		explicit shared_lock(const Lock&) {}
-		inline void lock() {}
-		inline void unlock() {}
-	};
-#else
-	template<class Mutex>
-	using unique_lock = std::unique_lock<Mutex>;
-	template<class Mutex>
-	using lock_guard = std::lock_guard<Mutex>;
-	template<class Mutex>
-	using shared_lock = std::shared_lock<Mutex>;
-#endif
-
-	//////////////////////////////////////////////////////////////////////////
-	template<class R, class C, class ...A>
-	auto is_invocable_test(C&& c, int, A&& ...a)
-		-> decltype(std::is_convertible<decltype(c(std::forward<A>(a)...)), R>::value
-			|| std::is_same<R, void>::value, std::true_type());
-
-	template<class R, class C, class ...A>
-	std::false_type
-		is_invocable_test(C&& c, long, A&& ...a);
-
-	template<class C, class F>
-	struct is_invocable : std::false_type
-	{};
-
-	template<class C, class R, class ...A>
-	struct is_invocable<C, R(A...)>
-		: decltype(is_invocable_test<R>(
-			std::declval<C>(), 1, std::declval<A>()...))
-	{};
-
-	template<class T, class Signature>
-	using is_completion_handler = std::integral_constant<bool,
-		std::is_move_constructible<typename std::decay<T>::type>::value &&
-		detail::is_invocable<T, Signature>::value>;
-
-#define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
-	static_assert(jsonrpc::detail::is_completion_handler< \
-		BOOST_ASIO_HANDLER_TYPE(type, sig), sig>::value, \
-			"CompletionHandler signature requirements not met")
 
 	//////////////////////////////////////////////////////////////////////////
 	struct rpc_bind_handler
@@ -207,7 +152,6 @@ namespace detail {
 		rpc_call_op(Json::Value& data, Handler&& h, ExecutorType executor)
 			: handler_(std::forward<Handler>(h))
 			, executor_(executor)
-			, data_(data)
 		{}
 
 		rpc_call_op(const rpc_call_op& other)
@@ -225,12 +169,12 @@ namespace detail {
 		void operator()(const boost::system::error_code& ec) override
 		{
 #if defined(JSONRPC_DISABLE_THREADS)
-			handler_(ec);
+			handler_(ec, data_);
 #else
 			boost::asio::post(executor_,
 				[handler = std::forward<Handler>(handler_), ec]() mutable
 			{
-				handler(ec);
+				handler(ec, data_);
 			});
 #endif
 		}
@@ -243,7 +187,7 @@ namespace detail {
 	private:
 		Handler handler_;
 		ExecutorType executor_;
-		Json::Value& data_;
+		Json::Value data_;
 	};
 
 }
@@ -335,19 +279,24 @@ public:
 	}
 
 	template<class Handler>
-	void async_call(const Json::Value& req, Json::Value& reply, Handler&& handler)
+	BOOST_ASIO_INITFN_RESULT_TYPE(Handler, void(boost::system::error_code, Json::Value))
+	void async_call(const Json::Value& req, Handler&& handler)
 	{
-		TINYRPC_HANDLER_TYPE_CHECK(Handler, void(boost::system::error_code));
+		TINYRPC_HANDLER_TYPE_CHECK(Handler, void(boost::system::error_code, Json::Value));
 
-		boost::asio::async_completion<Handler, void(boost::system::error_code)> init(handler);
+		boost::asio::async_completion<Handler, void(boost::system::error_code, Json::Value)> init(handler);
 		auto json_request = req;
 
 		{
-			using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
-			using rpc_call_op_type = detail::rpc_call_op<completion_handler_type, executor_type>;
+			auto completion_handler = init.completion_handler;
+			auto executor = boost::asio::get_associated_executor(completion_handler);
 
-			auto&& op = std::make_unique<rpc_call_op_type>(reply,
-				std::forward<completion_handler_type>(init.completion_handler), this->get_executor());
+			using completion_handler_type = std::decay_t<decltype(completion_handler)>;
+			using handler_executor_type = std::decay_t<decltype(executor)>;
+			using rpc_call_op_type = detail::rpc_call_op<completion_handler_type, handler_executor_type>;
+
+			auto&& op = std::make_unique<rpc_call_op_type>(
+				std::forward<completion_handler_type>(completion_handler), executor);
 
 			detail::lock_guard<std::mutex> l(m_call_op_mutex);
 			if (m_recycle.empty())

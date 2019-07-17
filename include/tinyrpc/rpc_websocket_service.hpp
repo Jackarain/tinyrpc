@@ -22,39 +22,10 @@
 #include "rpc_service_ptl.pb.h"
 
 #include "rpc_error_code.hpp"
+#include "handler_type_check.hpp"
 
 namespace tinyrpc {
-
-	//////////////////////////////////////////////////////////////////////////
-
 	namespace detail {
-#if defined(TINYRPC_DISABLE_THREADS)
-		template<class Lock>
-		struct unique_lock {
-			explicit unique_lock(const Lock&) {}
-			inline void lock() {}
-			inline void unlock() {}
-		};
-		template<class Lock>
-		struct lock_guard {
-			explicit lock_guard(const Lock&) {}
-		};
-		template<class Lock>
-		struct shared_lock {
-			explicit shared_lock(const Lock&) {}
-			inline void lock() {}
-			inline void unlock() {}
-		};
-#else
-		template<class Mutex>
-		using unique_lock = std::unique_lock<Mutex>;
-		template<class Mutex>
-		using lock_guard = std::lock_guard<Mutex>;
-		template<class Mutex>
-		using shared_lock = std::shared_lock<Mutex>;
-#endif
-
-		//////////////////////////////////////////////////////////////////////////
 
 		class rpc_operation
 		{
@@ -142,37 +113,6 @@ namespace tinyrpc {
 
 			Handler handler_;
 		};
-
-
-		//////////////////////////////////////////////////////////////////////////
-		template<class R, class C, class ...A>
-		auto is_invocable_test(C&& c, int, A&& ...a)
-			-> decltype(std::is_convertible<decltype(c(std::forward<A>(a)...)), R>::value
-				|| std::is_same<R, void>::value, std::true_type());
-
-		template<class R, class C, class ...A>
-		std::false_type
-			is_invocable_test(C&& c, long, A&& ...a);
-
-		template<class C, class F>
-		struct is_invocable : std::false_type
-		{};
-
-		template<class C, class R, class ...A>
-		struct is_invocable<C, R(A...)>
-			: decltype(is_invocable_test<R>(
-				std::declval<C>(), 1, std::declval<A>()...))
-		{};
-
-		template<class T, class Signature>
-		using is_completion_handler = std::integral_constant<bool,
-			std::is_move_constructible<typename std::decay<T>::type>::value &&
-			detail::is_invocable<T, Signature>::value>;
-
-		#define TINYRPC_HANDLER_TYPE_CHECK(type, sig) \
-			static_assert(tinyrpc::detail::is_completion_handler< \
-				BOOST_ASIO_HANDLER_TYPE(type, sig), sig>::value, \
-					"CompletionHandler signature requirements not met")
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -260,7 +200,10 @@ namespace tinyrpc {
 		{
 			TINYRPC_HANDLER_TYPE_CHECK(Handler, void(const Request&, Reply&));
 
-			detail::lock_guard<std::mutex> l(m_methods_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+			std::lock_guard<std::mutex> l(m_methods_mutex);
+#endif
+
 			auto desc = Request::descriptor();
 			if (m_remote_methods.empty())
 			{
@@ -289,13 +232,20 @@ namespace tinyrpc {
 				void(boost::system::error_code)> init(handler);
 
 			{
-				using completion_handler_type = std::decay_t<decltype(init.completion_handler)>;
-				using rpc_call_op_type = detail::rpc_call_op<completion_handler_type, executor_type>;
+				auto completion_handler = init.completion_handler;
+				auto executor = boost::asio::get_associated_executor(completion_handler);
+
+				using completion_handler_type = std::decay_t<decltype(completion_handler)>;
+				using handler_executor_type = std::decay_t<decltype(executor)>;
+				using rpc_call_op_type = detail::rpc_call_op<completion_handler_type, handler_executor_type>;
 
 				auto&& op = std::make_unique<rpc_call_op_type>(ret,
-					std::forward<completion_handler_type>(init.completion_handler), this->get_executor());
+					std::forward<completion_handler_type>(completion_handler), executor);
 
-				detail::lock_guard<std::mutex> l(m_call_op_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+				std::lock_guard<std::mutex> l(m_call_op_mutex);
+#endif
+
 				if (m_recycle.empty())
 				{
 					auto session = m_call_ops.size();
@@ -319,14 +269,19 @@ namespace tinyrpc {
 	protected:
 		void rpc_write(std::unique_ptr<std::string>&& context)
 		{
-			detail::unique_lock<std::mutex> l(m_msg_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+			std::unique_lock<std::mutex> l(m_msg_mutex);
+#endif
 
 			bool write_in_progress = !m_message_queue.empty();
 			m_message_queue.emplace_back(std::move(context));
 			if (!write_in_progress)
 			{
 				auto& front = m_message_queue.front();
+
+#if !defined(TINYRPC_DISABLE_THREADS)
 				l.unlock();
+#endif
 
 				m_websocket.async_write(boost::asio::buffer(*front),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
@@ -342,14 +297,18 @@ namespace tinyrpc {
 				return;
 			}
 
-			detail::unique_lock<std::mutex> l(m_msg_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+			std::unique_lock<std::mutex> l(m_msg_mutex);
+#endif
 
 			m_message_queue.pop_front();
 			if (!m_message_queue.empty())
 			{
 				auto& context = m_message_queue.front();
-				l.unlock();
 
+#if !defined(TINYRPC_DISABLE_THREADS)
+				l.unlock();
+#endif
 				m_websocket.async_write(boost::asio::buffer(*context),
 					std::bind(&rpc_websocket_service<Websocket>::rpc_write_handle,
 						this, std::placeholders::_1));
@@ -358,7 +317,10 @@ namespace tinyrpc {
 
 		void clean_remote_methods()
 		{
-			detail::lock_guard<std::mutex> l(m_methods_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+			std::lock_guard<std::mutex> l(m_methods_mutex);
+#endif
+
 			for (auto& h : m_remote_methods)
 			{
 				if (h)
@@ -371,7 +333,10 @@ namespace tinyrpc {
 		{
 			// clear all calling.
 			{
-				detail::lock_guard<std::mutex> l(m_call_op_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+				std::lock_guard<std::mutex> l(m_call_op_mutex);
+#endif
+
 				for (auto& h : m_call_ops)
 				{
 					if (!h) continue;
@@ -402,7 +367,10 @@ namespace tinyrpc {
 				detail::rpc_bind_handler* method = nullptr;
 
 				{
-					detail::lock_guard<std::mutex> l(m_methods_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+					std::lock_guard<std::mutex> l(m_methods_mutex);
+#endif
+
 					method = m_remote_methods[descriptor->index()].get();
 					BOOST_ASSERT(method && "method is nullptr!");
 					msg.reset(method->msg_->New());
@@ -435,9 +403,11 @@ namespace tinyrpc {
 				call_op_ptr handler;
 				do
 				{
-					detail::lock_guard<std::mutex> l(m_call_op_mutex);
+#if !defined(TINYRPC_DISABLE_THREADS)
+					std::lock_guard<std::mutex> l(m_call_op_mutex);
+#endif
 
-					if (session >= m_call_ops.size())
+					if (static_cast<std::size_t>(session) >= m_call_ops.size())
 					{
 						ec = make_error_code(errc::session_out_of_range);
 						return;
@@ -468,13 +438,23 @@ namespace tinyrpc {
 
 	private:
 		Websocket& m_websocket;
+
+#if !defined(TINYRPC_DISABLE_THREADS)
 		std::mutex m_msg_mutex;
+#endif
 		write_message_queue m_message_queue;
 		rpc_remote_method m_remote_methods;
+
+#if !defined(TINYRPC_DISABLE_THREADS)
 		std::mutex m_methods_mutex;
+#endif
+
 		call_op m_call_ops;
 		std::vector<int> m_recycle;
+
+#if !defined(TINYRPC_DISABLE_THREADS)
 		std::mutex m_call_op_mutex;
+#endif
 	};
 }
 
