@@ -131,8 +131,8 @@ namespace jsonrpc
 
   public:
     using stream_type = StreamType;
-      using next_layer_type = std::remove_reference_t<stream_type>;
-      using executor_type = next_layer_type::executor_type;
+    using next_layer_type = std::remove_reference_t<stream_type>;
+    using executor_type = next_layer_type::executor_type;
 
     using call_op_ptr = detail::call_op_ptr;
 
