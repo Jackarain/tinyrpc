@@ -14,14 +14,14 @@
 // stl_interaction.cpp - Make sure multi_arrays work with STL containers.
 //
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 #include <algorithm>
 #include <vector>
 
 int
-test_main(int, char*[])
+main()
 {
   using boost::extents;
   using boost::indices;
@@ -51,7 +51,7 @@ test_main(int, char*[])
   myarray.assign(data,data+data_size);
 
   array3vec myvec(5,myarray);
-  BOOST_CHECK(myarray == myvec[1]);
+  BOOST_TEST(myarray == myvec[1]);
 
   array3::array_view<2>::type myview =
     myarray[indices[1][range(0,2)][range(1,3)]];
@@ -65,8 +65,8 @@ test_main(int, char*[])
 
   myvec.push_back(myarray);
 
-  BOOST_CHECK(myarray != myvec[1]);
-  BOOST_CHECK(myarray == myvec[5]);
+  BOOST_TEST(myarray != myvec[1]);
+  BOOST_TEST(myarray == myvec[5]);
 
-  return boost::exit_success;
+  return boost::report_errors();
 }

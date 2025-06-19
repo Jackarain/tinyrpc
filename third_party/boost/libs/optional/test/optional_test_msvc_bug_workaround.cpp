@@ -12,7 +12,7 @@
 #define BOOST_OPTIONAL_CONFIG_NO_RVALUE_REFERENCES
 #include "boost/optional/optional.hpp"
 
-#ifdef __BORLANDC__
+#ifdef BOOST_BORLANDC
 #pragma hdrstop
 #endif
 
@@ -29,10 +29,12 @@ void test()
 {
 #if (!defined BOOST_NO_CXX11_RVALUE_REFERENCES)
   boost::optional<int> v = Wrapper();
-  BOOST_TEST(v);
+  //BOOST_TEST(v);
+  boost::optional<boost::optional<int>> vv;
+  bool xx = vv?true : false;
   BOOST_TEST_EQ(*v, 7);
 #endif
-} 
+}
 
 int main()
 {

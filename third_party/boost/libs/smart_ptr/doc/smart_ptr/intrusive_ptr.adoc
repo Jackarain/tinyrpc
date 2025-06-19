@@ -54,11 +54,17 @@ namespace boost {
     intrusive_ptr(intrusive_ptr const & r);
     template<class Y> intrusive_ptr(intrusive_ptr<Y> const & r);
 
+    intrusive_ptr(intrusive_ptr && r);
+    template<class Y> intrusive_ptr(intrusive_ptr<Y> && r);
+
     ~intrusive_ptr();
 
     intrusive_ptr & operator=(intrusive_ptr const & r);
     template<class Y> intrusive_ptr & operator=(intrusive_ptr<Y> const & r);
     intrusive_ptr & operator=(T * r);
+
+    intrusive_ptr & operator=(intrusive_ptr && r);
+    template<class Y> intrusive_ptr & operator=(intrusive_ptr<Y> && r);
 
     void reset();
     void reset(T * r);
@@ -71,7 +77,7 @@ namespace boost {
 
     explicit operator bool () const noexcept;
 
-    void swap(intrusive_ptr & b) noexept;
+    void swap(intrusive_ptr & b) noexcept;
   };
 
   template<class T, class U>
@@ -92,8 +98,8 @@ namespace boost {
   template<class T, class U>
     bool operator!=(T * a, intrusive_ptr<U> const & b) noexcept;
 
-  template<class T, class U>
-    bool operator<(intrusive_ptr<T> const & a, intrusive_ptr<U> const & b) noexcept;
+  template<class T>
+    bool operator<(intrusive_ptr<T> const & a, intrusive_ptr<T> const & b) noexcept;
 
   template<class T> void swap(intrusive_ptr<T> & a, intrusive_ptr<T> & b) noexcept;
 
@@ -158,6 +164,19 @@ template<class Y> intrusive_ptr(intrusive_ptr<Y> const & r);
 Effects:: `T * p = r.get(); if(p != 0) intrusive_ptr_add_ref(p);`.
 Postconditions:: `get() == r.get()`.
 
+```
+intrusive_ptr(intrusive_ptr && r);
+```
+```
+template<class Y> intrusive_ptr(intrusive_ptr<Y> && r);
+```
+
+[none]
+* {blank}
++
+Postconditions::
+  `get()` equals the old value of `r.get()`. `r.get() == 0`.
+
 ### destructor
 
 ```
@@ -167,7 +186,8 @@ Postconditions:: `get() == r.get()`.
 [none]
 * {blank}
 +
-Effects:: `if(get() != 0) intrusive_ptr_release(get());`.
+Effects::
+  `if(get() != 0) intrusive_ptr_release(get());`.
 
 ### assignment
 
@@ -185,6 +205,19 @@ intrusive_ptr & operator=(T * r);
 * {blank}
 +
 Effects:: Equivalent to `intrusive_ptr(r).swap(*this)`.
+Returns:: `*this`.
+
+```
+intrusive_ptr & operator=(intrusive_ptr && r);
+```
+```
+template<class Y> intrusive_ptr & operator=(intrusive_ptr<Y> && r);
+```
+
+[none]
+* {blank}
++
+Effects:: Equivalent to `intrusive_ptr(std::move(r)).swap(*this)`.
 Returns:: `*this`.
 
 ### reset
@@ -214,7 +247,8 @@ void reset(T * r, bool add_ref);
 [none]
 * {blank}
 +
-Effects:: Equivalent to `intrusive_ptr(r, add_ref).swap(*this)`.
+Effects::
+  Equivalent to `intrusive_ptr(r, add_ref).swap(*this)`.
 
 ### indirection
 
@@ -247,7 +281,8 @@ T * get() const noexcept;
 [none]
 * {blank}
 +
-Returns:: the stored pointer.
+Returns::
+  the stored pointer.
 
 ### detach
 
@@ -294,7 +329,8 @@ void swap(intrusive_ptr & b) noexcept;
 [none]
 * {blank}
 +
-Effects:: Exchanges the contents of the two smart pointers.
+Effects::
+  Exchanges the contents of the two smart pointers.
 
 ## Free Functions
 
@@ -361,8 +397,8 @@ template<class T, class U>
 Returns:: `a != b.get()`.
 
 ```
-template<class T, class U>
-  bool operator<(intrusive_ptr<T> const & a, intrusive_ptr<U> const & b) noexcept;
+template<class T>
+  bool operator<(intrusive_ptr<T> const & a, intrusive_ptr<T> const & b) noexcept;
 ```
 
 [none]
@@ -381,7 +417,8 @@ template<class T> void swap(intrusive_ptr<T> & a, intrusive_ptr<T> & b) noexcept
 [none]
 * {blank}
 +
-Effects:: Equivalent to `a.swap(b)`.
+Effects::
+  Equivalent to `a.swap(b)`.
 
 ### get_pointer
 
@@ -406,7 +443,8 @@ template<class T, class U>
 [none]
 * {blank}
 +
-Returns:: `intrusive_ptr<T>(static_cast<T*>(r.get()))`.
+Returns::
+  `intrusive_ptr<T>(static_cast<T*>(r.get()))`.
 
 ### const_pointer_cast
 
@@ -418,7 +456,8 @@ template<class T, class U>
 [none]
 * {blank}
 +
-Returns:: `intrusive_ptr<T>(const_cast<T*>(r.get()))`.
+Returns::
+  `intrusive_ptr<T>(const_cast<T*>(r.get()))`.
 
 ### dynamic_pointer_cast
 
@@ -430,7 +469,8 @@ template<class T, class U>
 [none]
 * {blank}
 +
-Returns:: `intrusive_ptr<T>(dynamic_cast<T*>(r.get()))`.
+Returns::
+  `intrusive_ptr<T>(dynamic_cast<T*>(r.get()))`.
 
 ### operator<<
 

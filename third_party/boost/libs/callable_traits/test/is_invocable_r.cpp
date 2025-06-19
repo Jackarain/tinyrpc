@@ -1,5 +1,5 @@
 /*
-Copyright Barrett Adair 2016-2017
+Copyright Barrett Adair 2016-2021
 Distributed under the Boost Software License, Version 1.0.
 (See accompanying file LICENSE.md or copy at http ://boost.org/LICENSE_1_0.txt)
 */
@@ -11,7 +11,7 @@ Distributed under the Boost Software License, Version 1.0.
 #include "test.hpp"
 
 #ifdef BOOST_CLBL_TRTS_GCC_OLDER_THAN_4_9_2
-//gcc >= 4.8 doesn't like the invoke_case pattern used here
+//gcc < 4.9 doesn't like the invoke_case pattern used here
 int main(){}
 #else
 
@@ -24,7 +24,20 @@ template<bool Expect, typename Ret, typename... Args>
 struct invoke_case {
    template<typename Callable>
    void operator()(tag<Callable>) const {
-       CT_ASSERT((Expect == boost::callable_traits::is_invocable_r<Ret, Callable, Args...>()));
+
+        CT_ASSERT((Expect == boost::callable_traits::is_invocable_r<Ret, Callable, Args...>()));
+#ifndef BOOST_CLBL_TRTS_DISABLE_VARIABLE_TEMPLATES
+        CT_ASSERT((Expect == boost::callable_traits::is_invocable_r_v<Ret, Callable, Args...>));
+#endif
+
+// when available, test parity with std implementation
+#if defined(__cpp_lib_is_invocable)
+        CT_ASSERT((std::is_invocable_r<Ret, Callable, Args...>() == boost::callable_traits::is_invocable_r<Ret, Callable, Args...>()));
+#  ifndef BOOST_CLBL_TRTS_DISABLE_VARIABLE_TEMPLATES
+        CT_ASSERT((std::is_invocable_r_v<Ret, Callable, Args...> == boost::callable_traits::is_invocable_r_v<Ret, Callable, Args...>));
+#  endif
+#endif
+
    }
 };
 
@@ -73,11 +86,11 @@ int main() {
     >();
 
     run_tests<char(foo::*)()
-        ,invoke_case<false, void, foo>
-        ,invoke_case<false, void, foo*>
-        ,invoke_case<false, void, foo&>
-        ,invoke_case<false, void, foo&&>
-        ,invoke_case<false, void, std::reference_wrapper<foo>>
+        ,invoke_case<true, void, foo>
+        ,invoke_case<true, void, foo*>
+        ,invoke_case<true, void, foo&>
+        ,invoke_case<true, void, foo&&>
+        ,invoke_case<true, void, std::reference_wrapper<foo>>
         ,invoke_case<true, int, foo>
         ,invoke_case<true, int, foo*>
         ,invoke_case<true, int, foo&>
@@ -154,24 +167,32 @@ int main() {
         ,invoke_case<false, void, std::reference_wrapper<foo>, int>
     >();
 
-// MSVC doesn't handle cv + ref qualifiers in expression sfinae correctly
-#ifndef BOOST_CLBL_TRTS_MSVC
+// old MSVC doesn't handle cv + ref qualifiers in expression sfinae correctly
+#ifndef BOOST_CLBL_TRTS_OLD_MSVC
+
+#if __cplusplus <= 201703L
+#define QUIRKY_CASE true
+#else
+#define QUIRKY_CASE false
+#endif
 
     run_tests<void(foo::*)() const LREF
-        ,invoke_case<false, void, foo>
+#ifndef BOOST_CLBL_TRTS_MSVC
+        ,invoke_case<!QUIRKY_CASE, void, foo>
+        ,invoke_case<!QUIRKY_CASE, void, foo&&>
+        ,invoke_case<!QUIRKY_CASE, void, foo const>
+        ,invoke_case<!QUIRKY_CASE, void, foo const&&>
+#endif
         ,invoke_case<true, void, foo*>
         ,invoke_case<true, void, foo&>
         ,invoke_case<false, int, foo*>
         ,invoke_case<false, int, foo&>
-        ,invoke_case<false, void, foo&&>
         ,invoke_case<true, void, std::reference_wrapper<foo>>
         ,invoke_case<false, int, std::reference_wrapper<foo>>
-        ,invoke_case<false, void, foo const>
         ,invoke_case<true, void, foo const*>
         ,invoke_case<true, void, foo const&>
         ,invoke_case<false, int, foo const*>
         ,invoke_case<false, int, foo const&>
-        ,invoke_case<false, void, foo const&&>
         ,invoke_case<true, void, std::reference_wrapper<foo const>>
         ,invoke_case<false, int, std::reference_wrapper<foo const>>
         ,invoke_case<false, void, foo, int>
@@ -203,7 +224,7 @@ int main() {
         ,invoke_case<false, void, std::reference_wrapper<foo>, int>
     >();
 
-#endif // #ifndef BOOST_CLBL_TRTS_MSVC
+#endif // #ifndef BOOST_CLBL_TRTS_OLD_MSVC
 
     run_tests<int
         ,invoke_case<false, void, foo>
@@ -232,6 +253,21 @@ int main() {
         ,invoke_case<false, int, char>
         ,invoke_case<false, void, void*>
     >();
+
+    auto g = [](){};
+
+    run_tests<decltype(g)
+        ,invoke_case<true, void>
+        ,invoke_case<true, void>
+        ,invoke_case<false, void, int>
+        ,invoke_case<false, void, char>
+        ,invoke_case<false, int, int>
+        ,invoke_case<false, int, char>
+        ,invoke_case<false, void, void*>
+    >();
+
+// libc++ requires constructible types be passed to std::is_invocable
+#ifndef  _LIBCPP_VERSION
 
     run_tests<void(int)
         ,invoke_case<true, void, int>
@@ -264,7 +300,7 @@ int main() {
         ,invoke_case<false, void, foo&&, int>
         ,invoke_case<false, void, std::reference_wrapper<foo>, int>
     >();
-
+#endif
 
     run_tests<int
         ,invoke_case<false, void, foo>

@@ -9,10 +9,10 @@
   namespace boost{ namespace math{
   
   template <class T>
-  ``__sf_result`` digamma(T z);
+  BOOST_MATH_GPU_ENABLED ``__sf_result`` digamma(T z);
   
   template <class T, class ``__Policy``>
-  ``__sf_result`` digamma(T z, const ``__Policy``&);
+  BOOST_MATH_GPU_ENABLED ``__sf_result`` digamma(T z, const ``__Policy``&);
   
   }} // namespaces
   
@@ -140,7 +140,7 @@ means that even when x is the value of the root rounded to the nearest
 representable value, the result of digamma(x) ['[*will not be zero]].
 
 
-[endsect][/section:digamma The Digamma Function]
+[endsect] [/section:digamma The Digamma Function]
 
 [/ 
   Copyright 2006 John Maddock and Paul A. Bristow.

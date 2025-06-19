@@ -3,26 +3,25 @@
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2017.
-// Modifications copyright (c) 2017, Oracle and/or its affiliates.
+// This file was modified by Oracle on 2017-2024.
+// Modifications copyright (c) 2017-2024, Oracle and/or its affiliates.
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
+
 #include <iostream>
 
 #include <geometry_test_common.hpp>
 
-
-#include <boost/foreach.hpp>
-
+#include <boost/geometry/algorithms/detail/overlay/get_turn_info.hpp>
+#include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>
 #include <boost/geometry/algorithms/intersection.hpp>
 #include <boost/geometry/algorithms/make.hpp>
 
-#include <boost/geometry/algorithms/detail/overlay/get_turn_info.hpp>
-#include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 
 #if defined(TEST_WITH_SVG)
@@ -30,6 +29,32 @@
 #endif
 
 
+// For test purposes, returns the point specified in the constructor
+template <typename Point>
+struct sub_range_from_points
+{
+    typedef Point point_type;
+
+    sub_range_from_points(Point const& i, Point const& j, Point const& k)
+    {
+        m_points[0] = i;
+        m_points[1] = j;
+        m_points[2] = k;
+    }
+
+    static inline bool is_first_segment() { return false; }
+    static inline bool is_last_segment() { return false; }
+
+    static inline std::size_t size() { return 3; }
+
+    inline Point const& at(std::size_t index) const
+    {
+        return m_points[index % 3];
+    }
+
+private :
+    Point m_points[3];
+};
 
 template <typename P, typename T>
 void test_with_point(std::string const& caseid,
@@ -48,30 +73,26 @@ void test_with_point(std::string const& caseid,
     P qj = bg::make<P>(qj_x, qj_y);
     P qk = bg::make<P>(qk_x, qk_y);
 
-    typedef typename bg::strategy::intersection::services::default_strategy
+    typedef typename bg::strategies::relate::services::default_strategy
         <
-            typename bg::cs_tag<P>::type
+            P, P
         >::type strategy_type;
-
-    typedef typename bg::detail::no_rescale_policy rescale_policy_type;
 
     typedef bg::detail::overlay::turn_info
         <
             P,
-            typename bg::segment_ratio_type<P, rescale_policy_type>::type
+            typename bg::segment_ratio_type<P>::type
         > turn_info;
     typedef std::vector<turn_info> tp_vector;
     turn_info model;
     tp_vector info;
     strategy_type strategy;
-    rescale_policy_type rescale_policy;
+    sub_range_from_points<P> sub_range_p(pi, pj, pk);
+    sub_range_from_points<P> sub_range_q(qi, qj, qk);
     bg::detail::overlay::get_turn_info
         <
             bg::detail::overlay::assign_null_policy
-        >::apply(pi, pj, pk, qi, qj, qk,
-                 false, false, false, false, // dummy parameters
-        model, strategy, rescale_policy, std::back_inserter(info));
-
+        >::apply(sub_range_p, sub_range_q, model, strategy, std::back_inserter(info));
 
     if (info.size() == 0)
     {
@@ -201,7 +222,7 @@ void test_both(std::string const& caseid,
             method, expected_touch_only, ip_x, ip_y, expected, ip_x2, ip_y2);
 
     std::string reversed(expected.rbegin(), expected.rend());
-    
+
     if (ip_x2 >= 0 && ip_y2 >= 0)
     {
         std::swap(ip_x, ip_x2);

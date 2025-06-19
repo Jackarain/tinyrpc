@@ -7,6 +7,7 @@
 
 import os ;
 import configure ;
+import ../../build/log-platform-config ;
 
 rule has-config-flag ( flag : properties * )
 {
@@ -39,28 +40,24 @@ rule check-message-compiler ( properties * )
     {
         result += <build>no ;
     }
+
+    return $(result) ;
 }
 
 project
     : requirements
+        <conditional>@log-platform-config.set-platform-defines
         <conditional>@check-message-compiler
 
         <link>shared
-        <toolset>msvc:<define>_SCL_SECURE_NO_WARNINGS
-        <toolset>msvc:<define>_SCL_SECURE_NO_DEPRECATE
-        <toolset>msvc:<define>_CRT_SECURE_NO_WARNINGS
-        <toolset>msvc:<define>_CRT_SECURE_NO_DEPRECATE
+
+        <c++-template-depth>1024
+
         <toolset>msvc:<cxxflags>/bigobj
         <toolset>msvc:<cxxflags>/wd4503 # decorated name length exceeded, name was truncated
         <toolset>msvc:<cxxflags>/wd4456 # declaration of 'A' hides previous local declaration
         <toolset>msvc:<cxxflags>/wd4459 # declaration of 'A' hides global declaration
         <toolset>msvc:<cxxflags>/wd4003 # not enough actual parameters for macro 'X' - caused by BOOST_PP_IS_EMPTY and BOOST_PP_IS_BEGIN_PARENS which are used by Fusion
-        <toolset>intel-win:<define>_SCL_SECURE_NO_WARNINGS
-        <toolset>intel-win:<define>_SCL_SECURE_NO_DEPRECATE
-        <toolset>intel-win:<define>_CRT_SECURE_NO_WARNINGS
-        <toolset>intel-win:<define>_CRT_SECURE_NO_DEPRECATE
-        <toolset>darwin:<cxxflags>-ftemplate-depth-1024
-        <toolset>gcc:<cxxflags>-ftemplate-depth-1024
         <toolset>gcc:<cxxflags>-fno-strict-aliasing  # avoids strict aliasing violations in other Boost components
 
         # Disable Intel warnings:
@@ -82,8 +79,6 @@ project
         <library>/boost/log//boost_log
         <library>/boost/date_time//boost_date_time
         <library>/boost/filesystem//boost_filesystem
-        <library>/boost/system//boost_system
-        <library>/boost/thread//boost_thread
         <threading>multi
     ;
 

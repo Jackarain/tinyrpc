@@ -8,7 +8,7 @@
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#include <algorithms/test_perimeter.hpp>
+#include "test_perimeter.hpp"
 #include <algorithms/perimeter/perimeter_polygon_cases.hpp>
 
 #include <boost/geometry/geometries/geometries.hpp>
@@ -79,10 +79,6 @@ int test_main(int, char* [])
         bg::cs::spherical_equatorial<bg::degree> > >(mean_radius);
     test_all_haversine<bg::model::d2::point_xy<double,
         bg::cs::spherical_equatorial<bg::degree> > >(mean_radius);
-
-#if defined(HAVE_TTMATH)
-    test_all<bg::model::d2::point_xy<ttmath_big> >();
-#endif
 
     return 0;
 }

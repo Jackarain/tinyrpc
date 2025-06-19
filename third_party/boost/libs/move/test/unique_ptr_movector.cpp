@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////
 #include <boost/move/utility_core.hpp>
 #include <boost/move/unique_ptr.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/core/lightweight_test.hpp>
 
 //////////////////////////////////////////////
@@ -267,7 +266,7 @@ void test()
 {
    //Single unique_ptr
    reset_counters();
-   BOOST_STATIC_ASSERT((bmupmu::is_convertible<B, A>::value));
+   BOOST_MOVE_STATIC_ASSERT((bmupmu::is_convertible<B, A>::value));
    {
    bml::unique_ptr<B, move_constr_deleter<B> > s(new B);
    A* p = s.get();

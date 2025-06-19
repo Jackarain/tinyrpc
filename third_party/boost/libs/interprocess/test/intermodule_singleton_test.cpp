@@ -7,11 +7,11 @@
 // See http://www.boost.org/libs/interprocess for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/intermodule_singleton.hpp>
 #include <boost/interprocess/detail/portable_intermodule_singleton.hpp>
 #include <iostream>
 #include <cstdlib> //for std::abort
+#include <typeinfo>
 
 using namespace boost::interprocess;
 
@@ -54,19 +54,19 @@ int intermodule_singleton_test()
    bool exception_thrown = false;
    bool exception_2_thrown = false;
 
-   try{
+   BOOST_INTERPROCESS_TRY{
       IntermoduleType<MyThrowingClass, true, false>::get();
    }
-   catch(int &){
+   BOOST_INTERPROCESS_CATCH(int &){
       exception_thrown = true;
       //Second try
-      try{
+      BOOST_INTERPROCESS_TRY{
          IntermoduleType<MyThrowingClass, true, false>::get();
       }
-      catch(interprocess_exception &){
+      BOOST_INTERPROCESS_CATCH(interprocess_exception &){
          exception_2_thrown = true;
-      }
-   }
+      } BOOST_INTERPROCESS_CATCH_END
+   } BOOST_INTERPROCESS_CATCH_END
 
    if(!exception_thrown || !exception_2_thrown){
       return 1;
@@ -79,12 +79,12 @@ int intermodule_singleton_test()
 
    //Second try
    exception_2_thrown = false;
-   try{
+   BOOST_INTERPROCESS_TRY{
       IntermoduleType<MyThrowingClass, true, false>::get();
    }
-   catch(interprocess_exception &){
+   BOOST_INTERPROCESS_CATCH(interprocess_exception &){
       exception_2_thrown = true;
-   }
+   } BOOST_INTERPROCESS_CATCH_END
    if(!exception_2_thrown){
       return 1;
    }
@@ -212,16 +212,16 @@ class LogDeadReferenceUser
       std::cout << "~LogDeadReferenceUser(), LogSingleton: " << typeid(LogSingleton).name() << "\n" << std::endl;
       //Make sure the exception is thrown as we are
       //trying to use a dead non-phoenix singleton
-      try{
+      BOOST_INTERPROCESS_TRY{
          LogSingleton::get().log_it();
          std::string s("LogDeadReferenceUser failed for LogSingleton ");
          s += typeid(LogSingleton).name();
          std::cout << "~LogDeadReferenceUser(), error: " << s << std::endl;
          std::abort();
       }
-      catch(interprocess_exception &){
+      BOOST_INTERPROCESS_CATCH(interprocess_exception &){
          //Correct behaviour
-      }
+      } BOOST_INTERPROCESS_CATCH_END
    }
 };
 
@@ -326,5 +326,3 @@ int main ()
 
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

@@ -1,6 +1,6 @@
 /* Boost.Flyweight example of flyweight-based formatted text processing.
  *
- * Copyright 2006-2014 Joaquin M Lopez Munoz.
+ * Copyright 2006-2023 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -192,7 +192,7 @@ void scan_html(ForwardIterator first,ForwardIterator last,OutputIterator out)
 
         for(html_context_data::reverse_iterator rit=context.rbegin();
             rit!=context.rend();++rit){
-          if(rit->get().name==res.tag.get().name){
+          if(rit->get().name==res.tag->name){
             context.erase(rit.base()-1,context.end());
             break;
           }

@@ -1,13 +1,12 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+#ifndef BOOST_QVM_TEST_QVM_HPP_INCLUDED
+#define BOOST_QVM_TEST_QVM_HPP_INCLUDED
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UUID_06E5D36EB6C211DEA317E19C55D89593
-#define UUID_06E5D36EB6C211DEA317E19C55D89593
-
-#include <boost/test/floating_point_comparison.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <iostream>
 
 #define BOOST_QVM_TEST_EQ(expra,exprb) ( ::test_qvm::detail::test_eq_impl(#expra, #exprb, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION, expra, exprb) )
@@ -251,7 +250,7 @@ test_qvm
                     return;
                     }
             }
-        }
-    }
+
+} }
 
 #endif

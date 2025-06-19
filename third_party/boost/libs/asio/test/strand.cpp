@@ -2,7 +2,7 @@
 // strand.cpp
 // ~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,47 +16,28 @@
 // Test that header file is self-contained.
 #include <boost/asio/strand.hpp>
 
+#include <functional>
 #include <sstream>
+#include <boost/asio/executor.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/detail/thread.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include "unit_test.hpp"
 
-#if defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-# include <boost/asio/deadline_timer.hpp>
-#else // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-# include <boost/asio/steady_timer.hpp>
-#endif // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-
-#if defined(BOOST_ASIO_HAS_BOOST_BIND)
-# include <boost/bind.hpp>
-#else // defined(BOOST_ASIO_HAS_BOOST_BIND)
-# include <functional>
-#endif // defined(BOOST_ASIO_HAS_BOOST_BIND)
-
 using namespace boost::asio;
-
-#if defined(BOOST_ASIO_HAS_BOOST_BIND)
-namespace bindns = boost;
-#else // defined(BOOST_ASIO_HAS_BOOST_BIND)
 namespace bindns = std;
-#endif
 
-#if defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-typedef deadline_timer timer;
-namespace chronons = boost::posix_time;
-#elif defined(BOOST_ASIO_HAS_CHRONO)
 typedef steady_timer timer;
 namespace chronons = boost::asio::chrono;
-#endif // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
 
 void increment(int* count)
 {
   ++(*count);
 }
 
-void increment_without_lock(io_context::strand* s, int* count)
+void increment_without_lock(strand<io_context::executor_type>* s, int* count)
 {
   BOOST_ASIO_CHECK(!s->running_in_this_thread());
 
@@ -69,7 +50,7 @@ void increment_without_lock(io_context::strand* s, int* count)
   BOOST_ASIO_CHECK(*count == original_count + 1);
 }
 
-void increment_with_lock(io_context::strand* s, int* count)
+void increment_with_lock(strand<io_context::executor_type>* s, int* count)
 {
   BOOST_ASIO_CHECK(s->running_in_this_thread());
 
@@ -110,7 +91,8 @@ void increment_by_a_b_c_d(int* count, int a, int b, int c, int d)
   (*count) += a + b + c + d;
 }
 
-void start_sleep_increments(io_context* ioc, io_context::strand* s, int* count)
+void start_sleep_increments(io_context* ioc,
+    strand<io_context::executor_type>* s, int* count)
 {
   // Give all threads a chance to start.
   timer t(*ioc, chronons::seconds(2));
@@ -135,7 +117,7 @@ void io_context_run(io_context* ioc)
 void strand_test()
 {
   io_context ioc;
-  io_context::strand s(ioc);
+  strand<io_context::executor_type> s = make_strand(ioc);
   int count = 0;
 
   post(ioc, bindns::bind(increment_without_lock, &s, &count));
@@ -170,18 +152,10 @@ void strand_test()
   timer timer1(ioc, chronons::seconds(3));
   timer1.wait();
   BOOST_ASIO_CHECK(count == 0);
-#if defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-  timer1.expires_at(timer1.expires_at() + chronons::seconds(2));
-#else // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
   timer1.expires_at(timer1.expiry() + chronons::seconds(2));
-#endif // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
   timer1.wait();
   BOOST_ASIO_CHECK(count == 1);
-#if defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
-  timer1.expires_at(timer1.expires_at() + chronons::seconds(2));
-#else // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
   timer1.expires_at(timer1.expiry() + chronons::seconds(2));
-#endif // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
   timer1.wait();
   BOOST_ASIO_CHECK(count == 2);
 
@@ -227,7 +201,7 @@ void strand_test()
   // Check for clean shutdown when handlers posted through an orphaned strand
   // are abandoned.
   {
-    io_context::strand s2(ioc);
+    strand<io_context::executor_type> s2 = make_strand(ioc.get_executor());
     post(s2, bindns::bind(increment, &count));
     post(s2, bindns::bind(increment, &count));
     post(s2, bindns::bind(increment, &count));
@@ -237,89 +211,230 @@ void strand_test()
   BOOST_ASIO_CHECK(count == 0);
 }
 
-void strand_wrap_test()
+void strand_conversion_test()
 {
-#if !defined(BOOST_ASIO_NO_DEPRECATED)
   io_context ioc;
-  io_context::strand s(ioc);
+  strand<io_context::executor_type> s1 = make_strand(ioc);
+
+  // Converting constructors.
+
+  strand<executor> s2(s1);
+  strand<executor> s3 = strand<io_context::executor_type>(s1);
+
+  // Converting assignment.
+
+  s3 = s1;
+  s3 = strand<io_context::executor_type>(s1);
+}
+
+void strand_query_test()
+{
+  io_context ioc;
+  strand<io_context::executor_type> s1 = make_strand(ioc);
+
+  BOOST_ASIO_CHECK(
+      &boost::asio::query(s1, boost::asio::execution::context)
+        == &ioc);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::blocking)
+        == boost::asio::execution::blocking.possibly);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::blocking.possibly)
+        == boost::asio::execution::blocking.possibly);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::outstanding_work)
+        == boost::asio::execution::outstanding_work.untracked);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::outstanding_work.untracked)
+        == boost::asio::execution::outstanding_work.untracked);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::relationship)
+        == boost::asio::execution::relationship.fork);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::relationship.fork)
+        == boost::asio::execution::relationship.fork);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::mapping)
+        == boost::asio::execution::mapping.thread);
+
+  BOOST_ASIO_CHECK(
+      boost::asio::query(s1, boost::asio::execution::allocator)
+        == std::allocator<void>());
+}
+
+void strand_execute_test()
+{
+  io_context ioc;
+  strand<io_context::executor_type> s1 = make_strand(ioc);
   int count = 0;
 
-  s.wrap(bindns::bind(increment, &count))();
+  s1.execute(bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
   BOOST_ASIO_CHECK(count == 1);
 
   count = 0;
-  s.wrap(increment)(&count);
+  ioc.restart();
+  boost::asio::require(s1, boost::asio::execution::blocking.possibly).execute(
+      bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
   BOOST_ASIO_CHECK(count == 1);
 
   count = 0;
-  s.wrap(increment_by_a)(&count, 1);
+  ioc.restart();
+  boost::asio::require(s1, boost::asio::execution::blocking.never).execute(
+      bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
   BOOST_ASIO_CHECK(count == 1);
 
   count = 0;
-  s.wrap(increment_by_a_b)(&count, 1, 2);
+  ioc.restart();
+  BOOST_ASIO_CHECK(!ioc.stopped());
+
+  boost::asio::require(s1,
+      boost::asio::execution::blocking.never,
+      boost::asio::execution::outstanding_work.tracked
+    ).execute(bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
-  BOOST_ASIO_CHECK(count == 3);
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
 
   count = 0;
-  s.wrap(increment_by_a_b_c)(&count, 1, 2, 3);
+  ioc.restart();
+  boost::asio::require(s1,
+      boost::asio::execution::blocking.never,
+      boost::asio::execution::outstanding_work.untracked
+    ).execute(bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
-  BOOST_ASIO_CHECK(count == 6);
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
 
   count = 0;
-  s.wrap(increment_by_a_b_c_d)(&count, 1, 2, 3, 4);
+  ioc.restart();
+  boost::asio::require(s1,
+      boost::asio::execution::blocking.never,
+      boost::asio::execution::outstanding_work.untracked,
+      boost::asio::execution::relationship.fork
+    ).execute(bindns::bind(increment, &count));
 
   // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
   BOOST_ASIO_CHECK(count == 0);
 
-  ioc.restart();
   ioc.run();
 
-  // The run() calls will not return until all work has finished.
-  BOOST_ASIO_CHECK(count == 10);
-#endif // !defined(BOOST_ASIO_NO_DEPRECATED)
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
+
+  count = 0;
+  ioc.restart();
+  boost::asio::require(s1,
+      boost::asio::execution::blocking.never,
+      boost::asio::execution::outstanding_work.untracked,
+      boost::asio::execution::relationship.continuation
+    ).execute(bindns::bind(increment, &count));
+
+  // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
+  BOOST_ASIO_CHECK(count == 0);
+
+  ioc.run();
+
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
+
+  count = 0;
+  ioc.restart();
+  boost::asio::prefer(
+      boost::asio::require(s1,
+        boost::asio::execution::blocking.never,
+        boost::asio::execution::outstanding_work.untracked,
+        boost::asio::execution::relationship.continuation),
+      boost::asio::execution::allocator(std::allocator<void>())
+    ).execute(bindns::bind(increment, &count));
+
+  // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
+  BOOST_ASIO_CHECK(count == 0);
+
+  ioc.run();
+
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
+
+  count = 0;
+  ioc.restart();
+  boost::asio::prefer(
+      boost::asio::require(s1,
+        boost::asio::execution::blocking.never,
+        boost::asio::execution::outstanding_work.untracked,
+        boost::asio::execution::relationship.continuation),
+      boost::asio::execution::allocator
+    ).execute(bindns::bind(increment, &count));
+
+  // No handlers can be called until run() is called.
+  BOOST_ASIO_CHECK(!ioc.stopped());
+  BOOST_ASIO_CHECK(count == 0);
+
+  ioc.run();
+
+  // The run() call will not return until all work has finished.
+  BOOST_ASIO_CHECK(ioc.stopped());
+  BOOST_ASIO_CHECK(count == 1);
 }
 
 BOOST_ASIO_TEST_SUITE
 (
   "strand",
   BOOST_ASIO_TEST_CASE(strand_test)
-  BOOST_ASIO_TEST_CASE(strand_wrap_test)
+  BOOST_ASIO_COMPILE_TEST_CASE(strand_conversion_test)
+  BOOST_ASIO_TEST_CASE(strand_query_test)
+  BOOST_ASIO_TEST_CASE(strand_execute_test)
 )

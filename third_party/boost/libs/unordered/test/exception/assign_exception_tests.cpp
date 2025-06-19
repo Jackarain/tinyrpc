@@ -13,6 +13,12 @@
 #pragma warning(disable : 4512) // assignment operator could not be generated
 #endif
 
+#if defined(__clang__) && defined(__has_warning)
+#if __has_warning("-Wself-assign-overloaded")
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+#endif
+
 test::seed_t initialize_seed(12847);
 
 template <class T> struct self_assign_base : public test::exception_base
@@ -54,6 +60,9 @@ template <class T> struct assign_base : public test::exception_base
   test::random_values<T> x_values, y_values;
   T x, y;
 
+  int t1;
+  int t2;
+
   typedef typename T::hasher hasher;
   typedef typename T::key_equal key_equal;
   typedef typename T::allocator_type allocator_type;
@@ -61,7 +70,10 @@ template <class T> struct assign_base : public test::exception_base
   assign_base(int tag1, int tag2, float mlf1 = 1.0, float mlf2 = 1.0)
       : x_values(), y_values(),
         x(0, hasher(tag1), key_equal(tag1), allocator_type(tag1)),
-        y(0, hasher(tag2), key_equal(tag2), allocator_type(tag2))
+        y(0, hasher(tag2), key_equal(tag2), allocator_type(tag2)),
+        t1(tag1),
+        t2(tag2)
+
   {
     x.max_load_factor(mlf1);
     y.max_load_factor(mlf2);
@@ -82,6 +94,22 @@ template <class T> struct assign_base : public test::exception_base
   void check BOOST_PREVENT_MACRO_SUBSTITUTION(T const& x1) const
   {
     test::check_equivalent_keys(x1);
+
+    if (x1.hash_function() == hasher(t1)) {
+      BOOST_TEST(x1.key_eq() == key_equal(t1));
+    }
+
+    if (x1.hash_function() == hasher(t2)) {
+      BOOST_TEST(x1.key_eq() == key_equal(t2));
+    }
+
+    if (x1.key_eq() == key_equal(t1)) {
+      BOOST_TEST(x1.hash_function() == hasher(t1));
+    }
+
+    if (x1.key_eq() == key_equal(t2)) {
+      BOOST_TEST(x1.hash_function() == hasher(t2));
+    }
 
     // If the container is empty at the point of the exception, the
     // internal structure is hidden, this exposes it, at the cost of

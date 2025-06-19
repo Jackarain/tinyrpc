@@ -1,0 +1,25 @@
+
+# This Jamfile is the same as Jamfile2, except that
+# it tries to access prebuilt targets using absolute
+# paths. It used to be broken on Windows.
+
+import modules ;
+LIBNAME = [ modules.peek : LIBNAME ] ;
+
+project ext ;
+
+# Assumed bjam was invoked from the project root
+local pwd = [ PWD ] ;
+
+lib a :
+    : <file>$(pwd)/ext/debug/$(LIBNAME:E=LIBNAME-not-defined) <variant>debug
+    :
+    : <include>debug
+    ;
+
+lib a :
+    : <file>$(pwd)/ext/release/$(LIBNAME:E=LIBNAME-not-defined) <variant>release
+    :
+    : <include>release
+    ;
+

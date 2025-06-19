@@ -4,17 +4,32 @@
 #
 # http://www.boost.org/
 #
-# Copyright (c) 2001-2011 Hartmut Kaiser. Distributed under the Boost 
-# Software License, Version 1.0. (See accompanying file 
+# Copyright (c) 2001-2011 Hartmut Kaiser. Distributed under the Boost
+# Software License, Version 1.0. (See accompanying file
 # LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-project boost/wave
+require-b2 5.0.1 ;
+import-search /boost/config/checks ;
+import config : requires ;
+
+project
+    : common-requirements <library>$(boost_dependencies)
     : requirements
+      [ requires
+        cxx11_constexpr
+        cxx11_variadic_templates
+        cxx11_rvalue_references
+        cxx11_hdr_thread
+        cxx11_hdr_mutex
+        cxx11_hdr_regex
+      ]
       <link>shared:<define>BOOST_ALL_DYN_LINK=1
       <link>static:<define>BOOST_THREAD_USE_LIB=1
       <toolset>msvc:<define>_SCL_SECURE_NO_DEPRECATE
       <toolset>msvc:<define>_CRT_SECURE_NO_DEPRECATE
     : source-location ../src
+    : usage-requirements
+        <define>BOOST_ALL_NO_LIB=1
     ;
 
 SOURCES =
@@ -22,6 +37,7 @@ SOURCES =
     instantiate_cpp_grammar
     instantiate_cpp_literalgrs
     instantiate_defined_grammar
+    instantiate_has_include_grammar
     instantiate_predef_macros
     instantiate_re2c_lexer
     instantiate_re2c_lexer_str
@@ -34,9 +50,8 @@ SOURCES =
 lib boost_wave
     :
     $(SOURCES)
-    ../../filesystem/build//boost_filesystem
-    ../../thread/build//boost_thread
-    ../../date_time/build//boost_date_time
+    /boost/filesystem//boost_filesystem
+    /boost/thread//boost_thread
     ;
 
 for local source in $(SOURCES)
@@ -59,5 +74,3 @@ for local source in $(SOURCES)
 
     obj $(source) : $(source).cpp : $(requirements) ;
 }
-
-boost-install boost_wave ;

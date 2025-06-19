@@ -5,26 +5,29 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-#include <boost/gil/image.hpp>
-#include <boost/gil/typedefs.hpp>
-#include <boost/gil/extension/io/jpeg_io.hpp>
+
+#include <boost/gil.hpp>
+#include <boost/gil/extension/io/jpeg.hpp>
 #include <boost/gil/extension/numeric/sampler.hpp>
 #include <boost/gil/extension/numeric/resample.hpp>
 
-// Example for resize_view() in the numeric extension
+// Demonstrates how to scale an image using bilinear sampling
+// This example relies on the function resize_view(), available in include/boost/gil/extension/numeric/resample.hpp,
+// to apply the resampling.
+// This example demonstrates bilinear sampling; include/boost/gil/extension/numeric/sample.hpp also offers nearest-neighbour sampling.
 
 int main()
 {
-    using namespace boost::gil;
+    namespace bg = boost::gil;
 
-    rgb8_image_t img;
-    jpeg_read_image("test.jpg",img);
+    bg::rgb8_image_t img;
+    bg::read_image("test.jpg", img, bg::jpeg_tag{});
 
     // test resize_view
     // Scale the image to 100x100 pixels using bilinear resampling
-    rgb8_image_t square100x100(100,100);
-    resize_view(const_view(img), view(square100x100), bilinear_sampler());
-    jpeg_write_view("out-resize.jpg",const_view(square100x100));
+    bg::rgb8_image_t square100x100(100, 100);
+    bg::resize_view(bg::const_view(img), bg::view(square100x100), bg::bilinear_sampler{});
+    bg::write_view("out-resize.jpg", bg::const_view(square100x100), bg::jpeg_tag{});
 
     return 0;
 }

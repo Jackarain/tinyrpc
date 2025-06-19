@@ -31,7 +31,24 @@ struct is_copyable<int>
    static const bool value = true;
 };
 
+template<class T>
+struct is_move_assignable
+{
+   static const bool value = true;
+};
 
+template<class T>
+struct is_move_constructible
+{
+   static const bool value = true;
+};
+
+
+/////////////////////////
+//
+// movable_int
+//
+/////////////////////////
 class movable_int
 {
    BOOST_MOVABLE_BUT_NOT_COPYABLE(movable_int)
@@ -54,10 +71,16 @@ class movable_int
 
    movable_int(BOOST_RV_REF(movable_int) mmi)
       :  m_int(mmi.m_int)
-   {  mmi.m_int = 0; ++count; }
+   {
+      BOOST_ASSERT(&mmi != this);
+      mmi.m_int = 0; ++count;
+   }
 
    movable_int & operator= (BOOST_RV_REF(movable_int) mmi)
-   {  this->m_int = mmi.m_int;   mmi.m_int = 0; return *this;  }
+   {
+      BOOST_ASSERT(&mmi != this);
+      this->m_int = mmi.m_int;   mmi.m_int = 0; return *this;
+   }
 
    movable_int & operator= (int i)
    {  this->m_int = i;  BOOST_ASSERT(this->m_int != INT_MIN); return *this;  }
@@ -116,13 +139,8 @@ inline movable_int produce_movable_int()
 {  return movable_int();  }
 
 template<class E, class T>
-std::basic_ostream<E, T> & operator<<
-   (std::basic_ostream<E, T> & os, movable_int const & p)
-
-{
-    os << p.get_int();
-    return os;
-}
+std::basic_ostream<E, T> & operator<<(std::basic_ostream<E, T> & os, movable_int const & p)
+{  os << p.get_int();   return os;  }
 
 template<>
 struct is_copyable<movable_int>
@@ -130,6 +148,150 @@ struct is_copyable<movable_int>
    static const bool value = false;
 };
 
+/////////////////////////
+//
+// moveconstruct_int
+//
+/////////////////////////
+class moveconstruct_int
+{
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(moveconstruct_int)
+
+   moveconstruct_int& operator= (BOOST_RV_REF(moveconstruct_int) mmi);
+
+public:
+
+   static unsigned int count;
+
+   moveconstruct_int()
+      : m_int(0)
+   {
+      ++count;
+   }
+
+   explicit moveconstruct_int(int a)
+      : m_int(a)
+   {
+      //Disallow INT_MIN
+      BOOST_ASSERT(this->m_int != INT_MIN);
+      ++count;
+   }
+
+   moveconstruct_int(BOOST_RV_REF(moveconstruct_int) mmi)
+      : m_int(mmi.m_int)
+   {
+      BOOST_ASSERT(&mmi != this);
+      mmi.m_int = 0; ++count;
+   }
+
+    moveconstruct_int& operator= (int i)
+   {
+      this->m_int = i;  BOOST_ASSERT(this->m_int != INT_MIN); return *this;
+   }
+
+   ~moveconstruct_int()
+   {
+      //Double destructor called
+      BOOST_ASSERT(this->m_int != INT_MIN);
+      this->m_int = INT_MIN;
+      --count;
+   }
+
+   friend bool operator ==(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int == r.m_int;
+   }
+
+   friend bool operator !=(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int != r.m_int;
+   }
+
+   friend bool operator <(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int < r.m_int;
+   }
+
+   friend bool operator <=(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int <= r.m_int;
+   }
+
+   friend bool operator >=(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int >= r.m_int;
+   }
+
+   friend bool operator >(const moveconstruct_int& l, const moveconstruct_int& r)
+   {
+      return l.m_int > r.m_int;
+   }
+
+   int get_int() const
+   {
+      return m_int;
+   }
+
+   friend bool operator==(const moveconstruct_int& l, int r)
+   {
+      return l.get_int() == r;
+   }
+
+   friend bool operator==(int l, const moveconstruct_int& r)
+   {
+      return l == r.get_int();
+   }
+
+   friend bool operator<(const moveconstruct_int& l, int r)
+   {
+      return l.get_int() < r;
+   }
+
+   friend bool operator<(int l, const moveconstruct_int& r)
+   {
+      return l < r.get_int();
+   }
+
+   friend std::size_t hash_value(const moveconstruct_int& v)
+   {
+      return (std::size_t)v.get_int();
+   }
+
+private:
+   int m_int;
+};
+
+unsigned int moveconstruct_int::count = 0;
+
+inline moveconstruct_int produce_movableconstruct_int()
+{
+   return moveconstruct_int();
+}
+
+template<class E, class T>
+std::basic_ostream<E, T>& operator<<(std::basic_ostream<E, T>& os, moveconstruct_int const& p)
+{
+   os << p.get_int();   return os;
+}
+
+template<>
+struct is_copyable<moveconstruct_int>
+{
+   static const bool value = false;
+};
+
+template<>
+struct is_move_assignable<moveconstruct_int>
+{
+   static const bool value = false;
+};
+
+
+/////////////////////////
+//
+// movable_and_copyable_int
+//
+/////////////////////////
 class movable_and_copyable_int
 {
    BOOST_COPYABLE_AND_MOVABLE(movable_and_copyable_int)
@@ -152,11 +314,17 @@ class movable_and_copyable_int
 
    movable_and_copyable_int(const movable_and_copyable_int& mmi)
       :  m_int(mmi.m_int)
-   {  ++count; }
+   {
+      BOOST_ASSERT(&mmi != this);
+      ++count;
+   }
 
    movable_and_copyable_int(BOOST_RV_REF(movable_and_copyable_int) mmi)
       :  m_int(mmi.m_int)
-   {  mmi.m_int = 0; ++count; }
+   {
+      BOOST_ASSERT(&mmi != this);
+      mmi.m_int = 0; ++count;
+   }
 
    ~movable_and_copyable_int()
    {
@@ -170,7 +338,10 @@ class movable_and_copyable_int
    {  this->m_int = mi.m_int;    return *this;  }
 
    movable_and_copyable_int & operator= (BOOST_RV_REF(movable_and_copyable_int) mmi)
-   {  this->m_int = mmi.m_int;   mmi.m_int = 0;    return *this;  }
+   {
+      BOOST_ASSERT(&mmi != this);
+      this->m_int = mmi.m_int;   mmi.m_int = 0;    return *this;
+   }
 
    movable_and_copyable_int & operator= (int i)
    {  this->m_int = i;  BOOST_ASSERT(this->m_int != INT_MIN); return *this;  }
@@ -221,13 +392,8 @@ inline movable_and_copyable_int produce_movable_and_copyable_int()
 {  return movable_and_copyable_int();  }
 
 template<class E, class T>
-std::basic_ostream<E, T> & operator<<
-   (std::basic_ostream<E, T> & os, movable_and_copyable_int const & p)
-
-{
-    os << p.get_int();
-    return os;
-}
+std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, movable_and_copyable_int const & p)
+{  os << p.get_int();   return os;  }
 
 template<>
 struct is_copyable<movable_and_copyable_int>
@@ -235,6 +401,12 @@ struct is_copyable<movable_and_copyable_int>
    static const bool value = true;
 };
 
+
+/////////////////////////
+//
+// copyable_int
+//
+/////////////////////////
 class copyable_int
 {
    public:
@@ -317,13 +489,8 @@ inline copyable_int produce_copyable_int()
 {  return copyable_int();  }
 
 template<class E, class T>
-std::basic_ostream<E, T> & operator<<
-   (std::basic_ostream<E, T> & os, copyable_int const & p)
-
-{
-    os << p.get_int();
-    return os;
-}
+std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, copyable_int const & p)
+{  os << p.get_int();   return os;  }
 
 template<>
 struct is_copyable<copyable_int>
@@ -331,6 +498,11 @@ struct is_copyable<copyable_int>
    static const bool value = true;
 };
 
+/////////////////////////
+//
+// non_copymovable_int
+//
+/////////////////////////
 class non_copymovable_int
 {
    non_copymovable_int(const non_copymovable_int& mmi);
@@ -396,35 +568,41 @@ unsigned int non_copymovable_int::count = 0;
 template<class T>
 struct life_count
 {
-   static unsigned check(unsigned) {  return true;   }
+   static bool check(unsigned) {  return true;   }
 };
 
 template<>
 struct life_count< movable_int >
 {
-   static unsigned check(unsigned c)
+   static bool check(unsigned c)
    {  return c == movable_int::count;   }
 };
 
 template<>
 struct life_count< copyable_int >
 {
-   static unsigned check(unsigned c)
+   static bool check(unsigned c)
    {  return c == copyable_int::count;   }
 };
 
 template<>
 struct life_count< movable_and_copyable_int >
 {
-   static unsigned check(unsigned c)
+   static bool check(unsigned c)
    {  return c == movable_and_copyable_int::count;   }
 };
 
 template<>
 struct life_count< non_copymovable_int >
 {
-   static unsigned check(unsigned c)
+   static bool check(unsigned c)
    {  return c == non_copymovable_int::count;   }
+};
+
+template<>
+struct is_move_constructible<non_copymovable_int>
+{
+   static const bool value = false;
 };
 
 

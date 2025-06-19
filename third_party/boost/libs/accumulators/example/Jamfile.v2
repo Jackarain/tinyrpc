@@ -8,4 +8,6 @@ exe example
     :
         <include>../../..
         <include>$(BOOST_ROOT)
+        <library>/boost/serialization
+        <cxxflags>"-Wno-deprecated-declarations"
     ;

@@ -6,11 +6,18 @@
 using quickbook ;
 using auto-index ;
 import modules ;
+import regex ;
 
 path-constant images_location : html ;
 path-constant here : . ;
+constant here-url : [ regex.replace $(here) "\\\\" "/" ] ;
 
-xml math : math.qbk ;
+xml math : math.qbk :
+        <quickbook-define>enable_index
+        <quickbook-define>__base_path__=$(here-url)
+        <format>pdf:<quickbook-define>__build_pdf
+        <format>html:<quickbook-define>__build_html
+;
 boostbook standalone
     :
         math
@@ -18,7 +25,7 @@ boostbook standalone
         # Path for links to Boost:
         <xsl:param>boost.root=../../../..
         <xsl:param>html.stylesheet=math.css
-        
+
         # Some general style settings:
         <xsl:param>table.footnote.number.format=1
         <xsl:param>footnote.number.format=1
@@ -39,11 +46,11 @@ boostbook standalone
         # Index on type:
         <xsl:param>index.on.type=1
         <xsl:param>boost.noexpand.chapter.toc=1
-        
+
         #<xsl:param>root.filename="sf_dist_and_tools"
         #<xsl:param>graphicsize.extension=1
         #<xsl:param>use.extensions=1
-        
+
         # PDF Options:
         # TOC Generation: this is needed for FOP-0.9 and later:
         <xsl:param>fop1.extensions=0
@@ -52,6 +59,7 @@ boostbook standalone
         <format>pdf:<xsl:param>fop.extensions=0
         <format>pdf:<xsl:param>fop1.extensions=0
         # No indent on body text:
+        #<format>pdf:<xsl:param>body.start.indent=15px indents ALL the text relative to the title :-(.
         <format>pdf:<xsl:param>body.start.indent=0pt
         # Margin size:
         <format>pdf:<xsl:param>page.margin.inner=0.5in
@@ -65,22 +73,24 @@ boostbook standalone
         # default pnd graphics are awful in PDF form,
         # better use SVG's instead:
         <format>pdf:<xsl:param>admon.graphics.extension=".svg"
-        <format>pdf:<xsl:param>use.role.for.mediaobject=1 
+        <format>pdf:<xsl:param>admon.graphics.path=$(here)/../../../doc/src/images/
+        <format>pdf:<xsl:param>use.role.for.mediaobject=1
         <format>pdf:<xsl:param>preferred.mediaobject.role=print
         <format>pdf:<xsl:param>img.src.path=$(images_location)/
         <format>pdf:<xsl:param>draft.mode="no"
-        <format>pdf:<xsl:param>boost.url.prefix=https\://www.boost.org/doc/libs/release/libs/math/doc/html
+        <format>pdf:<xsl:param>boost.url.prefix=http\://www.boost.org/doc/libs/release/libs/math/doc/html
         <auto-index>on <format>pdf:<auto-index-internal>off
         <format>html:<auto-index-internal>on
         <auto-index-script>$(here)/index.idx
-        <auto-index-prefix>$(here)/../../.. 
+        <auto-index-prefix>$(here)/../include
         #<auto-index-verbose>on
-        <quickbook-define>enable_index 
         <format>pdf:<xsl:param>index.on.type=1
     ;
 
 install pdfinstall : standalone/<format>pdf : <location>. <install-type>PDF <name>math.pdf ;
-explicit pdfinstall ;
+explicit pdfinstall ; # b2 pdf pdfinstall to do this pdf file copy.
+
+install css_install : math.css : <location>$(here)/html ;
 
 ###############################################################################
 alias boostdoc ;

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,7 @@
 // Test that header file is self-contained.
 #include <boost/beast/http/error.hpp>
 
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <memory>
 
 namespace boost {
@@ -24,17 +24,21 @@ public:
     check(char const* name, error ev)
     {
         auto const ec = make_error_code(ev);
-        auto const& cat =
-            make_error_code(static_cast<http::error>(0)).category();
+        auto const ec_http = make_error_code(
+            static_cast<http::error>(0));
+        auto const& cat = ec_http.category();
         BEAST_EXPECT(std::string(ec.category().name()) == name);
         BEAST_EXPECT(! ec.message().empty());
-        BEAST_EXPECT(std::addressof(ec.category()) == std::addressof(cat));
+        BEAST_EXPECT(
+            std::addressof(ec.category()) == std::addressof(cat));
         BEAST_EXPECT(cat.equivalent(
             static_cast<std::underlying_type<error>::type>(ev),
                 ec.category().default_error_condition(
                     static_cast<std::underlying_type<error>::type>(ev))));
         BEAST_EXPECT(cat.equivalent(ec,
             static_cast<std::underlying_type<error>::type>(ev)));
+
+        BEAST_EXPECT(ec.message() != "");
     }
 
     void
@@ -64,6 +68,13 @@ public:
         check("beast.http", error::bad_chunk);
         check("beast.http", error::bad_chunk_extension);
         check("beast.http", error::bad_obs_fold);
+        check("beast.http", error::multiple_content_length);
+
+        check("beast.http", error::stale_parser);
+        check("beast.http", error::short_read);
+
+        check("beast.http", error::header_field_name_too_large);
+        check("beast.http", error::header_field_value_too_large);
     }
 };
 

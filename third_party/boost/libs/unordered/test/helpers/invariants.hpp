@@ -1,5 +1,6 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright 2022 Christian Mazakas.
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -58,6 +59,7 @@ namespace test {
         std::cerr << x1.count(key) << "," << count << "\n";
       }
 
+#ifndef BOOST_UNORDERED_FOA_TESTS
       // Check that the keys are in the correct bucket and are
       // adjacent in the bucket.
       typename X::size_type bucket = x1.bucket(key);
@@ -86,7 +88,8 @@ namespace test {
           }
         }
       }
-    };
+#endif
+    }
 
     // Check that size matches up.
 
@@ -104,6 +107,7 @@ namespace test {
     if (fabs(x1.load_factor() - load_factor) > x1.load_factor() / 64)
       BOOST_ERROR("x1.load_factor() doesn't match actual load_factor.");
 
+#ifndef BOOST_UNORDERED_FOA_TESTS
     // Check that size in the buckets matches up.
 
     typename X::size_type bucket_size = 0;
@@ -120,6 +124,7 @@ namespace test {
       BOOST_ERROR("x1.size() doesn't match bucket size.");
       std::cout << x1.size() << "/" << bucket_size << std::endl;
     }
+#endif
   }
 }
 

@@ -11,19 +11,19 @@
 
 #include "boost/optional/optional.hpp"
 
-#ifdef __BORLANDC__
+#ifdef BOOST_BORLANDC
 #pragma hdrstop
 #endif
 
 #include "boost/core/ignore_unused.hpp"
-#include "boost/core/is_same.hpp"
 #include "boost/core/lightweight_test.hpp"
 #include "boost/core/lightweight_test_trait.hpp"
+#include "boost/type_traits/is_same.hpp"
 
 
 using boost::optional;
 using boost::make_optional;
-using boost::core::is_same;
+using boost::is_same;
 
 template <typename Expected, typename Deduced>
 void verify_type(Deduced)
@@ -240,8 +240,8 @@ void test_flat_map_move_only()
 {
   {
     optional<MoveOnly> om (makeMoveOnly(1)), om2 (makeMoveOnly(2));
-    verify_type<optional<int> >(boost::move(om).flat_map(get_val));
-    optional<int> oi = boost::move(om2).flat_map(get_val);
+    verify_type<optional<int> >(std::move(om).flat_map(get_val));
+    optional<int> oi = std::move(om2).flat_map(get_val);
     BOOST_TEST(bool(oi));
     BOOST_TEST_EQ(2, *oi);
   }

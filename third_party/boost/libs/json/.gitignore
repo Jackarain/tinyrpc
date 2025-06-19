@@ -1,0 +1,25 @@
+/bin
+/bin.v2
+/bin64
+/_build*
+temp
+
+# Emacs
+*#
+
+# Vim
+*~
+
+# Visual Studio
+/.vs
+/out
+
+# Visual Studio Code
+/.vscode
+
+# local copy of bench
+/bench/bench
+/bench/bench.exe
+
+# Python
+__pycache__

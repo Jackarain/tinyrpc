@@ -2,6 +2,7 @@
 //  Tests the pow function
 
 //  (C) Copyright Bruno Lalande 2008.
+//  (C) Copyright Matt Borland 2024.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -11,14 +12,13 @@
 #include <iostream>
 
 #include <boost/math/concepts/real_concept.hpp>
-#include <boost/math/tools/test.hpp>
+#include "../include_private/boost/math/tools/test.hpp"
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <boost/typeof/typeof.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/static_assert.hpp>
+#include <boost/math/tools/assert.hpp>
 
 #include <boost/math/special_functions/pow.hpp>
 
@@ -37,7 +37,9 @@ void test_pow(T base)
 
     if ((base == 0) && N < 0)
     {
+       #ifndef BOOST_MATH_NO_EXCEPTIONS 
        BOOST_MATH_CHECK_THROW(math::pow<N>(base), std::overflow_error);
+       #endif
     }
     else
     {
@@ -100,15 +102,15 @@ void test_with_big_exponents()
 
 void test_return_types()
 {
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>('\1')), double>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(L'\2')), double>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(3)), double>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(4u)), double>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(5ul)), double>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(6.0f)), float>::value));
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(7.0)), double>::value));
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>('\1')), double>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(L'\2')), double>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(3)), double>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(4u)), double>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(5ul)), double>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(6.0f)), float>::value), "Return type mismatch");
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(7.0)), double>::value), "Return type mismatch");
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
-    BOOST_STATIC_ASSERT((is_same<BOOST_TYPEOF(pow<2>(7.0l)), long double>::value));
+    static_assert((boost::math::is_same<BOOST_TYPEOF(pow<2>(7.0l)), long double>::value), "Return type mismatch");
 #endif
 }
 
@@ -193,6 +195,14 @@ BOOST_AUTO_TEST_CASE( test_main )
     cout << "Testing with concepts::real_concept precision bases and negative big exponents" << endl;
     test_with_big_exponents<boost::math::concepts::real_concept, -1>();
 #endif
+
+    #ifndef BOOST_NO_CXX14_CONSTEXPR
+    static_assert(boost::math::pow<8>(2)==256, "Pow is not constexpr");
+    static_assert(boost::math::pow<9>(2)==512, "Pow is not constexpr");
+    static_assert(boost::math::pow<2>(2)==4,   "Pow is not constexpr");
+    static_assert(boost::math::pow<1>(2)==2,   "Pow is not constexpr");
+    static_assert(boost::math::pow<0>(2)==1,   "Pow is not constexpr");
+    #endif
 
     test_return_types();
 

@@ -1,37 +1,40 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014-2015, Oracle and/or its affiliates.
+// Copyright (c) 2014-2021, Oracle and/or its affiliates.
+// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Licensed under the Boost Software License version 1.0.
 // http://www.boost.org/users/license.html
-
-// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 
 #ifndef BOOST_GEOMETRY_TEST_SET_OPS_POINTLIKE_HPP
 #define BOOST_GEOMETRY_TEST_SET_OPS_POINTLIKE_HPP
 
 
-#include <boost/geometry/geometry.hpp>
-
-namespace bg = ::boost::geometry;
-
 #include <from_wkt.hpp>
-#include <to_svg.hpp>
 
 #include <algorithm>
 #include <fstream>
+
 #include <boost/core/ignore_unused.hpp>
-#include <boost/typeof/typeof.hpp>
-
-#include <boost/geometry/policies/compare.hpp>
-#include <boost/geometry/algorithms/equals.hpp>
-
-#include <boost/geometry/algorithms/union.hpp>
-#include <boost/geometry/algorithms/difference.hpp>
-#include <boost/geometry/algorithms/intersection.hpp>
-#include <boost/geometry/algorithms/sym_difference.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+#include <boost/range/size.hpp>
 
 #include <boost/geometry/algorithms/detail/overlay/overlay_type.hpp>
+#include <boost/geometry/algorithms/difference.hpp>
+#include <boost/geometry/algorithms/equals.hpp>
+#include <boost/geometry/algorithms/intersection.hpp>
+#include <boost/geometry/algorithms/sym_difference.hpp>
+#include <boost/geometry/algorithms/union.hpp>
+#include <boost/geometry/io/wkt/write.hpp>
+#include <boost/geometry/policies/compare.hpp>
+
+#if defined(TEST_WITH_SVG)
+#include <boost/geometry/io/svg/svg_mapper.hpp>
+#endif
+
+namespace bg = ::boost::geometry;
 
 
 //==================================================================
@@ -49,15 +52,13 @@ void set_operation_output(std::string const& set_op_id,
     boost::ignore_unused(set_op_id, caseid, g1, g2, output);
 
 #if defined(TEST_WITH_SVG)
-    typedef typename bg::coordinate_type<G1>::type coordinate_type;
-    typedef typename bg::point_type<G1>::type point_type;
 
     std::ostringstream filename;
     filename << "svgs/" << set_op_id << "_" << caseid << ".svg";
 
     std::ofstream svg(filename.str().c_str());
 
-    bg::svg_mapper<point_type> mapper(svg, 500, 500);
+    bg::svg_mapper<typename bg::point_type<G1>::type> mapper(svg, 500, 500);
 
     mapper.add(g1);
     mapper.add(g2);
@@ -65,8 +66,7 @@ void set_operation_output(std::string const& set_op_id,
     mapper.map(g2, "stroke-opacity:1;stroke:rgb(153,204,0);stroke-width:4");
     mapper.map(g1, "stroke-opacity:1;stroke:rgb(51,51,153);stroke-width:2");
 
-    BOOST_AUTO_TPL(it, output.begin());
-    for (; it != output.end(); ++it)
+    for (auto it = output.begin(); it != output.end(); ++it)
     {
         mapper.map(*it,
                    "fill:rgb(255,0,255);stroke:rgb(0,0,0);stroke-width:1",
@@ -102,8 +102,8 @@ struct equals
             return false;
         }
 
-        BOOST_AUTO_TPL(it1, boost::begin(mp1));
-        BOOST_AUTO_TPL(it2, boost::begin(mp2));
+        auto it1 = boost::begin(mp1);
+        auto it2 = boost::begin(mp2);
         for (; it1 != boost::end(mp1); ++it1, ++it2)
         {
             if ( !bg::equals(*it1, *it2) )
@@ -183,7 +183,7 @@ struct geometry_info<Point, bg::point_tag>
 {
     static std::size_t const topological_dimension = 0;
 
-    static inline char const* name() { return "P"; }
+    static inline char const* name() { return "Pt"; }
 };
 
 template <typename MultiPoint>
@@ -191,7 +191,7 @@ struct geometry_info<MultiPoint, bg::multi_point_tag>
 {
     static std::size_t const topological_dimension = 0;
 
-    static inline char const* name() { return "MP"; }
+    static inline char const* name() { return "MPt"; }
 };
 
 template <typename Linestring>
@@ -218,7 +218,29 @@ struct geometry_info<Segment, bg::segment_tag>
     static inline char const* name() { return "S"; }
 };
 
+template <typename Ring>
+struct geometry_info<Ring, bg::ring_tag>
+{
+    static std::size_t const topological_dimension = 2;
 
+    static inline char const* name() { return "R"; }
+};
+
+template <typename Polygon>
+struct geometry_info<Polygon, bg::polygon_tag>
+{
+    static std::size_t const topological_dimension = 2;
+
+    static inline char const* name() { return "Po"; }
+};
+
+template <typename MultiPolygon>
+struct geometry_info<MultiPolygon, bg::multi_polygon_tag>
+{
+    static std::size_t const topological_dimension = 2;
+
+    static inline char const* name() { return "MPo"; }
+};
 
 //==================================================================
 //==================================================================

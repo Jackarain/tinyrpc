@@ -8,7 +8,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/container/detail/config_begin.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/container/string.hpp>
 #include <string>
@@ -98,6 +97,26 @@ struct string_literals<char>
    {
       std::sprintf(buf, "%i", number);
    }
+   static void sprintf_number(char *buf, unsigned number)
+   {
+      std::sprintf(buf, "%u", number);
+   }
+   static void sprintf_number(char *buf, long number)
+   {
+      std::sprintf(buf, "%li", number);
+   }
+   static void sprintf_number(char *buf, unsigned long number)
+   {
+      std::sprintf(buf, "%lu", number);
+   }
+   static void sprintf_number(char *buf, long long number)
+   {
+      std::sprintf(buf, "%lli", number);
+   }
+   static void sprintf_number(char *buf, unsigned long long number)
+   {
+      std::sprintf(buf, "%llu", number);
+   }
 };
 
 template<>
@@ -113,14 +132,14 @@ struct string_literals<wchar_t>
       {  return L"LongLongLongLongLongLongLongLongLongLongLongLongLongString";  }
    static wchar_t Char()
       {  return L'C';  }
-   static void sprintf_number(wchar_t *buffer, unsigned int number)
+   static void sprintf_number(wchar_t *buffer, unsigned long long number)
    {
       //For compilers without wsprintf, print it backwards
       const wchar_t *digits = L"0123456789";
       wchar_t *buf = buffer;
 
       while(1){
-         int rem = number % 10;
+         unsigned long long rem = number % 10;
          number  = number / 10;
 
          *buf = digits[rem];
@@ -142,7 +161,7 @@ int string_test()
    typedef basic_string<CharType> BoostString;
    typedef vector<BoostString> BoostStringVector;
 
-   const int MaxSize = 100;
+   const std::size_t MaxSize = 100;
 
    {
       BoostStringVector *boostStringVect = new BoostStringVector;
@@ -153,7 +172,7 @@ int string_test()
       CharType buffer [20];
 
       //First, push back
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          auxBoostString = string_literals<CharType>::String();
          auxStdString = string_literals<CharType>::String();
          string_literals<CharType>::sprintf_number(buffer, i);
@@ -172,7 +191,7 @@ int string_test()
       }
 
       //Now push back moving
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          auxBoostString = string_literals<CharType>::String();
          auxStdString = string_literals<CharType>::String();
          string_literals<CharType>::sprintf_number(buffer, i);
@@ -187,7 +206,7 @@ int string_test()
       }
 
       //push front
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          auxBoostString = string_literals<CharType>::String();
          auxStdString = string_literals<CharType>::String();
          string_literals<CharType>::sprintf_number(buffer, i);
@@ -202,7 +221,7 @@ int string_test()
       }
 
       //Now push front moving
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          auxBoostString = string_literals<CharType>::String();
          auxStdString = string_literals<CharType>::String();
          string_literals<CharType>::sprintf_number(buffer, i);
@@ -286,10 +305,10 @@ int string_test()
       if(!CheckEqualStringVector(boostStringVect, stdStringVect)) return 1;
 
       const CharType *prefix    = string_literals<CharType>::Prefix();
-      const int  prefix_size    = std::char_traits<CharType>::length(prefix);
+      const std::size_t  prefix_size    = std::char_traits<CharType>::length(prefix);
       const CharType *sufix      = string_literals<CharType>::Suffix();
 
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          (*boostStringVect)[i].append(sufix);
          (*stdStringVect)[i].append(sufix);
          (*boostStringVect)[i].insert((*boostStringVect)[i].begin(),
@@ -300,28 +319,28 @@ int string_test()
 
       if(!CheckEqualStringVector(boostStringVect, stdStringVect)) return 1;
 
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          std::reverse((*boostStringVect)[i].begin(), (*boostStringVect)[i].end());
          std::reverse((*stdStringVect)[i].begin(), (*stdStringVect)[i].end());
       }
 
       if(!CheckEqualStringVector(boostStringVect, stdStringVect)) return 1;
 
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          std::reverse((*boostStringVect)[i].begin(), (*boostStringVect)[i].end());
          std::reverse((*stdStringVect)[i].begin(), (*stdStringVect)[i].end());
       }
 
       if(!CheckEqualStringVector(boostStringVect, stdStringVect)) return 1;
 
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          std::sort(boostStringVect->begin(), boostStringVect->end());
          std::sort(stdStringVect->begin(), stdStringVect->end());
       }
 
       if(!CheckEqualStringVector(boostStringVect, stdStringVect)) return 1;
 
-      for(int i = 0; i < MaxSize; ++i){
+      for(std::size_t i = 0; i < MaxSize; ++i){
          (*boostStringVect)[i].replace((*boostStringVect)[i].begin(),
                                     (*boostStringVect)[i].end(),
                                     string_literals<CharType>::String());
@@ -562,7 +581,31 @@ int main()
          return 1;
    }
 
+   ////////////////////////////////////
+   //    has_trivial_destructor_after_move testing
+   ////////////////////////////////////
+   // default allocator
+   {
+      typedef boost::container::basic_string<char> cont;
+      typedef cont::allocator_type allocator_type;
+      typedef boost::container::allocator_traits<allocator_type>::pointer pointer;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG
+      (  (boost::has_trivial_destructor_after_move<cont>::value ==
+          (boost::has_trivial_destructor_after_move<allocator_type>::value &&
+           boost::has_trivial_destructor_after_move<pointer>::value)),
+          "has_trivial_destructor_after_move(default allocator) test failed");
+   }
+   // std::allocator
+   {
+      typedef boost::container::basic_string<char, std::char_traits<char>, std::allocator<char> > cont;
+      typedef cont::allocator_type allocator_type;
+      typedef boost::container::allocator_traits<allocator_type>::pointer pointer;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG
+      (  (boost::has_trivial_destructor_after_move<cont>::value ==
+          (boost::has_trivial_destructor_after_move<allocator_type>::value &&
+           boost::has_trivial_destructor_after_move<pointer>::value)),
+          "has_trivial_destructor_after_move(std::allocator) test failed");
+   }
+
    return boost::report_errors();
 }
-
-#include <boost/container/detail/config_end.hpp>

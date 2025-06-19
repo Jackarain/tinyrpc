@@ -15,12 +15,12 @@
 //   const_iterator/iterator conversion  test
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
 
-int test_main(int,char*[]) {
+int main() {
   typedef boost::multi_array_ref<int,3> array_ref;
 
   typedef array_ref::iterator iterator1;
@@ -29,5 +29,5 @@ int test_main(int,char*[]) {
   // FAIL! ILLEGAL conversion from const_iterator to iterator
   iterator1 in = citerator1();
 
-  return boost::exit_success;
+  return boost::report_errors();
 }

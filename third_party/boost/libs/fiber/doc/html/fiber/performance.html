@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Performance</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="prev" href="worker.html" title="Running with worker threads">
@@ -149,7 +149,7 @@
       As the benchmark shows, the memory allocation algorithm is significant for
       performance in a multithreaded environment. The tests use glibc&#8217;s memory allocation
       algorithm (based on ptmalloc2) as well as Google&#8217;s <a href="http://goog-perftools.sourceforge.net/doc/tcmalloc.html" target="_top">TCmalloc</a>
-      (via linkflags="-ltcmalloc").<a href="#ftn.fiber.performance.f0" class="footnote" name="fiber.performance.f0"><sup class="footnote">[9]</sup></a>
+      (via linkflags="-ltcmalloc").<sup>[<a name="fiber.performance.f0" href="#ftn.fiber.performance.f0" class="footnote">9</a>]</sup>
     </p>
 <p>
       In the <a class="link" href="scheduling.html#class_work_stealing"><code class="computeroutput">work_stealing</code></a> scheduling algorithm, each thread has
@@ -191,8 +191,8 @@
 </table></div>
 </div>
 <br class="table-break"><div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.performance.f0" class="footnote"><p><a href="#fiber.performance.f0" class="para"><sup class="para">[9] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.performance.f0" href="#fiber.performance.f0" class="para">9</a>] </sup>
         Tais B. Ferreira, Rivalino Matias, Autran Macedo, Lucio B. Araujo <span class="quote">&#8220;<span class="quote">An
         Experimental Study on Memory Allocators in Multicore and Multithreaded Applications</span>&#8221;</span>,
         PDCAT &#8217;11 Proceedings of the 2011 12th International Conference on Parallel

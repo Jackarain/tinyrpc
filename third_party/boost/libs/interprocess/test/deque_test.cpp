@@ -8,14 +8,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <memory>
 #include <deque>
 #include <iostream>
 #include <list>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/containers/deque.hpp>
+#include <boost/container/deque.hpp>
 #include <boost/interprocess/indexes/flat_map_index.hpp>
 #include "print_container.hpp"
 #include "check_equal_containers.hpp"
@@ -59,8 +58,8 @@ bool copyable_only(V1 *shmdeque, V2 *stddeque, ipcdetail::true_type)
    if(!test::CheckEqualContainers(shmdeque, stddeque)) return false;
    {
       IntType move_me(1);
-      stddeque->insert(stddeque->begin()+size/2, 50, 1);
-      shmdeque->insert(shmdeque->begin()+size/2, 50, boost::move(move_me));
+      stddeque->insert(stddeque->begin()+std::ptrdiff_t(size/2u), 50u, 1);
+      shmdeque->insert(shmdeque->begin()+std::ptrdiff_t(size/2u), 50u, boost::move(move_me));
       if(!test::CheckEqualContainers(shmdeque, stddeque)) return false;
    }
    {
@@ -119,19 +118,19 @@ bool do_test()
       shmem_allocator_t;
 
    //Alias deque types
-   typedef deque<IntType, shmem_allocator_t>   MyShmDeque;
+   typedef boost::container::deque<IntType, shmem_allocator_t>   MyShmDeque;
    typedef std::deque<int>                     MyStdDeque;
-   const int Memsize = 65536;
+   const int Memsize = 128u*1024u;
    const char *const shMemName = test::get_process_id_name();
    const int max = 100;
 
-   /*try*/{
+   BOOST_INTERPROCESS_TRY{
       shared_memory_object::remove(shMemName);
 
       //Create shared memory
       my_managed_shared_memory segment(create_only, shMemName, Memsize);
 
-      segment.reserve_named_objects(100);
+      segment.reserve_named_objects(10);
 
       //Shared memory allocator must be always be initialized
       //since it has no default constructor
@@ -140,7 +139,7 @@ bool do_test()
 
       MyStdDeque *stddeque = new MyStdDeque;
 
-      /*try*/{
+      BOOST_INTERPROCESS_TRY{
          //Compare several shared memory deque operations with std::deque
          for(int i = 0; i < max*50; ++i){
             IntType move_me(i);
@@ -270,18 +269,18 @@ bool do_test()
 
          if(!segment.all_memory_deallocated())
             return false;
-      }/*
-      catch(std::exception &ex){
+      }
+      BOOST_INTERPROCESS_CATCH(std::exception &ex){
          std::cout << ex.what() << std::endl;
          return false;
-      }*/
+      } BOOST_INTERPROCESS_CATCH_END
 
       std::cout << std::endl << "Test OK!" << std::endl;
-   }/*
-   catch(...){
+   }
+   BOOST_INTERPROCESS_CATCH(...){
       shared_memory_object::remove(shMemName);
-      throw;
-   }*/
+      BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
    shared_memory_object::remove(shMemName);
    return true;
 }
@@ -303,10 +302,8 @@ int main ()
    const test::EmplaceOptions Options = (test::EmplaceOptions)(test::EMPLACE_BACK | test::EMPLACE_FRONT | test::EMPLACE_BEFORE);
 
    if(!boost::interprocess::test::test_emplace
-      < deque<test::EmplaceInt>, Options>())
+      < boost::container::deque<test::EmplaceInt>, Options>())
       return 1;
 
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

@@ -1,6 +1,6 @@
 // Boost.Geometry
 
-// Copyright (c) 2016-2017 Oracle and/or its affiliates.
+// Copyright (c) 2016-2019 Oracle and/or its affiliates.
 
 // Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
@@ -245,6 +245,125 @@ void disjoint_tests_sph_geo()
     test_disjoint<bg::model::box<P>, bg::model::segment<P> >("BOX(0 5, 20 6)",
                                                              "SEGMENT(0 4.9, 120 -1)",
                                                              false);
+
+    //https://github.com/boostorg/geometry/issues/579
+    test_disjoint<bg::model::box<P>, bg::model::segment<P> >("BOX(10 10,20 20)",
+                                                             "SEGMENT(12 2,12 1)",
+                                                             true);
+    test_disjoint<bg::model::box<P>, bg::model::segment<P> >("BOX(10 10,20 20)",
+                                                             "SEGMENT(12 1,12 2)",
+                                                             true);
+
+    //based on https://github.com/boostorg/geometry/issues/851
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(13.381347 50.625, 13.40332 50.646972)",
+      "SEGMENT(9.18 48.78,13.4 52.52)",
+      true);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(11.22802734375 50.972264889367494, 11.359863281250002 51.06211251399776)",
+      "SEGMENT(9.18 48.78,13.4 52.52)",
+      true);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(10.9423828125 50.527396813293024, 12.06298828125 50.65294336725708)",
+      "SEGMENT(9.18 48.78,13.4 52.52)",
+      false);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(13.238525390625 52.49448734004673, 13.3319091796875 52.549636074382306)",
+      "SEGMENT(9.18 48.78,13.4 52.52)",
+      true);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(13.40332 -50.646972, 13.381347 -50.625)",
+      "SEGMENT(9.18 -48.78,13.4 -52.52)",
+      true);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(11.359863281250002 -51.06211251399776,11.22802734375 -50.972264889367494)",
+      "SEGMENT(9.18 -48.78,13.4 -52.52)",
+      true);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(0 1,1 2)",
+      "SEGMENT(0 0,0 3)",
+      false);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(0 1,1 2)",
+      "SEGMENT(1 0,1 3)",
+      false);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(1 0,2 1)",
+      "SEGMENT(0 0,3 0)",
+      false);
+
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(1 0,2 1)",
+      "SEGMENT(0 1,3 1)",
+      true);
+
+    // segment on the equator
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(1 1,2 2)",
+      "SEGMENT(0 0,3 0)",
+      true);
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(2 -2,1 -1)",
+      "SEGMENT(0 0,3 0)",
+      true);
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(1 -1,2 1)",
+      "SEGMENT(0 0,3 0)",
+      false);
+    test_disjoint
+    <
+        bg::model::box<P>,
+        bg::model::segment<P>
+    >("BOX(4 -1,5 1)",
+      "SEGMENT(0 0,3 0)",
+      true);
 }
 
 template <typename CT>
@@ -283,11 +402,6 @@ int test_main( int , char* [] )
 {
     test_all<float>();
     test_all<double>();
-
-#ifdef HAVE_TTMATH
-    common_tests<bg::model::d2::point_xy<ttmath_big> >();
-    common_tests<bg::model::point<ttmath_big, 3, bg::cs::cartesian> >();
-#endif
 
     return 0;
 }

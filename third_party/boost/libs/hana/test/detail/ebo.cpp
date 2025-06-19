@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2016
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -15,12 +15,17 @@ using hana::detail::ebo;
 
 template <int> struct empty { };
 template <int> struct idx;
+#ifdef BOOST_HANA_WORKAROUND_MSVC_EMPTYBASE
+template <typename ...Bases> struct __declspec(empty_bases) inherit : Bases... { };
+#else
 template <typename ...Bases> struct inherit : Bases... { };
+#endif
 
+#ifndef BOOST_HANA_CONFIG_CLANG_CL // MSVC doesn't implement EBO in all cases
 static_assert(sizeof(inherit<>) == sizeof(inherit<ebo<idx<0>, empty<0>>>), "");
 static_assert(sizeof(inherit<>) == sizeof(inherit<ebo<idx<0>, empty<0>>, ebo<idx<1>, empty<1>>>), "");
 static_assert(sizeof(inherit<>) == sizeof(inherit<ebo<idx<0>, empty<0>>, ebo<idx<1>, empty<1>>, ebo<idx<2>, empty<2>>>), "");
-
+#endif
 
 int main() {
     // Test default-construction

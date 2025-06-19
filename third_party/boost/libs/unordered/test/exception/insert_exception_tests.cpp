@@ -1,5 +1,6 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright 2022-2023 Christian Mazakas.
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #include "./containers.hpp"
@@ -9,6 +10,9 @@
 #include "../helpers/random_values.hpp"
 #include "../helpers/strong.hpp"
 #include "../helpers/tracker.hpp"
+
+#include <boost/tuple/tuple.hpp>
+
 #include <cmath>
 #include <string>
 
@@ -83,7 +87,7 @@ void insert_exception_test(T*, Inserter insert, test::random_generator gen)
     test::random_values<T> v(10, gen);
     T x;
 
-    EXCEPTION_LOOP(insert_exception_test_impl(x, generate(insert, x), v));
+    EXCEPTION_LOOP(insert_exception_test_impl(x, generate(insert, x), v))
   }
 }
 
@@ -95,11 +99,11 @@ void insert_rehash_exception_test(
   T*, Inserter insert, test::random_generator gen)
 {
   for (int i = 0; i < 5; ++i) {
-    T x;
+    T x(1);
     rehash_prep(x);
 
     test::random_values<T> v2(5, gen);
-    EXCEPTION_LOOP(insert_exception_test_impl(x, generate(insert, x), v2));
+    EXCEPTION_LOOP(insert_exception_test_impl(x, generate(insert, x), v2))
   }
 }
 
@@ -221,15 +225,42 @@ struct emplace_lvalue_pos_type
 } emplace_lvalue_pos;
 
 // Run the exception tests in various combinations.
+using test::default_generator;
+using test::limited_range;
+using test::generate_collisions;
 
+#ifdef BOOST_UNORDERED_FOA_TESTS
+test_set* test_set_;
+test_map* test_map_;
+test_node_set* test_node_set_;
+test_node_map* test_node_map_;
+
+// clang-format off
+UNORDERED_TEST(insert_exception_test,
+    ((test_set_)(test_map_)(test_node_set_)(test_node_map_))
+    ((insert_lvalue)(insert_lvalue_begin)(insert_lvalue_end)
+     (insert_lvalue_pos)(insert_single_item_range)
+     (emplace_lvalue)(emplace_lvalue_begin)(emplace_lvalue_end)
+     (emplace_lvalue_pos)
+    )
+    ((default_generator)(limited_range)(generate_collisions))
+)
+
+UNORDERED_TEST(insert_rehash_exception_test,
+    ((test_set_)(test_map_)(test_node_set_)(test_node_map_))
+    ((insert_lvalue)(insert_lvalue_begin)(insert_lvalue_end)
+     (insert_lvalue_pos)(insert_single_item_range)
+     (emplace_lvalue)(emplace_lvalue_begin)(emplace_lvalue_end)
+     (emplace_lvalue_pos)
+    )
+    ((default_generator)(limited_range)(generate_collisions))
+)
+// clang-format on
+#else
 test_set* test_set_;
 test_multiset* test_multiset_;
 test_map* test_map_;
 test_multimap* test_multimap_;
-
-using test::default_generator;
-using test::limited_range;
-using test::generate_collisions;
 
 // clang-format off
 UNORDERED_TEST(insert_exception_test,
@@ -252,6 +283,7 @@ UNORDERED_TEST(insert_rehash_exception_test,
     ((default_generator)(limited_range)(generate_collisions))
 )
 // clang-format on
+#endif
 
 // Repeat insert tests with pairs
 
@@ -259,8 +291,13 @@ struct pair_emplace_type : inserter_base
 {
   template <typename T, typename Iterator> void operator()(T& x, Iterator it)
   {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+    x.emplace(std::piecewise_construct, std::make_tuple(it->first),
+      std::make_tuple(it->second));
+#else
     x.emplace(boost::unordered::piecewise_construct,
       boost::make_tuple(it->first), boost::make_tuple(it->second));
+#endif
   }
 } pair_emplace;
 
@@ -268,12 +305,35 @@ struct pair_emplace2_type : inserter_base
 {
   template <typename T, typename Iterator> void operator()(T& x, Iterator it)
   {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+    x.emplace_hint(x.begin(), std::piecewise_construct,
+      std::make_tuple(it->first),
+      std::make_tuple(it->second.tag1_, it->second.tag2_));
+#else
     x.emplace_hint(x.begin(), boost::unordered::piecewise_construct,
       boost::make_tuple(it->first),
       boost::make_tuple(it->second.tag1_, it->second.tag2_));
+#endif
   }
 } pair_emplace2;
 
+#ifdef BOOST_UNORDERED_FOA_TESTS
+test_pair_set* test_pair_set_;
+test_pair_node_set* test_pair_node_set_;
+
+// clang-format off
+UNORDERED_TEST(insert_exception_test,
+    ((test_pair_set_)(test_map_)(test_pair_node_set_)(test_node_map_))
+    ((pair_emplace)(pair_emplace2))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+UNORDERED_TEST(insert_rehash_exception_test,
+    ((test_pair_set_)(test_map_)(test_pair_node_set_)(test_node_map_))
+    ((pair_emplace)(pair_emplace2))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+// clang-format on
+#else
 test_pair_set* test_pair_set_;
 test_pair_multiset* test_pair_multiset_;
 
@@ -289,6 +349,7 @@ UNORDERED_TEST(insert_rehash_exception_test,
     ((default_generator)(limited_range)(generate_collisions))
 )
 // clang-format on
+#endif
 
 // Test inserting using operator[]
 
@@ -344,6 +405,20 @@ struct map_insert_or_assign_type : map_inserter_base
   }
 } map_insert_or_assign;
 
+#ifdef BOOST_UNORDERED_FOA_TESTS
+// clang-format off
+UNORDERED_TEST(insert_exception_test,
+    ((test_map_)(test_node_map_))
+    ((try_emplace)(try_emplace2)(map_insert_operator)(map_insert_or_assign))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+UNORDERED_TEST(insert_rehash_exception_test,
+    ((test_map_)(test_node_map_))
+    ((try_emplace)(try_emplace2)(map_insert_operator)(map_insert_or_assign))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+// clang-format on
+#else
 // clang-format off
 UNORDERED_TEST(insert_exception_test,
     ((test_map_))
@@ -356,6 +431,7 @@ UNORDERED_TEST(insert_rehash_exception_test,
     ((default_generator)(limited_range)(generate_collisions))
 )
 // clang-format on
+#endif
 
 // Range insert tests
 
@@ -385,7 +461,7 @@ void insert_range_exception_test(T*, test::random_generator gen)
     test::random_values<T> v(10, gen);
     T x;
 
-    EXCEPTION_LOOP(insert_range_exception_test_impl(x, v));
+    EXCEPTION_LOOP(insert_range_exception_test_impl(x, v))
   }
 }
 
@@ -393,14 +469,27 @@ template <typename T>
 void insert_range_rehash_exception_test(T*, test::random_generator gen)
 {
   for (int i = 0; i < 5; ++i) {
-    T x;
+    T x(1);
     rehash_prep(x);
 
     test::random_values<T> v2(5, gen);
-    EXCEPTION_LOOP(insert_range_exception_test_impl(x, v2));
+    EXCEPTION_LOOP(insert_range_exception_test_impl(x, v2))
   }
 }
 
+#ifdef BOOST_UNORDERED_FOA_TESTS
+// clang-format off
+UNORDERED_TEST(insert_range_exception_test,
+    ((test_set_)(test_map_)(test_node_set_)(test_node_map_))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+
+UNORDERED_TEST(insert_range_rehash_exception_test,
+    ((test_set_)(test_map_)(test_node_set_)(test_node_map_))
+    ((default_generator)(limited_range)(generate_collisions))
+)
+// clang-format on
+#else
 // clang-format off
 UNORDERED_TEST(insert_range_exception_test,
     ((test_set_)(test_multiset_)(test_map_)(test_multimap_))
@@ -412,5 +501,6 @@ UNORDERED_TEST(insert_range_rehash_exception_test,
     ((default_generator)(limited_range)(generate_collisions))
 )
 // clang-format on
+#endif
 
 RUN_TESTS()

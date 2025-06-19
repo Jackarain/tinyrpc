@@ -1,4 +1,4 @@
-/* Copyright 2016-2018 Joaquin M Lopez Munoz.
+/* Copyright 2016-2024 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -16,7 +16,10 @@
 #include <array>
 #include <boost/core/lightweight_test.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
+#include <boost/mp11/algorithm.hpp>
+#include <boost/poly_collection/variant_collection_fwd.hpp>
 #include <boost/type_traits/has_equal_to.hpp>
+#include <boost/type_traits/make_void.hpp>
 #include <iterator>
 #include <memory>
 #include <type_traits>
@@ -115,7 +118,7 @@ using is_not_copy_assignable=std::integral_constant<
 template<typename T>
 using is_equality_comparable=std::integral_constant<
   bool,
-  boost::has_equal_to<T,T,bool>::value
+  boost::has_equal_to<const T&,const T&,bool>::value
 >;
 
 template<typename T>
@@ -249,14 +252,14 @@ bool is_first(
   return it==p.begin();
 }
 
-template<typename PolyCollection,typename Iterator>
-bool is_first(const PolyCollection& p,const std::type_info& info,Iterator it)
+template<typename PolyCollection,typename TypeIndex,typename Iterator>
+bool is_first(const PolyCollection& p,const TypeIndex& info,Iterator it)
 {
   return &*it==&*p.begin(info);
 }
 
-template<typename PolyCollection,typename Iterator>
-bool is_last(const PolyCollection& p,const std::type_info& info,Iterator it)
+template<typename PolyCollection,typename TypeIndex,typename Iterator>
+bool is_last(const PolyCollection& p,const TypeIndex& info,Iterator it)
 {
   return &*it==&*(p.end(info)-1);
 }
@@ -320,42 +323,142 @@ struct jammed_auto_increment
   int n=0;
 };
 
-template<typename T>
+template<
+  typename T,
+  typename Propagate=std::true_type,typename AlwaysEqual=std::true_type
+>
 struct rooted_allocator:std::allocator<T>
 {
-  using propagate_on_container_copy_assignment=std::false_type;
-  using propagate_on_container_move_assignment=std::true_type;
-  using propagate_on_container_swap=std::false_type;
+  using propagate_on_container_copy_assignment=Propagate;
+  using propagate_on_container_move_assignment=Propagate;
+  using propagate_on_container_swap=Propagate;
+  using is_always_equal=AlwaysEqual; /* for C++17 forward compatibility */
   template<typename U>
-  struct rebind{using other=rooted_allocator<U>;};
+  struct rebind{using other=rooted_allocator<U,Propagate,AlwaysEqual>;};
 
-  rooted_allocator()=default;
+  rooted_allocator():root{nullptr}{}
   explicit rooted_allocator(int):root{this}{}
   template<typename U>
-  rooted_allocator(const rooted_allocator<U>& x):root{x.root}{}
+  rooted_allocator(const rooted_allocator<U,Propagate,AlwaysEqual>& x):
+    root{x.root}{}
+
+  template<typename U>
+  bool operator==(const rooted_allocator<U,Propagate,AlwaysEqual>& x)const
+    {return AlwaysEqual::value?true:root==x.root;}
+  template<typename U>
+  bool operator!=(const rooted_allocator<U,Propagate,AlwaysEqual>& x)const
+    {return AlwaysEqual::value?false:root!=x.root;}
+
+  template<typename U>
+  bool comes_from(const rooted_allocator<U,Propagate,AlwaysEqual>& x)const
+    {return root==&x;}
+
+private:
+  template<typename,typename,typename> friend struct rooted_allocator;
 
   const void* root;
 };
 
-template<typename PolyCollection,template<typename> class Allocator>
+template<
+  typename PolyCollection,
+  template<typename...> class Allocator,typename... Args
+>
 struct realloc_poly_collection_class;
 
-template<typename PolyCollection,template<typename> class Allocator>
-using realloc_poly_collection=
-  typename realloc_poly_collection_class<PolyCollection,Allocator>::type;
+template<
+  typename PolyCollection,
+  template<typename...> class Allocator,typename... Args
+>
+using realloc_poly_collection=typename realloc_poly_collection_class<
+  PolyCollection,Allocator,Args...>::type;
 
 template<
   template<typename,typename> class PolyCollection,
   typename T,typename OriginalAllocator,
-  template<typename> class Allocator
+  template<typename...> class Allocator,typename... Args
 >
 struct realloc_poly_collection_class<
-  PolyCollection<T,OriginalAllocator>,Allocator
+  PolyCollection<T,OriginalAllocator>,Allocator,Args...
 >
 {
   using value_type=typename PolyCollection<T,OriginalAllocator>::value_type;
-  using type=PolyCollection<T,Allocator<value_type>>;
+  using type=PolyCollection<T,Allocator<value_type,Args...>>;
 };
+
+template<typename PolyCollection>
+struct is_closed_collection
+{
+private:
+  template<typename PolyCollection2>
+  static decltype(
+    std::declval<PolyCollection2&>().template register_types<>(),
+    std::false_type{}
+  ) check(int);
+
+  template<typename> static std::true_type check(...);
+
+public:
+  static constexpr bool value=decltype(check<PolyCollection>(0))::value;
+};
+
+template<
+  typename... T,typename PolyCollection,
+  typename std::enable_if<
+    !is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+void register_types(PolyCollection& p)
+{
+  p.template register_types<T...>();
+}
+
+template<
+  typename... T,typename PolyCollection,
+  typename std::enable_if<
+    is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+void register_types(PolyCollection&)
+{
+}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    !is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+bool is_open_and_registered(const PolyCollection& p)
+{
+  return p.template is_registered<T>();
+}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+bool is_open_and_registered(const PolyCollection&)
+{
+  return false;
+}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    !is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+bool is_registered(const PolyCollection& p)
+{
+  return p.template is_registered<T>();
+}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    is_closed_collection<PolyCollection>::value>::type* =nullptr
+>
+bool is_registered(const PolyCollection&)
+{
+  return true;
+}
 
 template<std::size_t N>
 struct layout_data
@@ -373,11 +476,30 @@ template<typename... Types,typename PolyCollection>
 layout_data<sizeof...(Types)> get_layout_data(const PolyCollection& p)
 {
   return{
-    {{(p.template is_registered<Types>()?
+    {{(is_registered<Types>(p)&&!p.template empty<Types>()?
       &*p.template begin<Types>():nullptr)...}},
-    {{(p.template is_registered<Types>()?
+    {{(is_registered<Types>(p)?
       p.template size<Types>():0)...}}
   };
+}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    std::is_same<typename PolyCollection::type_index,std::type_info>::value
+  >::type* =nullptr
+>
+const std::type_info& typeid_(const PolyCollection&){return typeid(T);}
+
+template<
+  typename T,typename PolyCollection,
+  typename std::enable_if<
+    std::is_same<typename PolyCollection::type_index,std::size_t>::value
+  >::type* =nullptr
+>
+std::size_t typeid_(const PolyCollection&)
+{
+  return boost::mp11::mp_find<typename PolyCollection::value_type,T>::value;
 }
 
 } /* namespace test_utilities */

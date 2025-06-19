@@ -9,11 +9,15 @@
 // Constants are too big for float case, but this doesn't matter for test.
 #endif
 
+#include <boost/math/tools/config.hpp>
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp>
+#endif
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/ellint_1.hpp>
 #include <boost/array.hpp>
 #include "functor.hpp"
 
@@ -84,7 +88,7 @@ void test_spots(T, const char* type_name)
 {
     // Function values calculated on http://functions.wolfram.com/
     // Note that Mathematica's EllipticF accepts k^2 as the second parameter.
-    static const boost::array<boost::array<typename table_type<T>::type, 3>, 19> data1 = {{
+    static const std::array<std::array<typename table_type<T>::type, 3>, 22> data1 = {{
         {{ SC_(0.0), SC_(0.0), SC_(0.0) }},
         {{ SC_(-10.0), SC_(0.0), SC_(-10.0) }},
         {{ SC_(-1.0), SC_(-1.0), SC_(-1.2261911708835170708130609674719067527242483502207) }},
@@ -104,6 +108,10 @@ void test_spots(T, const char* type_name)
         {{ SC_(-4.0), SC_(0.5), SC_(-4.2543274975235836861894752787874633017836785640477) }},
         {{ SC_(-6.0), SC_(0.5), SC_(-6.4588766202317746302999080620490579800463614807916) }},
         {{ SC_(-10.0), SC_(0.5), SC_(-10.697409951222544858346795279378531495869386960090) }},
+        // Some values where k is > 1:
+        {{ SC_(0.1538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538), SC_(1.1538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538), SC_(0.154661869446904722070471580919758948531148566762183486996920)}},
+        {{ SC_(0.1538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538), SC_(1.461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461), SC_(0.155166467455029577314314021156113481657713115640002027219)}},
+        {{ SC_(0.1538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538), SC_(2.461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461538461), SC_(0.15776272074094290829870142225970052217542486917945444918)}},
     }};
 
     do_test_ellint_f<T>(data1, type_name, "Elliptic Integral F: Mathworld Data");
@@ -114,7 +122,7 @@ void test_spots(T, const char* type_name)
 
     // Function values calculated on http://functions.wolfram.com/
     // Note that Mathematica's EllipticK accepts k^2 as the second parameter.
-    static const boost::array<boost::array<typename table_type<T>::type, 2>, 9> data2 = {{
+    static const std::array<std::array<typename table_type<T>::type, 2>, 9> data2 = {{
         {{ SC_(0.0), SC_(1.5707963267948966192313216916397514420985846996876) }},
         {{ SC_(0.125), SC_(1.5769867712158131421244030532288080803822271060839) }},
         {{ SC_(0.25), SC_(1.5962422221317835101489690714979498795055744578951) }},
@@ -131,5 +139,17 @@ void test_spots(T, const char* type_name)
 #include "ellint_k_data.ipp"
 
     do_test_ellint_k<T>(ellint_k_data, type_name, "Elliptic Integral K: Random Data");
+
+    //
+    // Test error handling:
+    //
+    #ifndef BOOST_MATH_NO_EXCEPTIONS
+    BOOST_CHECK_GE(boost::math::ellint_1(T(1)), boost::math::tools::max_value<T>());
+    BOOST_CHECK_GE(boost::math::ellint_1(T(-1)), boost::math::tools::max_value<T>());
+    BOOST_CHECK_THROW(boost::math::ellint_1(T(1.0001)), std::domain_error);
+    BOOST_CHECK_THROW(boost::math::ellint_1(T(-1.0001)), std::domain_error);
+    BOOST_CHECK_THROW(boost::math::ellint_1(T(2.2), T(0.5)), std::domain_error);
+    BOOST_CHECK_THROW(boost::math::ellint_1(T(-2.2), T(0.5)), std::domain_error);
+    #endif
 }
 

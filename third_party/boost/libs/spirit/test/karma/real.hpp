@@ -9,10 +9,7 @@
 #if !defined(BOOST_SPIRIT_TEST_REAL_NUMERICS_HPP)
 #define BOOST_SPIRIT_TEST_REAL_NUMERICS_HPP
 
-#include <boost/version.hpp>
-#include <boost/config/warning_disable.hpp>
-#include <boost/detail/lightweight_test.hpp>
-#include <boost/math/concepts/real_concept.hpp>
+#include <boost/spirit/include/karma_real.hpp>
 
 #include <boost/spirit/include/karma_char.hpp>
 #include <boost/spirit/include/karma_numeric.hpp>
@@ -21,6 +18,17 @@
 
 #include <boost/limits.hpp>
 #include "test.hpp"
+
+#ifdef _MSVC_LANG
+# if _MSC_VER < 1910 || _MSVC_LANG < 201402L
+#  define BOOST_SPIRIT_NO_MATH_REAL_CONCEPT
+# endif
+#elif __cplusplus < 201402L
+# define BOOST_SPIRIT_NO_MATH_REAL_CONCEPT
+#endif
+#ifndef BOOST_SPIRIT_NO_MATH_REAL_CONCEPT
+# include <boost/math/concepts/real_concept.hpp>
+#endif
 
 using namespace spirit_test;
 
@@ -41,7 +49,7 @@ struct fixed_policy : boost::spirit::karma::real_policies<T>
 {
     typedef boost::spirit::karma::real_policies<T> base_type;
 
-    //  we want the numbers always to be in scientific format
+    //  we want the numbers always to be in fixed format
     static int floatfield(T) { return base_type::fmtflags::fixed; }
 };
 

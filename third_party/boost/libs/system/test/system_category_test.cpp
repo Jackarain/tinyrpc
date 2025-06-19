@@ -8,15 +8,23 @@
 
 // See library home page at http://www.boost.org/libs/system
 
-// Avoid spurious VC++ warnings
-# define _CRT_SECURE_NO_WARNINGS
-
 #include <boost/system/error_code.hpp>
 #include <boost/core/lightweight_test.hpp>
+#include <boost/core/snprintf.hpp>
 #include <cstring>
 #include <cstdio>
 
 //
+
+#if defined(BOOST_WINDOWS_API) && defined(BOOST_SYSTEM_USE_UTF8)
+
+#include <boost/config/pragma_message.hpp>
+
+BOOST_PRAGMA_MESSAGE( "Skipping test due to BOOST_WINDOWS_API && BOOST_SYSTEM_USE_UTF8" )
+
+int main() {}
+
+#else
 
 #if defined(BOOST_WINDOWS_API)
 
@@ -49,12 +57,13 @@ std::string sys_strerror( int ev )
     };
 
     local_free lf_ = { lpMsgBuf };
+    (void)lf_;
 
     if( retval == 0 )
     {
         char buffer[ 38 ];
 
-        std::sprintf( buffer, "Unknown error (%d)", ev );
+        boost::core::snprintf( buffer, sizeof( buffer ), "Unknown error (%d)", ev );
         return buffer;
     }
 
@@ -90,7 +99,7 @@ static void test_message( sys::error_category const & cat, int ev )
 {
     BOOST_TEST_EQ( cat.message( ev ), sys_strerror( ev ) );
 
-    char buffer[ 2048 ]; // yes, really
+    char buffer[ 4096 ]; // yes, really
     BOOST_TEST_CSTR_EQ( cat.message( ev, buffer, sizeof( buffer ) ), sys_strerror( ev ).c_str() );
 }
 
@@ -100,17 +109,12 @@ int main()
 
     // message
 
-    for( int i = -2; i < 1024; ++i )
-    {
-        test_message( cat, i );
-    }
-
-    test_message( cat, 5810 );
-
-    for( int i = 10000; i < 11032; ++i )
+    for( int i = -2; i < 16000; ++i )
     {
         test_message( cat, i );
     }
 
     return boost::report_errors();
 }
+
+#endif // #if defined(BOOST_WINDOWS_API) && defined(BOOST_SYSTEM_USE_UTF8)

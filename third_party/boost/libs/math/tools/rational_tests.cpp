@@ -3,11 +3,11 @@
 //  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#include "mp_t.hpp"
 #include <boost/random.hpp>
 #include <boost/math/tools/rational.hpp>
 #include <iostream>
 #include <fstream>
-#include "mp_t.hpp"
 
 int main()
 {
@@ -41,7 +41,7 @@ int main()
       }
       std::cout << " };\n";
       std::cout <<
-         "   static const boost::array<U, " << i << "> n" << i << "a = { ";
+         "   static const std::array<U, " << i << "> n" << i << "a = { ";
       for(unsigned j = 0; j < i; ++j)
       {
          if(j) 
@@ -280,7 +280,7 @@ int main()
       }
       std::cout << " };\n";
       std::cout <<
-         "   static const boost::array<U, " << i << "> d" << i << "a = { ";
+         "   static const std::array<U, " << i << "> d" << i << "a = { ";
       for(unsigned j = 0; j < i; ++j)
       {
          if(j) 

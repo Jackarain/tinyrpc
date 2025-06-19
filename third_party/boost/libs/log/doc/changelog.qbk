@@ -1,5 +1,5 @@
 [/
-              Copyright Andrey Semashev 2007 - 2018.
+              Copyright Andrey Semashev 2007 - 2025.
      Distributed under the Boost Software License, Version 1.0.
         (See accompanying file LICENSE_1_0.txt or copy at
               http://www.boost.org/LICENSE_1_0.txt)
@@ -8,6 +8,152 @@
 /]
 
 [section:changelog Changelog]
+
+[heading 2.31, Boost 1.88]
+
+* Disabled usage of `std::codecvt<char16_t>` and `std::codecvt<char32_t>` locale facets in C++20 and later modes as they were deprecated in C++20. This means character code conversions to/from `char16_t` and `char32_t` is no longer available in C++20 and later.
+* Fixed building issues when using CMake and MinGW-w64. ([pull_request 241])
+* Fixed incorrect file counter used by `text_file_backend` when the backend was configured to append to an existing file and the actively written file name pattern didn't have a counter placeholder but the target file name pattern did, and the log files were written directly into the target storage. ([github_issue 245])
+
+[heading 2.30, Boost 1.87]
+
+* Replaced __boost_thread__ synchronization primitives with equivalents from the C++ standard library. This may improve multithreaded performance, but also has user-facing consequences:
+  * __boost_thread__ thread interruption is no longer supported. Boost.Log no longer has special treatment for the `thread_interrupted` exception that is used by __boost_thread__ to implement thread interruption. This exception will be handled like any other exception.
+    In particular, user-specified exception handlers may now be invoked with the `thread_interrupted` pending exception.
+  * For timed waiting operations, timeouts are now using std::chrono time units. This means that the `ordering_window` named parameter that is supported by the [class_sinks_bounded_ordering_queue] and [class_sinks_unbounded_ordering_queue] classes now expects an `std::chrono::duration` value instead of `boost::posix_time::time_duration` from __boost_date_time__.
+  * In case of errors indicated by thread synchronization primitives, `std::system_error` exception is thrown instead of __boost_thread__ exception types.
+* Added support for C++ standard library lock types to [class_log_strictest_lock].
+
+[heading 2.29, Boost 1.86]
+
+* Added a workaround for `windres.exe` issue, when it is used in CMake to compile event log resource files on MinGW-w64. ([pull_request 231])
+
+[heading 2.28, Boost 1.84]
+
+* C++03 is no longer supported. A C++11 or later compiler is required.
+* When built with C++11 compilers that are conforming enough for Boost.Regex v5 to be used, Boost.Log no longer links with Boost.Regex prebuilt library, since Boost.Regex v5 is header-only.
+* Support for Windows versions older than Windows 10 is deprecated and will be removed in Boost 1.87.
+
+[heading 2.27, Boost 1.83]
+
+* Fixed a possible infinite loop in [link log.detailed.sink_backends.text_file `text_file_backend`], when the size of a formatted log record exceeds the `rotation_size` limit. ([github_issue 209])
+
+[heading 2.26, Boost 1.82]
+
+* Due to changes in Boost libraries used by Boost.Log, support for C++03 is deprecated. C++11 will become the minimum starting with Boost.Log 1.84.
+
+[heading 2.25, Boost 1.80]
+
+[*Bug fixes:]
+
+* Fixed binding incorrect local address in UDP socket-based [link log.detailed.sink_backends.syslog `syslog_backend`] when IPv6 address is used for the syslog server. ([github_issue 181])
+* Added a workaround for a [@https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105857 bug] in libstdc++ from gcc 11.2. When [link log.detailed.expressions.formatters.decorators.max_size `max_size_decor`] was used on a formatting stream, `std::codecvt::do_length` incorrectly accessed the input buffer and caused a buffer overflow.
+
+[heading 2.24, Boost 1.79]
+
+[*General changes:]
+
+* In [link log.detailed.sink_backends.text_file `text_file_backend`], added support for appending to a previously written log file, when file rotation is used and log file names use file counters. For this to work, the target storage directory must be the same as the directory where the active log file is written, and `text_file_backend::scan_for_files` must be called prior to emitting any log records to discover the last file counter used in the target storage directory. Previously, in such a configuration the sink backend would generate a new file name instead of appending to the last written one.
+* *Breaking change:* The [class_file_collector] interface has changed:
+  * `scan_for_files` method returns a `scan_result` structure that contains information collected during the scan;
+  * `is_in_storage` method added for testing if a path refers to a file within the target storage directory.
+* Added a new [link log.detailed.utilities.manipulators.invoke `invoke_manip`] stream manipulator that can be used for injecting user's function into a stream output expression.
+
+[*Bug fixes:]
+
+* Fixed file counter being set to zero if the user calls [link log.detailed.sink_backends.text_file.file_scanning `text_file_backend::scan_for_files`] multiple times, and the second and the following calls don't find any new files. ([github_issue 179])
+
+[heading 2.23, Boost 1.78]
+
+[*General changes:]
+
+* Updated detection of `std::codecvt` specializations for `char16_t` and `char32_t` for compatibility with C++17 and later. ([pull_request 159])
+* Added support for C++17 `std::byte` type to receive methods of the [link log.detailed.utilities.ipc.reliable_message_queue inter-process message queue].
+* On Windows, when building the library for Windows 8 or later, the library will use `nt62` tag in the version namespace to denote the target OS ABI. For example, the version namespace could be named as `v2_mt_nt62`. This name will be part of all symbols exported by the library. Use the `BOOST_USE_WINAPI_VERSION` macro consistenly when building Boost and your code to request the minimum target Windows version.
+* Improved performance of SSSE3 and AVX2 implementations of the [link log.detailed.utilities.manipulators.dump `dump`] stream manipulator.
+* Added support for CMake build system. Only library build is supported at this moment, Boost.Build is still used for running tests.
+
+[*Bug fixes:]
+
+* Fixed a race condition on POSIX systems in [link log.detailed.utilities.ipc.reliable_message_queue `reliable_message_queue::open_or_create`] or the equivalent constructor. Multiple threads or processes calling `open_or_create` concurrently with sending or receiving messages from the same queue could end up corrupting the queue contents and potentially crashing the process. ([github_issue 162])
+* Added a workaround for `b2 install` failing on Windows because of missing `boost_log_setup` library if `BOOST_LOG_WITHOUT_SETTINGS_PARSERS` is defined. ([github_issue 164])
+
+[heading 2.22, Boost 1.77]
+
+[*Bug fixes:]
+
+* Fixed compilation on Linux for riscv32 target. ([pull_request 150])
+* Setting `std::ios_base::app` file open mode in [link log.detailed.sink_backends.text_file `text_file_backend`] now also implies `std::ios_base::ate`. This fixes incorrect accounting for the initial size of the log file opened for appending. ([github_issue 151])
+
+[heading 2.21, Boost 1.76]
+
+[*Bug fixes:]
+
+* Corrected a formal race condition in the thread-safe log record queue implementation used in the `unbounded_fifo_queue` policy of the [class_sinks_asynchronous_sink] frontend. The race could be detected by TSAN, but it was not a real problem on most current CPU architectures and compilers. ([github_issue 139])
+* When copying a logger with a channel attribute (e.g. `channel_logger`), the channel attribute is now deep-copied from the original logger. This means that modifying the channel in the new logger will no longer affect the original logger.
+* Replaced the use of `std::allocator<void>` in template parameters with a new tag type `boost::log::use_std_allocator` to silence libc++ warnings about the former being deprecated in C++17 and later. The tag indicates that the instantiated template should be using a specialization of `std::allocator` internally to allocate dynamic memory, so the change has no functional effect. ([github_issue 141])
+* Boost.Log no longer defines `__MSVCRT_VERSION__` macro on MinGW and MinGW-w64. This macro is used to select the target C runtime library. Defining this macro caused incompatibility with UCRT, which is available as an option in recent MinGW-w64. ([pull_request 149])
+
+[heading 2.20, Boost 1.75]
+
+[*Bug fixes:]
+
+* Corrected the file counter that would be used in [link log.detailed.sink_backends.text_file `text_file_backend`] when generating the target file name (based on the pattern set by `set_target_file_name_pattern` method) when the log file is rotated. The backend used to use the next value of file counter, which could cause some counter values to be skipped on application restarts. ([github_issue 125])
+* Replaced a volatile version counter in `basic_sink_frontend` with an atomic. This should silence clang-cl warnings about deprecated uses of `volatile`. ([github_issue 128])
+* In the [class_sinks_asynchronous_sink] frontend, resolved a possible conflict between `flush` and `run` methods, if `run` is called from a user's thread instead of the internal dedicated thread spawned by the frontend. `run` and `feed_records` methods will wait for `flush` to complete, if one is in progress. Additionally, `stop` now explicitly doesn't wait for the ongoing record feeding operation to complete. ([github_issue 131])
+
+[heading 2.19, Boost 1.74]
+
+[*Bug fixes:]
+
+* The [link log.detailed.sink_backends.syslog syslog] sink backend now verifies the IP version of the local and target addresses set by user. The addresses must have the same IP version as was specified in the `ip_version` named parameter on the sink backend construction (by default, IPv4 is assumed). When an address is obtained as a result of host name resolution, only addresses with matching IP version are considered. ([github_issue 119])
+
+[*New Features:]
+
+* Move constructors and assignment operators of various components were marked `noexcept`.
+* Added a new [link log.detailed.utilities.manipulators.range `range_manip`] stream manipulator that can be used for outputting elements of a range, optionally separated by a delimiter.
+* Added a new [link log.detailed.utilities.manipulators.tuple `tuple_manip`] stream manipulator that can be used for outputting elements of a tuple or any other heterogeneous sequence, optionally separated by a delimiter.
+* Added a new [link log.detailed.utilities.manipulators.optional `optional_manip`] stream manipulator that can be used for outputting optionally present values.
+
+[heading 2.18, Boost 1.73]
+
+[*New Features:]
+
+* Default sink used in trivial logging, when no sinks are registered in the logging core, now automatically flushes output after each log record. ([github_issue 103])
+* `core::flush` now performs a flush on the default sink used for trivial logging, when no sinks are registered.
+
+[*Bug fixes:]
+
+* Added a workaround for some syslog API implementations (e.g. glibc), which do not save the application identification string in `openlog` call. Such implementations could access already freed memory on each `syslog` call, resulting in undefined behavior. ([github_issue 97])
+* Fixed that log file rotation on a specific day of month (e.g. `rotation_at_time_point(boost::gregorian::greg_day(1))`) could be silently ignored and not happen. ([github_issue 98])
+* Fixed that [link log.detailed.sink_backends.text_file `text_file_backend`]`::rotate_file` could throw if there were no log records written yet and target file name pattern was set. The method would attempt to rename a missing file, which would result in an exception. Note that `rotate_file` may still throw because of a missing log file, if the file being rotated is removed by a third party.
+* Ported various components of the library to `std::allocator_traits` to improve compatibility with C++20 allocators.
+* Fixed compilation errors when building in MSYS2 Cygwin environment. ([github_issue 102])
+
+[heading 2.17, Boost 1.71]
+
+[*New features:]
+
+* Improved support for C++17 `std::string_view` in [class_log_basic_formatting_ostream]. The string view can now participate in character code conversion on output.
+* Added `auto_newline` [link log.detailed.expressions.formatters.auto_newline formatter] and [link log.detailed.utilities.manipulators.auto_newline stream manipulator]. It can be used to ensure that formatted output always ends with a newline while avoiding duplicate newlines.
+* In the [link log.detailed.sink_backends.text_ostream output stream], [link log.detailed.sink_backends.text_file text file] and [link log.detailed.sink_backends.text_multifile text multi-file] sink backends added support for configuring behavior with regard to appending a trailing newline to every formatted log record. The user can specify a value of the [enumref boost::log::sinks::auto_newline_mode `auto_newline_mode`] enum either in the `auto_newline_mode` named parameter of the backend constructor or by calling the `set_auto_newline_mode` method on the backend post-construction. The `auto_newline_mode` named parameter is also supported in the [link log.detailed.utilities.setup.convenience convenience functions] for initializing sinks. When initializing from [link log.detailed.utilities.setup.settings settings] or a config file, the behavior is controlled by the new "AutoNewline" parameter of the sink.
+
+[note The default behavior with regard to trailing newlines has changed slightly compared to the previous Boost.Log releases. The backends will now only add a trailing newline if there isn't one in the formatted log message string already. In previous releases a newline was added unconditionally. In general, users are advised to configure their formatters so that the trailing newline is added there, if needed (e.g. by using [link log.detailed.expressions.formatters.auto_newline `auto_newline`] formatter), and disable the automatic trailing newline insertion in the sink backends. This feature mostly exists for backward compatibility and can be considered deprecated.]
+
+* [link log.detailed.sink_backends.text_ostream Output stream] and [link log.detailed.sink_backends.text_multifile text multi-file] sink backends can now be constructed with named parameters.
+* Added support for passing arbitrary function objects (as opposed to only __boost_phoenix__ function objects, which were supported before) in the `filter` and `format` named parameters to sink constructors and [link log.detailed.utilities.setup.convenience convenience functions] for initializing sinks. For example, it is now possible to specify C++11 lambda functions directly in these parameters. ([github_issue 63])
+* In the default filter and formatter factories used in [link log.detailed.utilities.setup.filter_formatter filter and formatter parsers], added support for severity level attribute values of type [enumref boost::log::trivial::severity_level `boost::log::trivial::severity_level`]. For filters, the support is limited to attributes with "Severity" name. This relieves the user from having to register filter and formatter factories in order to use `boost::log::trivial::severity_level` with filters and formatters parsed from strings or [link log.detailed.utilities.setup.settings settings]. Note that any other custom severity level enums must still be [link log.extension.settings registered], as before.
+
+[*Bug fixes:]
+
+* Fixed incorrect parsing of components of the rotated file names while scanning for files in the [link log.detailed.sink_backends.text_file text file sink backend]. If the file name pattern ended with a placeholder (for example, a file counter), the `scan_for_files` method would not find files matching that pattern in the target storage, leaving them unmanaged. In particular, such files would not be deleted to free target storage. ([github_issue 78])
+* Updated [class_log_basic_formatting_ostream] and [class_log_basic_record_ostream] to make it possible to overload stream output operators for pointers to user-defined types. User-defined `operator<<` overloads taking `std::basic_ostream` and a pointer argument should now be picked up by the compiler when the pointer is being written to one of Boost.Log streams. ([github_issue 84])
+
+[heading 2.16, Boost 1.70]
+
+[*New features:]
+
+* Added support for generating another log file name before collecting the file in the [link log.detailed.sink_backends.text_file text file sink backend]. This allows to combine [link log.detailed.sink_backends.text_file.appending appending] to an existing log file with timestamps and file counters in log filenames, and, consequently, [link log.detailed.sink_backends.text_file.file_collection file collection] in general. To enable this feature, one must set the target file name pattern in the text file sink backend (using the `target_file_name` named parameter, `text_file_backend::set_target_file_name_pattern` method call or "TargetFileName" sink parameter in the [link log.detailed.utilities.setup.settings settings]). This pattern will be used to generate a new file name when the file is finished writing and is about to be collected. Therefore, the original (active) file name can be set to a stable pattern (e.g. "app.log") so that appending to a previously written file works. Then the target file name can include a timestamp or a counter (e.g. "app-2019-01-05.log"), so that different rotated files don't conflict in the target storage.
 
 [heading 2.15, Boost 1.69]
 

@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Context switching with call/cc</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Context">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Context">
 <link rel="prev" href="ff/class__fiber_.html" title="Class fiber">
@@ -26,7 +26,7 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="context.cc"></a><a name="cc"></a><a class="link" href="cc.html" title="Context switching with call/cc">Context switching with call/cc</a>
 </h2></div></div></div>
-<div class="toc"><dl class="toc">
+<div class="toc"><dl>
 <dt><span class="section"><a href="cc/implementations__fcontext_t__ucontext_t_and_winfiber.html">Implementations:
       fcontext_t, ucontext_t and WinFiber</a></span></dt>
 <dt><span class="section"><a href="cc/class__continuation_.html">Class <code class="computeroutput"><span class="identifier">continuation</span></code></a></span></dt>
@@ -64,7 +64,7 @@
     </p>
 <h4>
 <a name="context.cc.h0"></a>
-      <span class="phrase"><a name="context.cc._link_linkend__cc___emphasis_callcc____emphasis___link_"></a></span><a class="link" href="cc.html#context.cc._link_linkend__cc___emphasis_callcc____emphasis___link_"><span class="emphasis"><em>callcc()</em></span></a>
+      <span><a name="context.cc._link_linkend__cc___emphasis_callcc____emphasis___link_"></a></span><a class="link" href="cc.html#context.cc._link_linkend__cc___emphasis_callcc____emphasis___link_"><a class="link" href="cc.html#cc"><span class="emphasis"><em>callcc()</em></span></a></a>
     </h4>
 <p>
       <a class="link" href="cc.html#cc"><span class="emphasis"><em>callcc()</em></span></a> is the C++ equivalent
@@ -109,7 +109,7 @@
 </table></div>
 <h4>
 <a name="context.cc.h1"></a>
-      <span class="phrase"><a name="context.cc._link_linkend__cc___emphasis_continuation__emphasis___link_"></a></span><a class="link" href="cc.html#context.cc._link_linkend__cc___emphasis_continuation__emphasis___link_"><span class="emphasis"><em>continuation</em></span></a>
+      <span><a name="context.cc._link_linkend__cc___emphasis_continuation__emphasis___link_"></a></span><a class="link" href="cc.html#context.cc._link_linkend__cc___emphasis_continuation__emphasis___link_"><a class="link" href="cc.html#cc"><span class="emphasis"><em>continuation</em></span></a></a>
     </h4>
 <p>
       <a class="link" href="cc.html#cc"><span class="emphasis"><em>continuation</em></span></a> represents a continuation;
@@ -132,7 +132,7 @@
     </p>
 <h4>
 <a name="context.cc.h2"></a>
-      <span class="phrase"><a name="context.cc.usage"></a></span><a class="link" href="cc.html#context.cc.usage">Usage</a>
+      <span><a name="context.cc.usage"></a></span><a class="link" href="cc.html#context.cc.usage">Usage</a>
     </h4>
 <pre class="programlisting"><span class="keyword">namespace</span> <span class="identifier">ctx</span><span class="special">=</span><span class="identifier">boost</span><span class="special">::</span><span class="identifier">context</span><span class="special">;</span>
 <span class="keyword">int</span> <span class="identifier">a</span><span class="special">;</span>
@@ -184,7 +184,7 @@
     </p>
 <h4>
 <a name="context.cc.h3"></a>
-      <span class="phrase"><a name="context.cc.parameter_passing"></a></span><a class="link" href="cc.html#context.cc.parameter_passing">Parameter
+      <span><a name="context.cc.parameter_passing"></a></span><a class="link" href="cc.html#context.cc.parameter_passing">Parameter
       passing</a>
     </h4>
 <p>
@@ -216,7 +216,7 @@
     </p>
 <h4>
 <a name="context.cc.h4"></a>
-      <span class="phrase"><a name="context.cc.exception_handling"></a></span><a class="link" href="cc.html#context.cc.exception_handling">Exception
+      <span><a name="context.cc.exception_handling"></a></span><a class="link" href="cc.html#context.cc.exception_handling">Exception
       handling</a>
     </h4>
 <p>
@@ -236,7 +236,7 @@
 </table></div>
 <a name="cc_ontop"></a><h4>
 <a name="context.cc.h5"></a>
-      <span class="phrase"><a name="context.cc.executing_function_on_top_of_a_continuation"></a></span><a class="link" href="cc.html#context.cc.executing_function_on_top_of_a_continuation">Executing
+      <span><a name="context.cc.executing_function_on_top_of_a_continuation"></a></span><a class="link" href="cc.html#context.cc.executing_function_on_top_of_a_continuation">Executing
       function on top of a continuation</a>
     </h4>
 <p>
@@ -327,7 +327,7 @@
     </p>
 <h4>
 <a name="context.cc.h6"></a>
-      <span class="phrase"><a name="context.cc.stack_unwinding"></a></span><a class="link" href="cc.html#context.cc.stack_unwinding">Stack
+      <span><a name="context.cc.stack_unwinding"></a></span><a class="link" href="cc.html#context.cc.stack_unwinding">Stack
       unwinding</a>
     </h4>
 <p>
@@ -354,7 +354,7 @@
 </table></div>
 <a name="cc_prealloc"></a><h4>
 <a name="context.cc.h7"></a>
-      <span class="phrase"><a name="context.cc.allocating_control_structures_on_top_of_stack"></a></span><a class="link" href="cc.html#context.cc.allocating_control_structures_on_top_of_stack">Allocating
+      <span><a name="context.cc.allocating_control_structures_on_top_of_stack"></a></span><a class="link" href="cc.html#context.cc.allocating_control_structures_on_top_of_stack">Allocating
       control structures on top of stack</a>
     </h4>
 <p>
@@ -401,7 +401,7 @@
 </pre>
 <h4>
 <a name="context.cc.h8"></a>
-      <span class="phrase"><a name="context.cc.inverting_the_control_flow"></a></span><a class="link" href="cc.html#context.cc.inverting_the_control_flow">Inverting
+      <span><a name="context.cc.inverting_the_control_flow"></a></span><a class="link" href="cc.html#context.cc.inverting_the_control_flow">Inverting
       the control flow</a>
     </h4>
 <pre class="programlisting"><span class="keyword">namespace</span> <span class="identifier">ctx</span><span class="special">=</span><span class="identifier">boost</span><span class="special">::</span><span class="identifier">context</span><span class="special">;</span>

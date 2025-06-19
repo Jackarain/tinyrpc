@@ -167,7 +167,7 @@ class basic_iarchive_impl {
     cobject_id_vector_type cobject_id_vector;
 
     //////////////////////////////////////////////////////////////////////
-    // address of the most recent object serialized as a poiner
+    // address of the most recent object serialized as a pointer
     // whose data itself is now pending serialization
     struct pending {
         void * object;
@@ -257,9 +257,12 @@ basic_iarchive_impl::reset_object_address(
             break;
     }
     for(; i < m_moveable_objects.end; ++i){
-        void const * const this_address = object_id_vector[i].address;
+        const aobject & ao = object_id_vector[i];
+        if(ao.loaded_as_pointer)
+            continue;
+        void const * const this_address = ao.address;
         // calculate displacement from this level
-        // warning - pointer arithmetic on void * is in herently non-portable
+        // warning - pointer arithmetic on void * is inherently non-portable
         // but expected to work on all platforms in current usage
         if(this_address > old_address){
             std::size_t member_displacement
@@ -399,7 +402,7 @@ basic_iarchive_impl::load_object(
         if(!track(ar, t))
             // we're done
             return;
-        // add a new enty into the tracking list
+        // add a new entry into the tracking list
         object_id_vector.push_back(aobject(t, cid));
         // and add an entry for this object
         m_moveable_objects.end = object_id_type(object_id_vector.size());
@@ -424,7 +427,7 @@ basic_iarchive_impl::load_pointer(
     class_id_type cid;
     load(ar, cid);
 
-    if(NULL_POINTER_TAG == cid){
+    if(BOOST_SERIALIZATION_NULL_POINTER_TAG == cid){
         t = NULL;
         return bpis_ptr;
     }
@@ -497,9 +500,8 @@ basic_iarchive_impl::load_pointer(
 
         serialization::state_saver<object_id_type> w_end(m_moveable_objects.end);
 
-        
         // add to list of serialized objects so that we can properly handle
-        // cyclic strucures
+        // cyclic structures
         object_id_vector.push_back(aobject(t, cid));
 
         // remember that that the address of these elements could change
@@ -584,7 +586,7 @@ basic_iarchive::delete_created_pointers()
     pimpl->delete_created_pointers();
 }
 
-BOOST_ARCHIVE_DECL boost::archive::library_version_type
+BOOST_ARCHIVE_DECL boost::serialization::library_version_type
 basic_iarchive::get_library_version() const{
     return pimpl->m_archive_library_version;
 }

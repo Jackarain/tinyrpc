@@ -26,6 +26,12 @@
 .file	"jump_i386_ms_pe_gas.asm"
 .text
 .p2align 4,,15
+
+/* mark as using no unregistered SEH handlers */
+.globl	@feat.00
+.def	@feat.00;	.scl	3;	.type	0;	.endef
+.set    @feat.00,   1
+
 .globl	_jump_fcontext
 .def	_jump_fcontext;	.scl	2;	.type	32;	.endef
 _jump_fcontext:
@@ -67,7 +73,7 @@ _jump_fcontext:
 
     /* firstarg of jump_fcontext() == fcontext to jump to */
     movl  0x30(%esp), %ecx
-    
+
     /* restore ESP (pointing to context-data) from ECX */
     movl  %ecx, %esp
 

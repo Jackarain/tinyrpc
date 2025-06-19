@@ -1,10 +1,12 @@
-// Copyright 2013-2017 Antony Polukhin
+// Copyright Antony Polukhin, 2013-2025.
 
 // Distributed under the Boost Software License, Version 1.0.
 // (See the accompanying file LICENSE_1_0.txt
 // or a copy at <http://www.boost.org/LICENSE_1_0.txt>.)
 
 #include <boost/lexical_cast.hpp>
+
+#include <array>
 #include <string>
 #include <cstdio>
 
@@ -13,7 +15,7 @@
 #endif
 
 //[lexical_cast_log_errno
-//`The following example uses numeric data in a string expression: 
+//`The following example uses numeric data in a string expression:
 
 void log_message(const std::string &);
 
@@ -28,11 +30,11 @@ void log_errno(int yoko)
 //[lexical_cast_fixed_buffer
 //`The following example converts some number and puts it to file:
 
-void number_to_file(int number, FILE* file)
+void number_to_file(int number, std::FILE* file)
 {
-    typedef boost::array<char, 50> buf_t; // You can use std::array if your compiler supports it
+    using buf_t = std::array<char, 50>;
     buf_t buffer = boost::lexical_cast<buf_t>(number); // No dynamic memory allocation
-    std::fputs(buffer.begin(), file);
+    std::fputs(buffer.data(), file);
 }
 
 //] [/lexical_cast_fixed_buffer]

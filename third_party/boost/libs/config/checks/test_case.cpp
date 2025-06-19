@@ -1,6 +1,6 @@
-//  This file was automatically generated on Thu Aug 16 11:20:17 2018
+//  This file was automatically generated on Fri Oct 13 19:09:38 2023
 //  by libs/config/tools/generate.cpp
-//  Copyright John Maddock 2002-4.
+//  Copyright John Maddock 2002-21.
 //  Use, modification and distribution are subject to the 
 //  Boost Software License, Version 1.0. (See accompanying file 
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -276,6 +276,16 @@
 #     error "Defect macro BOOST_NO_CWCTYPE is defined."
 #  endif
 #endif
+#ifdef TEST_BOOST_NO_CXX03
+#  ifdef BOOST_NO_CXX03
+#     error "Defect macro BOOST_NO_CXX03 is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX11
+#  ifdef BOOST_NO_CXX11
+#     error "Defect macro BOOST_NO_CXX11 is defined."
+#  endif
+#endif
 #ifdef TEST_BOOST_NO_CXX11_ADDRESSOF
 #  ifdef BOOST_NO_CXX11_ADDRESSOF
 #     error "Defect macro BOOST_NO_CXX11_ADDRESSOF is defined."
@@ -284,6 +294,11 @@
 #ifdef TEST_BOOST_NO_CXX11_ALIGNAS
 #  ifdef BOOST_NO_CXX11_ALIGNAS
 #     error "Defect macro BOOST_NO_CXX11_ALIGNAS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX11_ALIGNOF
+#  ifdef BOOST_NO_CXX11_ALIGNOF
+#     error "Defect macro BOOST_NO_CXX11_ALIGNOF is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX11_ALLOCATOR
@@ -299,6 +314,11 @@
 #ifdef TEST_BOOST_NO_CXX11_DEFAULTED_MOVES
 #  ifdef BOOST_NO_CXX11_DEFAULTED_MOVES
 #     error "Defect macro BOOST_NO_CXX11_DEFAULTED_MOVES is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX11_HDR_EXCEPTION
+#  ifdef BOOST_NO_CXX11_HDR_EXCEPTION
+#     error "Defect macro BOOST_NO_CXX11_HDR_EXCEPTION is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX11_FINAL
@@ -416,6 +436,11 @@
 #     error "Defect macro BOOST_NO_CXX11_NUMERIC_LIMITS is defined."
 #  endif
 #endif
+#ifdef TEST_BOOST_NO_CXX11_OVERRIDE
+#  ifdef BOOST_NO_CXX11_OVERRIDE
+#     error "Defect macro BOOST_NO_CXX11_OVERRIDE is defined."
+#  endif
+#endif
 #ifdef TEST_BOOST_NO_CXX11_POINTER_TRAITS
 #  ifdef BOOST_NO_CXX11_POINTER_TRAITS
 #     error "Defect macro BOOST_NO_CXX11_POINTER_TRAITS is defined."
@@ -451,9 +476,19 @@
 #     error "Defect macro BOOST_NO_CXX11_TRAILING_RESULT_TYPES is defined."
 #  endif
 #endif
+#ifdef TEST_BOOST_NO_CXX11_UNRESTRICTED_UNION
+#  ifdef BOOST_NO_CXX11_UNRESTRICTED_UNION
+#     error "Defect macro BOOST_NO_CXX11_UNRESTRICTED_UNION is defined."
+#  endif
+#endif
 #ifdef TEST_BOOST_NO_CXX11_USER_DEFINED_LITERALS
 #  ifdef BOOST_NO_CXX11_USER_DEFINED_LITERALS
 #     error "Defect macro BOOST_NO_CXX11_USER_DEFINED_LITERALS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX14
+#  ifdef BOOST_NO_CXX14
+#     error "Defect macro BOOST_NO_CXX14 is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX14_BINARY_LITERALS
@@ -511,9 +546,49 @@
 #     error "Defect macro BOOST_NO_CXX14_VARIABLE_TEMPLATES is defined."
 #  endif
 #endif
+#ifdef TEST_BOOST_NO_CXX17
+#  ifdef BOOST_NO_CXX17
+#     error "Defect macro BOOST_NO_CXX17 is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_AUTO_NONTYPE_TEMPLATE_PARAMS
+#  ifdef BOOST_NO_CXX17_AUTO_NONTYPE_TEMPLATE_PARAMS
+#     error "Defect macro BOOST_NO_CXX17_AUTO_NONTYPE_TEMPLATE_PARAMS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_DEDUCTION_GUIDES
+#  ifdef BOOST_NO_CXX17_DEDUCTION_GUIDES
+#     error "Defect macro BOOST_NO_CXX17_DEDUCTION_GUIDES is defined."
+#  endif
+#endif
 #ifdef TEST_BOOST_NO_CXX17_FOLD_EXPRESSIONS
 #  ifdef BOOST_NO_CXX17_FOLD_EXPRESSIONS
 #     error "Defect macro BOOST_NO_CXX17_FOLD_EXPRESSIONS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_ANY
+#  ifdef BOOST_NO_CXX17_HDR_ANY
+#     error "Defect macro BOOST_NO_CXX17_HDR_ANY is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_CHARCONV
+#  ifdef BOOST_NO_CXX17_HDR_CHARCONV
+#     error "Defect macro BOOST_NO_CXX17_HDR_CHARCONV is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_EXECUTION
+#  ifdef BOOST_NO_CXX17_HDR_EXECUTION
+#     error "Defect macro BOOST_NO_CXX17_HDR_EXECUTION is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_FILESYSTEM
+#  ifdef BOOST_NO_CXX17_HDR_FILESYSTEM
+#     error "Defect macro BOOST_NO_CXX17_HDR_FILESYSTEM is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_MEMORY_RESOURCE
+#  ifdef BOOST_NO_CXX17_HDR_MEMORY_RESOURCE
+#     error "Defect macro BOOST_NO_CXX17_HDR_MEMORY_RESOURCE is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX17_HDR_OPTIONAL
@@ -524,6 +599,11 @@
 #ifdef TEST_BOOST_NO_CXX17_HDR_STRING_VIEW
 #  ifdef BOOST_NO_CXX17_HDR_STRING_VIEW
 #     error "Defect macro BOOST_NO_CXX17_HDR_STRING_VIEW is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX17_HDR_VARIANT
+#  ifdef BOOST_NO_CXX17_HDR_VARIANT
+#     error "Defect macro BOOST_NO_CXX17_HDR_VARIANT is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX17_IF_CONSTEXPR
@@ -554,6 +634,126 @@
 #ifdef TEST_BOOST_NO_CXX17_STRUCTURED_BINDINGS
 #  ifdef BOOST_NO_CXX17_STRUCTURED_BINDINGS
 #     error "Defect macro BOOST_NO_CXX17_STRUCTURED_BINDINGS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_BARRIER
+#  ifdef BOOST_NO_CXX20_HDR_BARRIER
+#     error "Defect macro BOOST_NO_CXX20_HDR_BARRIER is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_BIT
+#  ifdef BOOST_NO_CXX20_HDR_BIT
+#     error "Defect macro BOOST_NO_CXX20_HDR_BIT is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_COMPARE
+#  ifdef BOOST_NO_CXX20_HDR_COMPARE
+#     error "Defect macro BOOST_NO_CXX20_HDR_COMPARE is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_CONCEPTS
+#  ifdef BOOST_NO_CXX20_HDR_CONCEPTS
+#     error "Defect macro BOOST_NO_CXX20_HDR_CONCEPTS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_COROUTINE
+#  ifdef BOOST_NO_CXX20_HDR_COROUTINE
+#     error "Defect macro BOOST_NO_CXX20_HDR_COROUTINE is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_FORMAT
+#  ifdef BOOST_NO_CXX20_HDR_FORMAT
+#     error "Defect macro BOOST_NO_CXX20_HDR_FORMAT is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_LATCH
+#  ifdef BOOST_NO_CXX20_HDR_LATCH
+#     error "Defect macro BOOST_NO_CXX20_HDR_LATCH is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_NUMBERS
+#  ifdef BOOST_NO_CXX20_HDR_NUMBERS
+#     error "Defect macro BOOST_NO_CXX20_HDR_NUMBERS is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_RANGES
+#  ifdef BOOST_NO_CXX20_HDR_RANGES
+#     error "Defect macro BOOST_NO_CXX20_HDR_RANGES is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_SEMAPHORE
+#  ifdef BOOST_NO_CXX20_HDR_SEMAPHORE
+#     error "Defect macro BOOST_NO_CXX20_HDR_SEMAPHORE is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_SOURCE_LOCATION
+#  ifdef BOOST_NO_CXX20_HDR_SOURCE_LOCATION
+#     error "Defect macro BOOST_NO_CXX20_HDR_SOURCE_LOCATION is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_SPAN
+#  ifdef BOOST_NO_CXX20_HDR_SPAN
+#     error "Defect macro BOOST_NO_CXX20_HDR_SPAN is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_STOP_TOKEN
+#  ifdef BOOST_NO_CXX20_HDR_STOP_TOKEN
+#     error "Defect macro BOOST_NO_CXX20_HDR_STOP_TOKEN is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_SYNCSTREAM
+#  ifdef BOOST_NO_CXX20_HDR_SYNCSTREAM
+#     error "Defect macro BOOST_NO_CXX20_HDR_SYNCSTREAM is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX20_HDR_VERSION
+#  ifdef BOOST_NO_CXX20_HDR_VERSION
+#     error "Defect macro BOOST_NO_CXX20_HDR_VERSION is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_EXPECTED
+#  ifdef BOOST_NO_CXX23_HDR_EXPECTED
+#     error "Defect macro BOOST_NO_CXX23_HDR_EXPECTED is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_FLAT_MAP
+#  ifdef BOOST_NO_CXX23_HDR_FLAT_MAP
+#     error "Defect macro BOOST_NO_CXX23_HDR_FLAT_MAP is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_FLAT_SET
+#  ifdef BOOST_NO_CXX23_HDR_FLAT_SET
+#     error "Defect macro BOOST_NO_CXX23_HDR_FLAT_SET is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_GENERATOR
+#  ifdef BOOST_NO_CXX23_HDR_GENERATOR
+#     error "Defect macro BOOST_NO_CXX23_HDR_GENERATOR is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_MDSPAN
+#  ifdef BOOST_NO_CXX23_HDR_MDSPAN
+#     error "Defect macro BOOST_NO_CXX23_HDR_MDSPAN is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_PRINT
+#  ifdef BOOST_NO_CXX23_HDR_PRINT
+#     error "Defect macro BOOST_NO_CXX23_HDR_PRINT is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_SPANSTREAM
+#  ifdef BOOST_NO_CXX23_HDR_SPANSTREAM
+#     error "Defect macro BOOST_NO_CXX23_HDR_SPANSTREAM is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_STACKTRACE
+#  ifdef BOOST_NO_CXX23_HDR_STACKTRACE
+#     error "Defect macro BOOST_NO_CXX23_HDR_STACKTRACE is defined."
+#  endif
+#endif
+#ifdef TEST_BOOST_NO_CXX23_HDR_STDFLOAT
+#  ifdef BOOST_NO_CXX23_HDR_STDFLOAT
+#     error "Defect macro BOOST_NO_CXX23_HDR_STDFLOAT is defined."
 #  endif
 #endif
 #ifdef TEST_BOOST_NO_CXX98_BINDERS

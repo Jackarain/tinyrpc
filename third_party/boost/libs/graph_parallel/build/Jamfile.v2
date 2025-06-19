@@ -27,6 +27,7 @@ if [ mpi.configured ]
       # Without these flags, MSVC 7.1 crash
       # User reports that VC++ 8 no longer has this problem
       <toolset>msvc-7.1:<cxxflags>-GR-
+      <local-visibility>global
     ;
 
 }
@@ -34,10 +35,9 @@ else
 {
   message boost_graph_parallel
       : "warning: Graph library does not contain MPI-based parallel components."
-      : "note: to enable them, add \"using mpi ;\" to your user-config.jam"
+      : "note: to enable them, add \"using mpi ;\" to your user-config.jam."
+      : "note: to suppress this message, pass \"--without-graph_parallel\" to bjam."
       ;
 }
-
-
 
 boost-install boost_graph_parallel ;

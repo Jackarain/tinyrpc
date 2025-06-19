@@ -21,6 +21,9 @@
 #include <iostream>
 #include <algorithm>
 #include <boost/config.hpp>
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+#include <string_view>
+#endif
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/string_view.hpp>
 #include <boost/log/utility/formatting_ostream.hpp>
@@ -198,6 +201,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(width_formatting, CharT, char_types)
     test::BOOST_NESTED_TEMPLATE width_formatting< const CharT* >();
     test::BOOST_NESTED_TEMPLATE width_formatting< typename test::string_type >();
     test::BOOST_NESTED_TEMPLATE width_formatting< boost::basic_string_view< CharT > >();
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+    test::BOOST_NESTED_TEMPLATE width_formatting< std::basic_string_view< CharT > >();
+#endif
 }
 
 // Test support for filler character setup
@@ -207,6 +213,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fill_formatting, CharT, char_types)
     test::BOOST_NESTED_TEMPLATE fill_formatting< const CharT* >();
     test::BOOST_NESTED_TEMPLATE fill_formatting< typename test::string_type >();
     test::BOOST_NESTED_TEMPLATE fill_formatting< boost::basic_string_view< CharT > >();
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+    test::BOOST_NESTED_TEMPLATE fill_formatting< std::basic_string_view< CharT > >();
+#endif
 }
 
 // Test support for text alignment
@@ -216,6 +225,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(alignment, CharT, char_types)
     test::BOOST_NESTED_TEMPLATE alignment< const CharT* >();
     test::BOOST_NESTED_TEMPLATE alignment< typename test::string_type >();
     test::BOOST_NESTED_TEMPLATE alignment< boost::basic_string_view< CharT > >();
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+    test::BOOST_NESTED_TEMPLATE alignment< std::basic_string_view< CharT > >();
+#endif
 }
 
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
@@ -226,6 +238,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(rvalue_stream, CharT, char_types)
     test::BOOST_NESTED_TEMPLATE rvalue_stream< const CharT* >();
     test::BOOST_NESTED_TEMPLATE rvalue_stream< typename test::string_type >();
     test::BOOST_NESTED_TEMPLATE rvalue_stream< boost::basic_string_view< CharT > >();
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+    test::BOOST_NESTED_TEMPLATE rvalue_stream< std::basic_string_view< CharT > >();
+#endif
 }
 #endif
 
@@ -251,6 +266,20 @@ template< typename CharT, typename TraitsT >
 inline std::basic_ostream< CharT, TraitsT >& operator<< (std::basic_ostream< CharT, TraitsT >& strm, B&)
 {
     strm << "B";
+    return strm;
+}
+
+template< typename CharT, typename TraitsT >
+inline std::basic_ostream< CharT, TraitsT >& operator<< (std::basic_ostream< CharT, TraitsT >& strm, B*)
+{
+    strm << "B*";
+    return strm;
+}
+
+template< typename CharT, typename TraitsT >
+inline std::basic_ostream< CharT, TraitsT >& operator<< (std::basic_ostream< CharT, TraitsT >& strm, const B*)
+{
+    strm << "const B*";
     return strm;
 }
 
@@ -287,10 +316,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(operator_forwarding, CharT, char_types)
     my_namespace::B b; // lvalue
     strm_fmt << a << b << my_namespace::C(); // rvalue
     strm_fmt << my_namespace::eee;
+    strm_fmt << &b << (my_namespace::B const*)&b;
     strm_fmt.flush();
 
     ostream_type strm_correct;
-    strm_correct << a << b << my_namespace::C() << my_namespace::eee;
+    strm_correct << a << b << my_namespace::C() << my_namespace::eee << &b << (my_namespace::B const*)&b;
 
     BOOST_CHECK(equal_strings(strm_fmt.str(), strm_correct.str()));
 }
@@ -464,6 +494,10 @@ BOOST_AUTO_TEST_CASE(character_code_conversion)
     test_widening_code_conversion< std::string >();
     test_narrowing_code_conversion< boost::wstring_view >();
     test_widening_code_conversion< boost::string_view >();
+#if !defined(BOOST_NO_CXX17_HDR_STRING_VIEW)
+    test_narrowing_code_conversion< std::wstring_view >();
+    test_widening_code_conversion< std::string_view >();
+#endif
 }
 
 #endif

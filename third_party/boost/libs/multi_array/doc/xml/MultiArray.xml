@@ -567,7 +567,7 @@ This expression generates a view of the array determined by the
 	      <entry>bool</entry>
 	      <entry>This performs a lexicographical comparison of the
 values of <literal>a</literal> and <literal>b</literal>.  The element
-type must model <ulink url="http://www.sgi.com/tech/stl/EqualityComparable.html">EqualityComparable</ulink> for this
+type must model <ulink url="https://www.boost.org/sgi/stl/EqualityComparable.html">EqualityComparable</ulink> for this
 expression to be valid.</entry>
 	    </row>
 	    <row>
@@ -575,7 +575,7 @@ expression to be valid.</entry>
 	      <entry>bool</entry>
 	      <entry>This performs a lexicographical comparison of the
 values of <literal>a</literal> and <literal>b</literal>.  The element
-type must model <ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink> for this
+type must model <ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink> for this
 expression to be valid.</entry>
 	    </row>
 	    <row>
@@ -583,8 +583,8 @@ expression to be valid.</entry>
 	      <entry>bool</entry>
 	      <entry>This performs a lexicographical comparison of the
 values of <literal>a</literal> and <literal>b</literal>.  The element
-type must model <ulink url="http://www.sgi.com/tech/stl/EqualityComparable.html">EqualityComparable</ulink> and
-<ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink> for this
+type must model <ulink url="https://www.boost.org/sgi/stl/EqualityComparable.html">EqualityComparable</ulink> and
+<ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink> for this
 expression to be valid.</entry>
 	    </row>
 	    <row>
@@ -592,8 +592,8 @@ expression to be valid.</entry>
 	      <entry>bool</entry>
 	      <entry>This performs a lexicographical comparison of the
 values of <literal>a</literal> and <literal>b</literal>.  The element
-type must model <ulink url="http://www.sgi.com/tech/stl/EqualityComparable.html">EqualityComparable</ulink> and 
-<ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink> for this
+type must model <ulink url="https://www.boost.org/sgi/stl/EqualityComparable.html">EqualityComparable</ulink> and 
+<ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink> for this
 expression to be valid.</entry>
 	    </row>
 	    <row>
@@ -601,7 +601,7 @@ expression to be valid.</entry>
 	      <entry>bool</entry>
 	      <entry>This performs a lexicographical comparison of the
 values of <literal>a</literal> and <literal>b</literal>.  The element
-type must model <ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink> for this
+type must model <ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink> for this
 expression to be valid.</entry>
 	    </row>
     </tbody>

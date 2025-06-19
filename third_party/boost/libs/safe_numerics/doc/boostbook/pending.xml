@@ -53,55 +53,12 @@ struct range {
     {}
 };</programlisting></para>
 
-    <para>Then redeclare <code>safe_base</code>, etc. accordingly.</para>
-  </section>
+    <para>Then redeclare <code>safe_base</code>, etc., accordingly.</para>
 
-  <section>
-    <title>Concepts are Defined but Not Enforced.</title>
-
-    <para>The following is paraphrased from an issue raised by Andrzej
-    Krzemieński as a <ulink
-    url="https://github.com/robertramey/safe_numerics/issues/46">github
-    issue</ulink>.</para>
-
-    <para><quote>You do not need a concept to constrain anything with it, in
-    your library. Or is the purpose of the Type requirements to show in detail
-    what it means that safe&lt;T&gt; is a 'drop-in replacement for
-    T?</quote></para>
-
-    <para>Right - currently I don't use the concept to constrain anything.
-    They are currently a purely "conceptual" tool to keep the design from
-    getting off track. This is common with other libraries such as the C++
-    standard library where the concepts are defined but not enforced by
-    compile time predicates. Hopefully in future that might change - see
-    below</para>
-
-    <para><quote>If you want to extend safe&lt;T&gt; for other integer types,
-    Type requirement still need to be fixed:</quote></para>
-
-    <para>Hmmmm - I'm not quite sure that this is true. One thing that IS true
-    is the the interface and implementation of the library will need to be
-    enhanced to permit "safe" to be applied to user defined types. This is
-    apparent now, but as my brain can only comprehend the library one piece at
-    a time, this design feature was lost during the implementation. In
-    implementing co-existence of floats with safe integers, I did refactor the
-    implementation in a way which I believe my eventually permit the
-    application to any user supplied T which implements all the required
-    operations of Numeric types. So as it is now this is pending. If the
-    library were to become widely used, there might be motivation to do this.
-    Time will tell. So for now I'm leaving these in the documentation and
-    code, even though they are not actually used.</para>
-  </section>
-
-  <section>
-    <title> <code>Safe</code> values Can Be Uninitialized</title>
-
-    <para>Currently the library permits a <code>safe&lt;int&gt;</code> value
-    to be uninitialized. This supports the goal of "drop-in" replacement of
-    C++/C built-in types with safe counter parts. On the other hand, this
-    breaks the "always valid" guarantee. The recent improvements in the
-    exception policy implementation will permit a user to specify how this is
-    to be handled.</para>
+    <para>Also note that for C++20, template value parameters are no longer
+    restricted to integer primitive types but may be class types as well. This
+    means the library maybe extended to user class types without changing the
+    current template signatures.</para>
   </section>
 
   <section>
@@ -120,7 +77,9 @@ struct range {
           <code>checked</code> integer arithmetic - depend upon two's
           complement representation of integers. Hence the library is probably
           not currently portable to all other possible C++ architectures.
-          These days, this is unlikely to be a limitation in practice.</para>
+          These days, this is unlikely to be a limitation in practice.
+          Starting with C++20, integer arithmetic will be guaranteed by the
+          C++ standard to be two's complement.</para>
         </listitem>
 
         <listitem>
@@ -128,22 +87,6 @@ struct range {
           libraries, including std::chrono. Without a specialization for
           <code>safe&lt;T&gt;</code>s one cannot use the safe wrappers e.g. as
           a representation for <code>std::chrono::duration</code>.</para>
-        </listitem>
-
-        <listitem>
-          <para>For many meta programming tasks, the library uses the classic
-          Boost.MPL library as well as the more current Boost.MP11 library. In
-          the interests of conserving brain surface area required to
-          understand and maintain the library, the remaining instances of
-          usage of Boost.MPL should be replaces with code based on Boost.MP11.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>For testing the library, we rely on Boost.Preprocessor to
-          generate test cases. In later tests, we've depended on boost mp11.
-          Again, in order to diminish the dependencies, we plan to replace
-          usages of Boost.Preprocessor with Boost.MP11.</para>
         </listitem>
       </itemizedlist></para>
   </section>

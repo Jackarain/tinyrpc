@@ -12,6 +12,8 @@
         "Math"
     ],
     "maintainers": [
-        "Steven Watanabe <watanabesj -at- gmail.com>"
-    ]
+        "Steven Watanabe <watanabesj -at- gmail.com>",
+        "Matt Borland <matt -at- mattborland.com>"
+    ],
+    "cxxstd": "11"
 }

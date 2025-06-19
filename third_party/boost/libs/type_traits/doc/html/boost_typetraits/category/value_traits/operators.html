@@ -1,10 +1,10 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Operator Type Traits</title>
 <link rel="stylesheet" href="../../../../../../../doc/src/boostbook.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
-<link rel="home" href="../../../index.html" title="Chapter&#160;1.&#160;Boost.TypeTraits">
+<link rel="home" href="../../../index.html" title="Chapter 1. Boost.TypeTraits">
 <link rel="up" href="../value_traits.html" title="Type Traits that Describe the Properties of a Type">
 <link rel="prev" href="relate.html" title="Relationships Between Two Types">
 <link rel="next" href="../transform.html" title="Type Traits that Transform One Type to Another">
@@ -204,7 +204,7 @@
           operators.
         </p>
 <div class="table">
-<a name="boost_typetraits.category.value_traits.operators.supported_prefix_operators"></a><p class="title"><b>Table&#160;1.4.&#160;Supported prefix operators</b></p>
+<a name="boost_typetraits.category.value_traits.operators.supported_prefix_operators"></a><p class="title"><b>Table 1.4. Supported prefix operators</b></p>
 <div class="table-contents"><table class="table" summary="Supported prefix operators">
 <colgroup>
 <col>
@@ -315,7 +315,7 @@
 </table></div>
 </div>
 <br class="table-break"><div class="table">
-<a name="boost_typetraits.category.value_traits.operators.supported_postfix_operators"></a><p class="title"><b>Table&#160;1.5.&#160;Supported postfix operators</b></p>
+<a name="boost_typetraits.category.value_traits.operators.supported_postfix_operators"></a><p class="title"><b>Table 1.5. Supported postfix operators</b></p>
 <div class="table-contents"><table class="table" summary="Supported postfix operators">
 <colgroup>
 <col>
@@ -366,7 +366,7 @@
 </table></div>
 </div>
 <br class="table-break"><div class="table">
-<a name="boost_typetraits.category.value_traits.operators.supported_binary_operators"></a><p class="title"><b>Table&#160;1.6.&#160;Supported binary operators</b></p>
+<a name="boost_typetraits.category.value_traits.operators.supported_binary_operators"></a><p class="title"><b>Table 1.6. Supported binary operators</b></p>
 <div class="table-contents"><table class="table" summary="Supported binary operators">
 <colgroup>
 <col>
@@ -769,7 +769,7 @@
           to be <code class="computeroutput"><span class="keyword">true</span></code>.
         </p>
 <div class="table">
-<a name="boost_typetraits.category.value_traits.operators.necessary_and_non_sufficient_condition_on_operator_argument_for_value_to_be_true"></a><p class="title"><b>Table&#160;1.7.&#160;necessary and non sufficient condition on operator argument for
+<a name="boost_typetraits.category.value_traits.operators.necessary_and_non_sufficient_condition_on_operator_argument_for_value_to_be_true"></a><p class="title"><b>Table 1.7. necessary and non sufficient condition on operator argument for
           value to be true</b></p>
 <div class="table-contents"><table class="table" summary="necessary and non sufficient condition on operator argument for
           value to be true">
@@ -905,7 +905,7 @@
 </table></div>
 </div>
 <br class="table-break"><div class="table">
-<a name="boost_typetraits.category.value_traits.operators.necessary_and_non_sufficient_condition_on_operator_return_type_for_value_to_be_true"></a><p class="title"><b>Table&#160;1.8.&#160;necessary and non sufficient condition on operator return type for
+<a name="boost_typetraits.category.value_traits.operators.necessary_and_non_sufficient_condition_on_operator_return_type_for_value_to_be_true"></a><p class="title"><b>Table 1.8. necessary and non sufficient condition on operator return type for
           value to be true</b></p>
 <div class="table-contents"><table class="table" summary="necessary and non sufficient condition on operator return type for
           value to be true">
@@ -1148,7 +1148,15 @@
           All traits are implemented the same way using preprocessor macros to avoid
           code duplication. The main files are in <code class="literal">boost/type_traits/detail</code>:
           <code class="literal">has_binary_operator.hpp</code>, <code class="literal">has_prefix_operator.hpp</code>
-          and <code class="literal">has_postfix_operator.hpp</code>. The example of prefix
+          and <code class="literal">has_postfix_operator.hpp</code>.
+        </p>
+<p>
+          Given a sufficiently conforming C++11 compiler, these traits are implemented
+          in a rather compact and straightforward way that should always give accurate
+          answers.
+        </p>
+<p>
+          In C++03 there is a legacy implementation, by way of example the prefix
           <code class="computeroutput"><span class="keyword">operator</span><span class="special">-</span></code>
           is presented below:
         </p>
@@ -1324,7 +1332,7 @@
           <span class="phrase"><a name="boost_typetraits.category.value_traits.operators.limitation"></a></span><a class="link" href="operators.html#boost_typetraits.category.value_traits.operators.limitation">Limitation</a>
         </h6>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
-              Requires a compiler with working SFINAE.
+              Prior to C++11, requires a compiler with working SFINAE.
             </li></ul></div>
 <h6>
 <a name="boost_typetraits.category.value_traits.operators.h6"></a>
@@ -1333,21 +1341,22 @@
         </h6>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-              These traits cannot detect whether the operators are public or not:
-              if an operator is defined as a private member of type <code class="computeroutput"><span class="identifier">T</span></code> then the instantiation of the corresponding
-              trait will produce a compiler error. For this reason these traits cannot
-              be used to determine whether a type has a public operator or not.
+              Prior to C++11, these traits cannot detect whether the operators are
+              public or not: if an operator is defined as a private member of type
+              <code class="computeroutput"><span class="identifier">T</span></code> then the instantiation
+              of the corresponding trait will produce a compiler error. For this
+              reason these traits cannot be used to determine whether a type has
+              a public operator or not.
 <pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">A</span> <span class="special">{</span> <span class="keyword">private</span><span class="special">:</span> <span class="identifier">A</span> <span class="keyword">operator</span><span class="special">-();</span> <span class="special">};</span>
 <span class="identifier">boost</span><span class="special">::</span><span class="identifier">has_unary_minus</span><span class="special">&lt;</span><span class="identifier">A</span><span class="special">&gt;::</span><span class="identifier">value</span><span class="special">;</span> <span class="comment">// error: A::operator-() is private</span>
 </pre>
             </li>
 <li class="listitem">
-              There is an issue if the operator exists only for type <code class="computeroutput"><span class="identifier">A</span></code> and <code class="computeroutput"><span class="identifier">B</span></code>
-              is convertible to <code class="computeroutput"><span class="identifier">A</span></code>.
-              In this case, the compiler will report an ambiguous overload because
-              both the existing operator and the one we provide (with argument of
-              type <code class="computeroutput"><span class="identifier">any</span></code>) need type
-              conversion, so that none is preferred.
+              Prior to C++11, there is an issue if the operator exists only for type
+              <code class="computeroutput"><span class="identifier">A</span></code> and <code class="computeroutput"><span class="identifier">B</span></code> is convertible to <code class="computeroutput"><span class="identifier">A</span></code>. In this case, the compiler will
+              report an ambiguous overload because both the existing operator and
+              the one we provide (with argument of type <code class="computeroutput"><span class="identifier">any</span></code>)
+              need type conversion, so that none is preferred.
 <pre class="programlisting"><span class="keyword">struct</span> <span class="identifier">A</span> <span class="special">{</span> <span class="special">};</span>
 <span class="keyword">void</span> <span class="keyword">operator</span><span class="special">-(</span><span class="keyword">const</span> <span class="identifier">A</span><span class="special">&amp;);</span>
 <span class="keyword">struct</span> <span class="identifier">B</span> <span class="special">{</span> <span class="keyword">operator</span> <span class="identifier">A</span><span class="special">();</span> <span class="special">};</span>
@@ -1388,7 +1397,7 @@
 
 <span class="keyword">class</span> <span class="identifier">bad</span> <span class="special">{</span> <span class="special">};</span>
 <span class="keyword">class</span> <span class="identifier">good</span> <span class="special">{</span> <span class="special">};</span>
-<span class="keyword">bool</span> <span class="identifier">f</span><span class="special">(</span><span class="keyword">const</span> <span class="identifier">good</span><span class="special">&amp;,</span> <span class="keyword">const</span> <span class="identifier">good</span><span class="special">&amp;)</span> <span class="special">{</span> <span class="special">}</span>
+<span class="keyword">bool</span> <span class="identifier">f</span><span class="special">(</span><span class="keyword">const</span> <span class="identifier">good</span><span class="special">&amp;,</span> <span class="keyword">const</span> <span class="identifier">good</span><span class="special">&amp;)</span> <span class="special">{</span> <span class="keyword">return</span> <span class="keyword">true</span><span class="special">;</span> <span class="special">}</span>
 
 <span class="keyword">int</span> <span class="identifier">main</span><span class="special">()</span> <span class="special">{</span>
 	<span class="identifier">std</span><span class="special">::</span><span class="identifier">cout</span><span class="special">&lt;&lt;</span><span class="identifier">std</span><span class="special">::</span><span class="identifier">boolalpha</span><span class="special">;</span>
@@ -1423,11 +1432,11 @@
 </div>
 <table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
 <td align="left"></td>
-<td align="right"><div class="copyright-footer">Copyright &#169; 2000, 2011 Adobe Systems Inc, David Abrahams,
-      Frederic Bron, Steve Cleary, Beman Dawes, Aleksey Gurtovoy, Howard Hinnant,
-      Jesse Jones, Mat Marcus, Itay Maman, John Maddock, Alexander Nasonov, Thorsten
-      Ottosen, Roman Perepelitsa, Robert Ramey, Jeremy Siek, Robert Stewart and Steven
-      Watanabe<p>
+<td align="right"><div class="copyright-footer">Copyright © 2000, 2011 Adobe Systems Inc, David Abrahams,
+      Frederic Bron, Steve Cleary, Beman Dawes, Glen Fernandes, Aleksey Gurtovoy,
+      Howard Hinnant, Jesse Jones, Mat Marcus, Itay Maman, John Maddock, Alexander
+      Nasonov, Thorsten Ottosen, Roman Perepelitsa, Robert Ramey, Jeremy Siek, Robert
+      Stewart and Steven Watanabe<p>
         Distributed under the Boost Software License, Version 1.0. (See accompanying
         file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
       </p>

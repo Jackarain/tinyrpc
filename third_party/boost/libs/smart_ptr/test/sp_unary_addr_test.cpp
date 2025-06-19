@@ -9,7 +9,7 @@
 //
 
 #include <boost/shared_ptr.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <memory>
 
 struct deleter
@@ -49,9 +49,6 @@ int main()
         BOOST_TEST( q != 0 && q->data == 17041 );
     }
 
-#if defined( BOOST_MSVC ) && BOOST_WORKAROUND( BOOST_MSVC, < 1300 )
-#else
-
     {
         boost::shared_ptr<X> p( &x, deleter(), std::allocator<X>() );
 
@@ -60,8 +57,6 @@ int main()
         BOOST_TEST( q != 0 );
         BOOST_TEST( q != 0 && q->data == 17041 );
     }
-
-#endif
 
     return boost::report_errors();
 }

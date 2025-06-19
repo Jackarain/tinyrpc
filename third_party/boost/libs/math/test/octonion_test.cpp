@@ -8,7 +8,6 @@
 
 #include <iomanip>
 
-
 #include <boost/mpl/list.hpp>
 
 #include <boost/test/unit_test.hpp>
@@ -16,6 +15,7 @@
 
 #include <boost/math/octonion.hpp>
 
+// LCOV_EXCL_START
 
 template<typename T>
 struct string_type_name;
@@ -440,7 +440,7 @@ void    octonion_manual_test()
     BOOST_TEST_MESSAGE( "the value of the l1 norm is "
                 << l1(o0));
     
-    BOOST_TEST_MESSAGE( "the value of the magnitude (euclidian norm) is "
+    BOOST_TEST_MESSAGE( "the value of the magnitude (Euclidean norm) is "
                 << abs(o0));
     
     BOOST_TEST_MESSAGE( "the value of the (Cayley) norm is "
@@ -773,3 +773,5 @@ boost::unit_test::test_suite *    init_unit_test_suite(int, char *[])
 }
 
 #undef DEFINE_TYPE_NAME
+
+// LCOV_EXCL_STOP

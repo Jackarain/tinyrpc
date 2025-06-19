@@ -1,5 +1,7 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright 2022 Christian Mazakas
+// Copyright 2023 Joaquin M Lopez Munoz
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -10,8 +12,12 @@
 #include "../helpers/fwd.hpp"
 #include "../helpers/memory.hpp"
 #include <boost/config.hpp>
+#include <boost/core/serialization.hpp>
 #include <boost/limits.hpp>
 #include <cstddef>
+
+template <class T> struct allocator1;
+template <class T> struct allocator2;
 
 namespace test {
   // Note that the default hash function will work for any equal_to (but not
@@ -73,6 +79,14 @@ namespace test {
     {
       return out << "(" << o.tag1_ << "," << o.tag2_ << ")";
     }
+
+
+    template<typename Archive>
+    void serialize(Archive& ar,unsigned int)
+    {
+      ar & boost::core::make_nvp("tag1", tag1_);
+      ar & boost::core::make_nvp("tag2", tag2_);
+    }
   };
 
   class movable : private counted_object
@@ -82,7 +96,6 @@ namespace test {
     friend class less;
     int tag1_, tag2_;
 
-    BOOST_COPYABLE_AND_MOVABLE(movable)
   public:
     explicit movable(int t1 = 0, int t2 = 0) : tag1_(t1), tag2_(t2) {}
 
@@ -92,7 +105,7 @@ namespace test {
       BOOST_TEST(x.tag1_ != -1);
     }
 
-    movable(BOOST_RV_REF(movable) x)
+    movable(movable&& x)
         : counted_object(x), tag1_(x.tag1_), tag2_(x.tag2_)
     {
       BOOST_TEST(x.tag1_ != -1);
@@ -100,7 +113,7 @@ namespace test {
       x.tag2_ = -1;
     }
 
-    movable& operator=(BOOST_COPY_ASSIGN_REF(movable) x) // Copy assignment
+    movable& operator=(movable const& x) // Copy assignment
     {
       BOOST_TEST(x.tag1_ != -1);
       tag1_ = x.tag1_;
@@ -108,7 +121,7 @@ namespace test {
       return *this;
     }
 
-    movable& operator=(BOOST_RV_REF(movable) x) // Move assignment
+    movable& operator=(movable&& x) // Move assignment
     {
       BOOST_TEST(x.tag1_ != -1);
       tag1_ = x.tag1_;
@@ -184,7 +197,7 @@ namespace test {
   };
 
   // Note: This is a deliberately bad hash function.
-  class hash
+  class hash BOOST_FINAL
   {
     int type_;
 
@@ -195,50 +208,52 @@ namespace test {
 
     std::size_t operator()(object const& x) const
     {
-      int result;
+      unsigned result;
       switch (type_) {
       case 1:
-        result = x.tag1_;
+        result = static_cast<unsigned>(x.tag1_);
         break;
       case 2:
-        result = x.tag2_;
+        result = static_cast<unsigned>(x.tag2_);
         break;
       default:
-        result = x.tag1_ + x.tag2_;
+        result =
+          static_cast<unsigned>(x.tag1_) + static_cast<unsigned>(x.tag2_);
       }
-      return static_cast<std::size_t>(result);
+      return result;
     }
 
     std::size_t operator()(movable const& x) const
     {
-      int result;
+      unsigned result;
       switch (type_) {
       case 1:
-        result = x.tag1_;
+        result = static_cast<unsigned>(x.tag1_);
         break;
       case 2:
-        result = x.tag2_;
+        result = static_cast<unsigned>(x.tag2_);
         break;
       default:
-        result = x.tag1_ + x.tag2_;
+        result =
+          static_cast<unsigned>(x.tag1_) + static_cast<unsigned>(x.tag2_);
       }
-      return static_cast<std::size_t>(result);
+      return result;
     }
 
     std::size_t operator()(int x) const
     {
-      int result;
+      unsigned result;
       switch (type_) {
       case 1:
-        result = x;
+        result = static_cast<unsigned>(x);
         break;
       case 2:
-        result = x * 7;
+        result = static_cast<unsigned>(x) * 7;
         break;
       default:
-        result = x * 256;
+        result = static_cast<unsigned>(x) * 256;
       }
-      return static_cast<std::size_t>(result);
+      return result;
     }
 
     friend bool operator==(hash const& x1, hash const& x2)
@@ -287,7 +302,7 @@ namespace test {
       }
     }
 
-    std::size_t operator()(int x1, int x2) const { return x1 < x2; }
+    bool operator()(int x1, int x2) const { return x1 < x2; }
 
     friend bool operator==(less const& x1, less const& x2)
     {
@@ -295,7 +310,7 @@ namespace test {
     }
   };
 
-  class equal_to
+  class equal_to BOOST_FINAL
   {
     int type_;
 
@@ -328,7 +343,7 @@ namespace test {
       }
     }
 
-    std::size_t operator()(int x1, int x2) const { return x1 == x2; }
+    bool operator()(int x1, int x2) const { return x1 == x2; }
 
     friend bool operator==(equal_to const& x1, equal_to const& x2)
     {
@@ -394,11 +409,10 @@ namespace test {
       ::operator delete((void*)p);
     }
 
-#if BOOST_UNORDERED_CXX11_CONSTRUCTION
     template <typename U, typename... Args> void construct(U* p, Args&&... args)
     {
       detail::tracker.track_construct((void*)p, sizeof(U), tag_);
-      new (p) U(boost::forward<Args>(args)...);
+      new (p) U(std::forward<Args>(args)...);
     }
 
     template <typename U> void destroy(U* p)
@@ -409,22 +423,6 @@ namespace test {
       // Work around MSVC buggy unused parameter warning.
       ignore_variable(&p);
     }
-#else
-  private:
-    // I'm going to claim in the documentation that construct/destroy
-    // is never used when C++11 support isn't available, so might as
-    // well check that in the text.
-    // TODO: Or maybe just disallow them for values?
-    template <typename U> void construct(U* p);
-    template <typename U, typename A0> void construct(U* p, A0 const&);
-    template <typename U, typename A0, typename A1>
-    void construct(U* p, A0 const&, A1 const&);
-    template <typename U, typename A0, typename A1, typename A2>
-    void construct(U* p, A0 const&, A1 const&, A2 const&);
-    template <typename U> void destroy(U* p);
-
-  public:
-#endif
 
     bool operator==(allocator1 const& x) const { return tag_ == x.tag_; }
 
@@ -493,16 +491,18 @@ namespace test {
 
   template <class T> class ptr
   {
+    friend struct ::allocator1<T>;
+    friend struct ::allocator2<T>;
     friend class allocator2<T>;
     friend class const_ptr<T>;
     friend struct void_ptr;
 
     T* ptr_;
-
     ptr(T* x) : ptr_(x) {}
 
   public:
     ptr() : ptr_(0) {}
+    ptr(std::nullptr_t) : ptr_(nullptr) {}
     explicit ptr(void_ptr const& x) : ptr_((T*)x.ptr_) {}
 
     T& operator*() const { return *ptr_; }
@@ -518,10 +518,22 @@ namespace test {
       ++ptr_;
       return tmp;
     }
+
     ptr operator+(std::ptrdiff_t s) const { return ptr<T>(ptr_ + s); }
     friend ptr operator+(std::ptrdiff_t s, ptr p) { return ptr<T>(s + p.ptr_); }
+
+    std::ptrdiff_t operator-(ptr p) const { return ptr_ - p.ptr_; }
+    ptr operator-(std::ptrdiff_t s) const { return ptr(ptr_ - s); }
+
+    ptr& operator+=(std::ptrdiff_t s) { ptr_ += s; return *this; }
+    ptr& operator-=(std::ptrdiff_t s) { ptr_ -= s; return *this; }
+
     T& operator[](std::ptrdiff_t s) const { return ptr_[s]; }
     bool operator!() const { return !ptr_; }
+
+    static ptr pointer_to(T& p) {
+      return ptr(&p);
+    }
 
     // I'm not using the safe bool idiom because the containers should be
     // able to cope with bool conversions.
@@ -644,24 +656,17 @@ namespace test {
       ::operator delete((void*)p.ptr_);
     }
 
-    void construct(T* p, T const& t)
+    template <class U, class... Args>
+    void construct(U* p, Args&&... args)
     {
-      detail::tracker.track_construct((void*)p, sizeof(T), tag_);
-      new (p) T(t);
+      detail::tracker.track_construct((void*)p, sizeof(U), tag_);
+      new (p) U(std::forward<Args>(args)...);
     }
 
-#if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
-    template <class... Args> void construct(T* p, BOOST_FWD_REF(Args)... args)
+    template <class U> void destroy(U* p)
     {
-      detail::tracker.track_construct((void*)p, sizeof(T), tag_);
-      new (p) T(boost::forward<Args>(args)...);
-    }
-#endif
-
-    void destroy(T* p)
-    {
-      detail::tracker.track_destroy((void*)p, sizeof(T), tag_);
-      p->~T();
+      detail::tracker.track_destroy((void*)p, sizeof(U), tag_);
+      p->~U();
     }
 
     size_type max_size() const
@@ -696,5 +701,18 @@ namespace test {
     return x == y;
   }
 }
+
+namespace boost {
+  template <> struct pointer_traits< ::test::void_ptr>
+  {
+    template <class U> struct rebind_to
+    {
+      typedef ::test::ptr<U> type;
+    };
+
+    template<class U>
+    using rebind=typename rebind_to<U>::type;
+  };
+} // namespace boost
 
 #endif

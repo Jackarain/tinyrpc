@@ -1,9 +1,13 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#ifdef BOOST_QVM_TEST_SINGLE_HEADER
+#   include BOOST_QVM_TEST_SINGLE_HEADER
+#else
+#   include <boost/qvm/scalar_traits.hpp>
+#endif
 
-#include <boost/qvm/scalar_traits.hpp>
 #include <boost/qvm/vec.hpp>
 #include <boost/qvm/mat.hpp>
 #include <boost/qvm/quat.hpp>
@@ -18,7 +22,7 @@ tester<true>
     };
 
 using namespace boost::qvm;
-tester<is_scalar<char>::value> t1;
+tester<!is_scalar<char>::value> t1;
 tester<is_scalar<signed char>::value> t2;
 tester<is_scalar<unsigned char>::value> t3;
 tester<is_scalar<signed short>::value> t4;
@@ -33,3 +37,11 @@ tester<is_scalar<long double>::value> t13;
 tester<!is_scalar<vec<float,4> >::value> t14;
 tester<!is_scalar<mat<float,4,4> >::value> t15;
 tester<!is_scalar<quat<float> >::value> t16;
+tester<is_scalar<signed long long>::value> t17;
+tester<is_scalar<unsigned long long>::value> t18;
+
+int
+main()
+    {
+    return 0;
+    }

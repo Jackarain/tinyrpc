@@ -5,11 +5,13 @@
 # accompanying file LICENSE_1_0.txt or copy at
 # http://www.boost.org/LICENSE_1_0.txt
 
+import-search /boost/config/checks ;
 import config : requires ;
 import testing ;
 
 project
     : requirements
+        <library>/boost/yap//boost_yap
         [ requires
             cxx14_constexpr
             cxx14_decltype_auto
@@ -38,6 +40,7 @@ run comma.cpp ;
 run if_else.cpp ;
 run expression_function.cpp ;
 run transform.cpp ;
+run supplied_transforms.cpp ;
 
 compile compile_is_expr.cpp ;
 compile compile_const_term.cpp ;

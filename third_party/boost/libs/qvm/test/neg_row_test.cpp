@@ -1,12 +1,16 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#ifdef BOOST_QVM_TEST_SINGLE_HEADER
+#   include BOOST_QVM_TEST_SINGLE_HEADER
+#else
+#   include <boost/qvm/map_mat_mat.hpp>
+#   include <boost/qvm/mat_operations.hpp>
+#   include <boost/qvm/mat.hpp>
+#endif
 
-#include <boost/qvm/map_mat_mat.hpp>
-#include <boost/qvm/mat_operations.hpp>
 #include <boost/qvm/mat_traits_array.hpp>
-#include <boost/qvm/mat.hpp>
 #include "test_qvm.hpp"
 #include "test_qvm_matrix.hpp"
 #include "gold.hpp"

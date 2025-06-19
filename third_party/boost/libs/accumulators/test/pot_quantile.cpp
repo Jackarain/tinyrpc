@@ -11,10 +11,13 @@
 
 #include <boost/random.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/accumulators/statistics/peaks_over_threshold.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
@@ -84,6 +87,36 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    // tolerance in %
+    double epsilon = 1.;
+    // "persistent" storage
+    std::stringstream ss;
+    {
+        // random number generators
+        boost::lagged_fibonacci607 rng;
+        boost::normal_distribution<> mean_sigma(0,1);
+        boost::variate_generator<boost::lagged_fibonacci607&, boost::normal_distribution<> > normal(rng, mean_sigma);
+
+        accumulator_set<double, stats<tag::pot_quantile<right>(with_threshold_value)> > acc(pot_threshold_value = 3.);
+
+        for (std::size_t i = 0; i < 100000; ++i)
+            acc(normal());
+
+        BOOST_CHECK_CLOSE(quantile(acc, quantile_probability = 0.999), 3.090232, 3*epsilon);
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_set<double, stats<tag::pot_quantile<right>(with_threshold_value)> > acc(pot_threshold_value = 3.);
+    boost::archive::text_iarchive ia(ss);
+    acc.serialize(ia, 0);
+    BOOST_CHECK_CLOSE(quantile(acc, quantile_probability = 0.999), 3.090232, 3*epsilon);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -91,6 +124,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("pot_quantile test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

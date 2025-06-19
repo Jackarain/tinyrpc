@@ -15,7 +15,9 @@
 // From MathWorld--A Wolfram Web Resource.
 // http://mathworld.wolfram.com/NormalDistribution.html
 
+#ifndef SYCL_LANGUAGE_VERSION
 #include <pch.hpp> // include directory /libs/math/src/tr1/ is needed.
+#endif
 
 #ifdef _MSC_VER
 #  pragma warning (disable: 4127) // conditional expression is constant
@@ -23,15 +25,20 @@
 // and   if (std::numeric_limits<RealType>::has_quiet_NaN)
 #endif
 
-#include <boost/math/tools/test.hpp>
+#include <boost/math/tools/config.hpp>
+
+#include "../include_private/boost/math/tools/test.hpp"
+
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
+#endif
+
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <boost/math/distributions/normal.hpp>
     using boost::math::normal_distribution;
-#include <boost/math/tools/test.hpp>
 #include "test_out_of_range.hpp"
 
 #include <iostream>
@@ -41,6 +48,8 @@
    using std::setprecision;
 #include <limits>
   using std::numeric_limits;
+#include <type_traits>
+  using std::log;
 
 template <class RealType>
 RealType NaivePDF(RealType mean, RealType sd, RealType x)
@@ -126,6 +135,7 @@ void test_spots(RealType)
   {
     // No longer allow x to be NaN, then these tests should throw.
     BOOST_MATH_CHECK_THROW(pdf(N01, +std::numeric_limits<RealType>::quiet_NaN()), std::domain_error); // x = NaN
+    BOOST_MATH_CHECK_THROW(logpdf(N01, +std::numeric_limits<RealType>::quiet_NaN()), std::domain_error); // x = NaN
     BOOST_MATH_CHECK_THROW(cdf(N01, +std::numeric_limits<RealType>::quiet_NaN()), std::domain_error); // x = NaN
     BOOST_MATH_CHECK_THROW(cdf(complement(N01, +std::numeric_limits<RealType>::quiet_NaN())), std::domain_error); // x = + infinity
     BOOST_MATH_CHECK_THROW(quantile(N01, +std::numeric_limits<RealType>::quiet_NaN()), std::domain_error); // p = + infinity
@@ -216,6 +226,31 @@ void test_spots(RealType)
       tolerance);
 
    //
+   // Tests for logpdf
+   //
+   RealType temp_tol = tolerance;
+
+   BOOST_IF_CONSTEXPR (std::is_same<long double, RealType>::value)
+   {
+      tolerance *= 100;
+   }
+
+   BOOST_CHECK_CLOSE(
+      logpdf(normal_distribution<RealType>(), static_cast<RealType>(0)),
+      log(static_cast<RealType>(0.3989422804014326779399460599343818684759L)), // 1/sqrt(2*pi)
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(normal_distribution<RealType>(3), static_cast<RealType>(3)),
+      log(static_cast<RealType>(0.3989422804014326779399460599343818684759L)),
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(normal_distribution<RealType>(3, 5), static_cast<RealType>(3)),
+      log(static_cast<RealType>(0.3989422804014326779399460599343818684759L / 5)),
+      tolerance);
+
+   tolerance = temp_tol;
+
+   //
    // Spot checks for mean = -5, sd = 6:
    //
    for(RealType x = -15; x < 5; x += 0.125)
@@ -269,14 +304,19 @@ void test_spots(RealType)
     BOOST_CHECK_CLOSE(
        skewness(dist)
        , static_cast<RealType>(0), tol2);
-    // kertosis:
+    // kurtosis:
     BOOST_CHECK_CLOSE(
        kurtosis(dist)
        , static_cast<RealType>(3), tol2);
-    // kertosis excess:
+    // kurtosis excess:
     BOOST_CHECK_CLOSE(
        kurtosis_excess(dist)
        , static_cast<RealType>(0), tol2);
+
+    RealType expected_entropy = log(boost::math::constants::two_pi<RealType>()*boost::math::constants::e<RealType>()*9)/2;
+    BOOST_CHECK_CLOSE(
+       entropy(dist)
+       ,expected_entropy, tol2);
 
     normal_distribution<RealType> norm01(0, 1); // Test default (0, 1)
     BOOST_CHECK_CLOSE(
@@ -302,6 +342,8 @@ void test_spots(RealType)
     
     BOOST_MATH_CHECK_THROW(pdf(normal_distribution<RealType>(0, 0), 0), std::domain_error);
     BOOST_MATH_CHECK_THROW(pdf(normal_distribution<RealType>(0, -1), 0), std::domain_error);
+    BOOST_MATH_CHECK_THROW(logpdf(normal_distribution<RealType>(0, 0), 0), std::domain_error);
+    BOOST_MATH_CHECK_THROW(logpdf(normal_distribution<RealType>(0, -1), 0), std::domain_error);
     BOOST_MATH_CHECK_THROW(quantile(normal_distribution<RealType>(0, 1), -1), std::domain_error);
     BOOST_MATH_CHECK_THROW(quantile(normal_distribution<RealType>(0, 1), 2), std::domain_error);
 } // template <class RealType>void test_spots(RealType)
@@ -324,7 +366,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double. OK at decdigits 7, tolerance = 1e07 %
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_spots(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x0582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x0582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #else

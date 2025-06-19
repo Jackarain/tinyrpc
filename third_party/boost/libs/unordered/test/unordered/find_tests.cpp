@@ -1,14 +1,11 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright (C) 2022-2023 Christian Mazakas
+// Copyright (C) 2024 Joaquin M Lopez Munoz.
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
-#include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
-#include "../helpers/postfix.hpp"
-// clang-format on
+#include "../helpers/unordered.hpp"
 
 #include "../helpers/test.hpp"
 #include "../objects/test.hpp"
@@ -116,6 +113,7 @@ namespace find_tests {
     typedef typename test::random_values<X>::iterator value_iterator;
     test::random_values<X> v(500, generator);
     X x(v.begin(), v.end());
+    X const& x_const = x;
 
     compatible_hash h;
     compatible_predicate eq;
@@ -123,6 +121,7 @@ namespace find_tests {
     for (value_iterator it = v.begin(), end = v.end(); it != end; ++it) {
       typename X::key_type key = test::get_key<X>(*it);
       BOOST_TEST(x.find(key) == x.find(compatible_key(key), h, eq));
+      BOOST_TEST(x_const.find(key) == x_const.find(compatible_key(key), h, eq));
     }
 
     test::random_values<X> v2(20, generator);
@@ -130,9 +129,28 @@ namespace find_tests {
     for (value_iterator it = v2.begin(), end = v2.end(); it != end; ++it) {
       typename X::key_type key = test::get_key<X>(*it);
       BOOST_TEST(x.find(key) == x.find(compatible_key(key), h, eq));
+      BOOST_TEST(x_const.find(key) == x_const.find(compatible_key(key), h, eq));
     }
   }
 
+  using test::default_generator;
+  using test::generate_collisions;
+  using test::limited_range;
+
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  boost::unordered_flat_set<test::object, test::hash, test::equal_to,
+    test::allocator2<test::object> >* test_set;
+  boost::unordered_flat_map<test::object, test::object, test::hash, test::equal_to,
+    test::allocator2<test::object> >* test_map;
+  boost::unordered_node_set<test::object, test::hash, test::equal_to,
+    test::allocator2<test::object> >* test_node_set;
+  boost::unordered_node_map<test::object, test::object, test::hash, test::equal_to,
+    test::allocator2<test::object> >* test_node_map;
+
+  UNORDERED_TEST(
+    find_tests1, ((test_set)(test_map)(test_node_set)(test_node_map))(
+                   (default_generator)(generate_collisions)(limited_range)))
+#else
   boost::unordered_set<test::object, test::hash, test::equal_to,
     test::allocator2<test::object> >* test_set;
   boost::unordered_multiset<test::object, test::hash, test::equal_to,
@@ -142,16 +160,13 @@ namespace find_tests {
   boost::unordered_multimap<test::object, test::object, test::hash,
     test::equal_to, test::allocator1<test::object> >* test_multimap;
 
-  using test::default_generator;
-  using test::generate_collisions;
-  using test::limited_range;
-
   UNORDERED_TEST(
     find_tests1, ((test_set)(test_multiset)(test_map)(test_multimap))(
                    (default_generator)(generate_collisions)(limited_range)))
   UNORDERED_TEST(find_compatible_keys_test,
     ((test_set)(test_multiset)(test_map)(test_multimap))(
       (default_generator)(generate_collisions)(limited_range)))
+#endif
 }
 
 RUN_TESTS()

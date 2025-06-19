@@ -3,13 +3,13 @@
 //  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#include "mp_t.hpp"
 #include <boost/math/special_functions/log1p.hpp>
 #include <boost/math/special_functions/erf.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <map>
 #include <iostream>
 #include <iomanip>
-#include "mp_t.hpp"
 
 using namespace std;
 using namespace boost::math;
@@ -23,7 +23,7 @@ using namespace boost::math;
 // See "The Asymptotic Expansion of the Incomplete Gamma Functions"
 // N. M. Temme.
 // Siam J. Math Anal. Vol 10 No 4, July 1979, p757.
-// Coeffient calculation is described from Eq 3.8 (p762) onwards.
+// Coefficient calculation is described from Eq 3.8 (p762) onwards.
 //
 
 //
@@ -134,7 +134,7 @@ void calculate_terms(double sigma, double a, unsigned bits)
    }
    cout << "Max n required:  " << max_n << endl;
 
-   unsigned max_k;
+   unsigned max_k = 0;
    for(unsigned k = 1; k < 10000; ++k)
    {
       double term = tools::real_cast<double>(Coeff(0, k) * pow(a, -((double)k)));
@@ -150,7 +150,6 @@ void calculate_terms(double sigma, double a, unsigned bits)
    cout << "Print code [0|1]? ";
    cin >> code;
 
-   int prec = 2 + (static_cast<double>(bits) * 3010LL)/10000;
    std::cout << std::scientific << std::setprecision(40);
 
    if(code)

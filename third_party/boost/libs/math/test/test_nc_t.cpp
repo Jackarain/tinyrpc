@@ -30,7 +30,7 @@
 #include <boost/test/unit_test.hpp> // for test_main
 #include <boost/test/results_collector.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp> // for BOOST_CHECK_CLOSE
+#include <boost/test/tools/floating_point_comparison.hpp> // for BOOST_CHECK_CLOSE
 
 #include "functor.hpp"
 #include "handle_test_result.hpp"
@@ -113,6 +113,20 @@ void expected_results()
       largest_type,                     // test type(s)
       "[^|]*",                          // test data group
       "[^|]*", 400, 100);               // test function
+   add_expected_result(
+      "[^|]*",                          // compiler
+      "[^|]*",                          // stdlib
+      "[^|]*",                          // platform
+      "double",                         // test type(s)
+      "[^|]*PDF",                  // test data group
+      "[^|]*", static_cast<std::uintmax_t>(1 / boost::math::tools::root_epsilon<double>()), static_cast<std::uintmax_t>(1 / boost::math::tools::root_epsilon<double>())); // test function
+   add_expected_result(
+      "[^|]*",                          // compiler
+      "[^|]*",                          // stdlib
+      "[^|]*",                          // platform
+      "long double",                         // test type(s)
+      "[^|]*PDF",                  // test data group
+      "[^|]*", static_cast<std::uintmax_t>(1 / boost::math::tools::root_epsilon<long double>()), static_cast<std::uintmax_t>(1 / boost::math::tools::root_epsilon<long double>())); // test function
    add_expected_result(
       "[^|]*",                          // compiler
       "[^|]*",                          // stdlib

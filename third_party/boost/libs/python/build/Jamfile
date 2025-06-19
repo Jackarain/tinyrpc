@@ -30,15 +30,33 @@ else
         ;
 }
 
-if [ python.configured ]
-{
-project boost/python
+constant boost_dependencies_private :
+    /boost/graph//boost_graph
+    /boost/integer//boost_integer
+    /boost/property_map//boost_property_map
+    /boost/smart_ptr//boost_smart_ptr
+    ;
+
+project
   : source-location ../src
+  : common-requirements <library>$(boost_dependencies)
+  : requirements <library>$(boost_dependencies_private)
   ;
 
 rule cond ( test ? : yes * : no * ) { if $(test) { return $(yes) ; } else { return $(no) ; } }
 rule unless ( test ? : yes * : no * ) { if ! $(test) { return $(yes) ; } else { return $(no) ; } }
 local rule eq ( a : b ) { if $(a) = $(b) { return 1 ; } }
+
+rule tag ( name : type ? : property-set )
+{
+    if python-tag in [ RULENAMES $(__name__) ]
+    {
+        return [  $(__name__).python-tag $(name) : $(type) : $(property-set) ] ;
+    }
+}
+
+if [ python.configured ]
+{
 
 lib boost_python
     : # sources
@@ -94,8 +112,9 @@ lib boost_python
         [ unless [ python.configured ] : <build>no ]
         <dependency>config-warning
         <python-debugging>on:<define>BOOST_DEBUG_PYTHON
+        -<tag>@%boostcpp.tag
         -<tag>@$(BOOST_JAMROOT_MODULE)%$(BOOST_JAMROOT_MODULE).tag
-        <tag>@$(__name__).python-tag
+        <tag>@tag
         <conditional>@python.require-py
 
     :   # default build
@@ -103,7 +122,19 @@ lib boost_python
     :   # usage requirements
         <link>static:<define>BOOST_PYTHON_STATIC_LIB
         <python-debugging>on:<define>BOOST_DEBUG_PYTHON
+        <define>BOOST_PYTHON_NO_LIB
     ;
+
+}
+else
+{
+
+alias boost_python : config-warning ;
+
+}
+
+if [ python.configured ] && [ python.numpy ]
+{
 
 numpy-include = [ python.numpy-include ] ;
 lib boost_numpy
@@ -119,11 +150,12 @@ lib boost_numpy
         <define>BOOST_NUMPY_SOURCE
         [ cond [ python.numpy ] : <library>/python//python_for_extensions ]
         [ unless [ python.numpy ] : <build>no ]
-        <include>$(numpy-include)
+        <library>/python//numpy
         <library>boost_python
         <python-debugging>on:<define>BOOST_DEBUG_PYTHON
+        -<tag>@%boostcpp.tag
         -<tag>@$(BOOST_JAMROOT_MODULE)%$(BOOST_JAMROOT_MODULE).tag
-	<tag>@$(__name__).python-tag
+        <tag>@tag
         <conditional>@python.require-py
 
     :   # default build
@@ -131,5 +163,13 @@ lib boost_numpy
     :   # usage requirements
         <link>static:<define>BOOST_NUMPY_STATIC_LIB
         <python-debugging>on:<define>BOOST_DEBUG_PYTHON
+        <define>BOOST_NUMPY_NO_LIB
     ;
+
+}
+else
+{
+
+alias boost_numpy : config-warning ;
+
 }

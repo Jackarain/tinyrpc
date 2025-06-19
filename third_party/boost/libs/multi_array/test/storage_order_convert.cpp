@@ -14,12 +14,12 @@
 // test out my new storage_order stuff
 //
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/multi_array/storage_order.hpp"
+#include <boost/multi_array/storage_order.hpp>
 
 int 
-test_main(int,char*[]) {
+main() {
 
   using namespace boost;
 
@@ -31,9 +31,9 @@ test_main(int,char*[]) {
   general_storage_order<5> fortran_storage(fortran_ordering.begin(),
                                            ascending.begin());
  
-  BOOST_CHECK(c_storage == (general_storage_order<5>) c_storage_order());
-  BOOST_CHECK(fortran_storage ==
+  BOOST_TEST(c_storage == (general_storage_order<5>) c_storage_order());
+  BOOST_TEST(fortran_storage ==
              (general_storage_order<5>) fortran_storage_order());
 
-  return boost::exit_success;
+  return boost::report_errors();
 }

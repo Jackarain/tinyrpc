@@ -3,6 +3,10 @@
 
 // Copyright (c) 2012-2015 Barend Gehrels, Amsterdam, the Netherlands.
 
+// This file was modified by Oracle on 2021.
+// Modifications copyright (c) 2021, Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -12,26 +16,28 @@
 #  pragma warning( disable : 4267 )
 #endif
 
+#include <chrono>
 #include <fstream>
 #include <sstream>
 
-#include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/timer.hpp>
 
-#include <boost/geometry.hpp>
+#include <boost/geometry/algorithms/append.hpp>
+#include <boost/geometry/algorithms/buffer.hpp>
+#include <boost/geometry/algorithms/covered_by.hpp>
+#include <boost/geometry/algorithms/envelope.hpp>
+#include <boost/geometry/algorithms/within.hpp>
+
+//#include <boost/geometry/extensions/algorithms/midpoints.hpp>
+
 #include <boost/geometry/geometries/geometries.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 
 #include <boost/geometry/io/svg/svg_mapper.hpp>
-#include <boost/geometry/extensions/algorithms/midpoints.hpp>
 
-#include <common/common_settings.hpp>
-#include <common/make_square_polygon.hpp>
+#include <robustness/common/common_settings.hpp>
+#include <robustness/common/make_random_generator.hpp>
+#include <robustness/common/make_square_polygon.hpp>
 
 
 namespace bg = boost::geometry;
@@ -71,8 +77,8 @@ inline void make_random_linestring(Linestring& line, Generator& generator, Setti
 {
     using namespace boost::geometry;
 
-    typedef typename point_type<Linestring>::type point_type;
-    typedef typename coordinate_type<Linestring>::type coordinate_type;
+    using point_type = point_type_t<Linestring>;
+    using coordinate_type = coordinate_type_t<Linestring>;
 
     coordinate_type x, y;
     x = generator();
@@ -193,24 +199,24 @@ public :
     template <typename Segment2>
     inline void operator()(Segment2 const& segment)
     {
+        using point_t = typename bg::point_type<Segment2>::type ;
+        using segment_t = bg::model::segment<point_t>;
+        using result_t = bg::segment_intersection_points<point_t> ;
+        using policy_t = bg::policies::relate::segments_intersection_points
+            <
+                result_t
+            >;
+
         // Create copies (TODO: find out why referring_segment does not compile)
-        typedef typename bg::point_type<Segment2>::type pt;
-        typedef bg::model::segment<pt> segment_type;
-
-        typedef bg::strategy::intersection::relate_cartesian_segments
-                    <
-                        bg::policies::relate::segments_intersection_points
-                            <
-                                segment_type,
-                                segment_type,
-                                bg::segment_intersection_points<pt>
-                            >
-                    > policy;
-
-        segment_type seg1, seg2;
+        segment_t seg1, seg2;
         bg::convert(m_segment, seg1);
         bg::convert(segment, seg2);
-        bg::segment_intersection_points<pt> is = policy::apply(seg1, seg2);
+
+        bg::strategy::intersection::cartesian_segments<> strategy;
+        bg::detail::segment_as_subrange<segment_t> subrange1(seg1);
+        bg::detail::segment_as_subrange<segment_t> subrange2(seg2);
+        bg::segment_intersection_points<point_t> is
+            = strategy.apply(subrange1, subrange2, policy_t());
 
         if (is.count == 2)
         {
@@ -296,15 +302,22 @@ bool verify(std::string const& caseid, MultiPolygon const& mp, Linestring const&
     border_check<MultiPolygon> bc(mp, result);
     bg::for_each_segment(difference, bc);
 
+    /* commented out since it needs extensions, tests are passing without that part
     // 3) check also the mid-points from the difference to remove false positives
-    BOOST_FOREACH(Linestring const& d, difference)
+    for (Linestring const& d : difference)
     {
         Linestring difference_midpoints;
         bg::midpoints(d, false, std::back_inserter(difference_midpoints));
         outside_check<MultiPolygon> ocm(mp, result);
         bg::for_each_point(difference_midpoints, ocm);
     }
-
+    */
+    if (settings.verbose)
+    {
+        std::cout << " [" << bg::area(mp) << " " << bg::length(ls) <<
+            " " << bg::length(intersection) <<
+            " " << bg::length(difference) << "]";
+    }
 
     bool svg = settings.svg;
     bool wkt = settings.wkt;
@@ -395,15 +408,7 @@ bool test_linear_areal(MultiPolygon& result, int& index,
 template <typename T, bool Clockwise, bool Closed>
 void test_all(int seed, int count, int level, common_settings const& settings)
 {
-    boost::timer t;
-
-    typedef boost::minstd_rand base_generator_type;
-
-    base_generator_type generator(seed);
-
-    boost::uniform_int<> random_coordinate(0, settings.field_size - 1);
-    boost::variate_generator<base_generator_type&, boost::uniform_int<> >
-        coordinate_generator(generator, random_coordinate);
+    auto coordinate_generator = make_int_generator(seed, settings.field_size - 1);
 
     typedef bg::model::polygon
         <
@@ -411,6 +416,7 @@ void test_all(int seed, int count, int level, common_settings const& settings)
         > polygon;
     typedef bg::model::multi_polygon<polygon> mp;
 
+    auto const t0 = std::chrono::high_resolution_clock::now();
 
     int index = 0;
     for(int i = 0; i < count; i++)
@@ -418,10 +424,12 @@ void test_all(int seed, int count, int level, common_settings const& settings)
         mp p;
         test_linear_areal<mp>(p, index, coordinate_generator, level, settings);
     }
-    std::cout
+    auto const t = std::chrono::high_resolution_clock::now();
+    auto const elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
+    std::cout << std::endl
         << "geometries: " << index
         << " type: " << typeid(T).name()
-        << " time: " << t.elapsed()  << std::endl;
+        << " time: " << elapsed_ms / 1000.0  << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -432,7 +440,7 @@ int main(int argc, char** argv)
         po::options_description description("=== recursive_polygons_linear_areal ===\nAllowed options");
 
         int count = 1;
-        int seed = static_cast<unsigned int>(std::time(0));
+        int seed = -1;
         int level = 3;
         bool ccw = false;
         bool open = false;
@@ -442,15 +450,16 @@ int main(int argc, char** argv)
         description.add_options()
             ("help", "Help message")
             ("seed", po::value<int>(&seed), "Initialization seed for random generator")
-            ("count", po::value<int>(&count)->default_value(1), "Number of tests")
-            ("diff", po::value<bool>(&settings.also_difference)->default_value(false), "Include testing on difference")
-            ("level", po::value<int>(&level)->default_value(3), "Level to reach (higher->slower)")
+            ("count", po::value<int>(&count), "Number of tests")
+            ("diff", po::value<bool>(&settings.also_difference), "Include testing on difference")
+            ("level", po::value<int>(&level), "Level to reach (higher->slower)")
             ("form", po::value<std::string>(&form)->default_value("box"), "Form of the polygons (box, triangle)")
-            ("ccw", po::value<bool>(&ccw)->default_value(false), "Counter clockwise polygons")
-            ("open", po::value<bool>(&open)->default_value(false), "Open polygons")
-            ("size", po::value<int>(&settings.field_size)->default_value(10), "Size of the field")
-            ("wkt", po::value<bool>(&settings.wkt)->default_value(false), "Create a WKT of the inputs, for all tests")
-            ("svg", po::value<bool>(&settings.svg)->default_value(false), "Create a SVG for all tests")
+            ("ccw", po::value<bool>(&ccw), "Counter clockwise polygons")
+            ("open", po::value<bool>(&open), "Open polygons")
+            ("size", po::value<int>(&settings.field_size), "Size of the field")
+            ("verbose", po::value<bool>(&settings.verbose), "Verbose")
+            ("wkt", po::value<bool>(&settings.wkt), "Create a WKT of the inputs, for all tests")
+            ("svg", po::value<bool>(&settings.svg), "Create a SVG for all tests")
         ;
 
         po::variables_map varmap;
@@ -482,10 +491,6 @@ int main(int argc, char** argv)
         {
             test_all<double, true, true>(seed, count, level, settings);
         }
-
-#if defined(HAVE_TTMATH)
-        // test_all<ttmath_big, true, true>(seed, count, max, svg, level);
-#endif
     }
     catch(std::exception const& e)
     {

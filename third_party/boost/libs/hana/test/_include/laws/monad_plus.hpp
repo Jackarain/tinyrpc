@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -46,6 +46,10 @@ namespace boost { namespace hana { namespace test {
     struct TestMonadPlus<M, laws> {
         template <typename Xs, typename Predicates, typename Values>
         TestMonadPlus(Xs xs, Predicates predicates, Values values) {
+#ifdef BOOST_HANA_WORKAROUND_MSVC_DECLTYPEAUTO_RETURNTYPE_662735
+            empty<M>(); // force adding empty<M>'s member function to pending temploid list
+#endif
+
             hana::for_each(xs, [](auto a) {
                 static_assert(MonadPlus<decltype(a)>{}, "");
 

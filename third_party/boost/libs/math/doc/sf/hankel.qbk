@@ -1,30 +1,47 @@
-
 [section:hankel Hankel Functions]
 [section:cyl_hankel Cyclic Hankel Functions]
 
 [h4 Synopsis]
 
-   template <class T1, class T2>
-   std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x);
-
-   template <class T1, class T2, class ``__Policy``>
-   std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x, const ``__Policy``&);
+   #if !defined(__CUDACC__) && !defined(__CUDACC_RTC__)
 
    template <class T1, class T2>
-   std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x);
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x);
+
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x, const ``__Policy``&);
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x);
    
    template <class T1, class T2, class ``__Policy``>
-   std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x, const ``__Policy``&);
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x, const ``__Policy``&);
    
+   #else // When using cuda we use namespace cuda::std:: instead of std::
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x);
+
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> cyl_hankel_1(T1 v, T2 x, const ``__Policy``&);
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x);
+   
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> cyl_hankel_2(T1 v, T2 x, const ``__Policy``&);
+
+   #endif
+
    
 [h4 Description]
 
 The functions __cyl_hankel_1 and __cyl_hankel_2 return the result of the
 [@http://dlmf.nist.gov/10.2#P3 Hankel functions] of the first and second kind respectively:
 
-[:['cyl_hankel_1(v, x) = H[sub v][super (1)](x) = J[sub v](x) + i Y[sub v](x)]]
+[expression ['cyl_hankel_1(v, x) = H[sub v][super (1)](x) = J[sub v](x) + i Y[sub v](x)]]
 
-[:['cyl_hankel_2(v, x) = H[sub v][super (2)](x) = J[sub v](x) - i Y[sub v](x)]]
+[expression ['cyl_hankel_2(v, x) = H[sub v][super (2)](x) = J[sub v](x) - i Y[sub v](x)]]
 
 where:
 
@@ -72,25 +89,41 @@ and therefore a single Hankel function call is more efficient than two Bessel fu
 The one exception is when ['v] is a small positive integer, in which case the usual Bessel function
 routines for integer order are used.
 
-[endsect]
-
+[endsect] [/section:cyl_hankel Cyclic Hankel Functions]
 
 [section:sph_hankel Spherical Hankel Functions]
 
 [h4 Synopsis]
 
-   template <class T1, class T2>
-   std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x);
-
-   template <class T1, class T2, class ``__Policy``>
-   std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x, const ``__Policy``&);
+   #if !defined(__CUDACC__) && !defined(__CUDACC_RTC__)
 
    template <class T1, class T2>
-   std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x);
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x);
+
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x, const ``__Policy``&);
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x);
    
    template <class T1, class T2, class ``__Policy``>
-   std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x, const ``__Policy``&);
+   BOOST_MATH_GPU_ENABLED std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x, const ``__Policy``&);
    
+   #else // When using cuda we use namespace cuda::std:: instead of std::
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x);
+
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> sph_hankel_1(T1 v, T2 x, const ``__Policy``&);
+
+   template <class T1, class T2>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x);
+   
+   template <class T1, class T2, class ``__Policy``>
+   BOOST_MATH_GPU_ENABLED cuda::std::complex<``__sf_result``> sph_hankel_2(T1 v, T2 x, const ``__Policy``&);
+
+   #endif
    
 [h4 Description]
 
@@ -125,8 +158,10 @@ Refer to __cyl_bessel_j and __cyl_neumann.
 
 These functions are trivially implemented in terms of __cyl_hankel_1 and __cyl_hankel_2.
 
-[endsect]
-[endsect]
+[endsect] [/section:sph_hankel Spherical Hankel Functions]
+
+[endsect] [/section:hankel Hankel Functions]
+
 
 [/ 
   Copyright 2012 John Maddock.

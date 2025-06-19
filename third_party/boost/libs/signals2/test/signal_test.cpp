@@ -10,13 +10,16 @@
 
 // For more information, see http://www.boost.org
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/optional.hpp>
-#include <boost/test/minimal.hpp>
 #include <boost/signals2.hpp>
+#define BOOST_TEST_MODULE signal_test
+#include <boost/test/included/unit_test.hpp>
 #include <functional>
 #include <iostream>
 #include <typeinfo>
+
+using namespace boost::placeholders;
 
 template<typename T>
 struct max_or_default {
@@ -157,6 +160,20 @@ test_signal_signal_connect()
     s2.connect(boost::bind(std::multiplies<int>(), -3, _1));
 
     BOOST_CHECK(s2(-3) == 9);
+    BOOST_CHECK(s1(3) == 6);
+
+    // disconnect by slot
+    s1.disconnect(s2);
+    BOOST_CHECK(s1(3) == -3);
+
+    // disconnect by reference wrapped slot
+    s1.connect(s2);
+    BOOST_CHECK(s1(3) == 6);
+    s1.disconnect(boost::ref(s2));
+    BOOST_CHECK(s1(3) == -3);
+
+    // reconnect s2 to test auto-disconnect on destruction
+    s1.connect(s2);
     BOOST_CHECK(s1(3) == 6);
   } // s2 goes out of scope and disconnects
   BOOST_CHECK(s1(3) == -3);
@@ -322,16 +339,20 @@ void test_move()
   signal_type sig2(dummy_combiner(2));
   BOOST_CHECK(sig2() == 2);
 
+  BOOST_CHECK(sig2.null() == false);
   sig1 = std::move(sig2);
   BOOST_CHECK(sig1() == 2);
+  BOOST_CHECK(sig2.null() == true);
+  BOOST_CHECK(sig2.empty() == true);
+  BOOST_CHECK(sig2.num_slots() == 0);
+  sig2.disconnect_all_slots();
 
   signal_type sig3(std::move(sig1));
   BOOST_CHECK(sig3() == 2);
 #endif // !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 }
 
-int
-test_main(int, char* [])
+BOOST_AUTO_TEST_CASE(test_main)
 {
   test_zero_args();
   test_one_arg();
@@ -343,5 +364,4 @@ test_main(int, char* [])
   test_set_combiner();
   test_swap();
   test_move();
-  return 0;
 }

@@ -4,17 +4,13 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
+#include <boost/spirit/include/qi_rule.hpp>
 
-// this file deliberately contains non-ascii characters
-// boostinspect:noascii
-
-#include <boost/detail/lightweight_test.hpp>
 #include <boost/spirit/include/qi_operator.hpp>
 #include <boost/spirit/include/qi_char.hpp>
 #include <boost/spirit/include/qi_string.hpp>
-#include <boost/spirit/include/qi_numeric.hpp>
-#include <boost/spirit/include/qi_auxiliary.hpp>
-#include <boost/spirit/include/qi_directive.hpp>
+#include <boost/spirit/include/qi_int.hpp>
+#include <boost/spirit/include/qi_uint.hpp>
 #include <boost/spirit/include/qi_nonterminal.hpp>
 #include <boost/spirit/include/qi_action.hpp>
 #include <boost/fusion/include/std_pair.hpp>
@@ -75,7 +71,15 @@ main()
         rule<char const*> a ('a');
         rule<char const*> b ('b');
         rule<char const*> c ('c');
+#ifdef BOOST_CLANG
+# pragma clang diagnostic push
+// variable 'start' is uninitialized when used within its own initialization
+# pragma clang diagnostic ignored "-Wuninitialized"
+#endif
         rule<char const*> start = (a | b) >> (start | b);
+#ifdef BOOST_CLANG
+# pragma clang diagnostic pop
+#endif
 
         BOOST_TEST(test("aaaabababaaabbb", start));
         BOOST_TEST(test("aaaabababaaabba", start, false));

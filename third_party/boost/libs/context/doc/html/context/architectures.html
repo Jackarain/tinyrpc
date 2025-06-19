@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Architectures</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Context">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Context">
 <link rel="prev" href="performance.html" title="Performance">
@@ -26,7 +26,7 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="context.architectures"></a><a class="link" href="architectures.html" title="Architectures">Architectures</a>
 </h2></div></div></div>
-<div class="toc"><dl class="toc"><dt><span class="section"><a href="architectures/crosscompiling.html">Cross compiling</a></span></dt></dl></div>
+<div class="toc"><dl><dt><span class="section"><a href="architectures/crosscompiling.html">Cross compiling</a></span></dt></dl></div>
 <p>
       <span class="bold"><strong>Boost.Context</strong></span>, using <a class="link" href="ff/implementations__fcontext_t__ucontext_t_and_winfiber.html#implementation"><span class="emphasis"><em>fcontext_t</em></span></a>,
       supports following architectures:
@@ -153,12 +153,39 @@
 <tr>
 <td>
               <p>
-                mips1
+                loongarch64
               </p>
             </td>
 <td>
               <p>
-                O32|ELF
+                SYSV|ELF
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+</tr>
+<tr>
+<td>
+              <p>
+                mips
+              </p>
+            </td>
+<td>
+              <p>
+                O32,N64|ELF
               </p>
             </td>
 <td>
@@ -223,6 +250,60 @@
 <td>
               <p>
                 SYSV|MACH-O
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+</tr>
+<tr>
+<td>
+              <p>
+                riscv64
+              </p>
+            </td>
+<td>
+              <p>
+                SYSV|ELF
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+<td>
+              <p>
+                SYSV
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+</tr>
+<tr>
+<td>
+              <p>
+                s390x
+              </p>
+            </td>
+<td>
+              <p>
+                SYSV|ELF
+              </p>
+            </td>
+<td>
+              <p>
+                -
+              </p>
+            </td>
+<td>
+              <p>
+                -
               </p>
             </td>
 <td>

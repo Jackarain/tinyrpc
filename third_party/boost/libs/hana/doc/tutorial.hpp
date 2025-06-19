@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -52,13 +52,7 @@ have a couple of options:
 Hana is included in the [Boost][] distribution starting from Boost 1.61.0, so
 installing that will give you access to Hana.
 
-2. __Use Homebrew__\n
-On Mac OS, Hana can be installed with [Homebrew][]:
-@code{.sh}
-brew install hana
-@endcode
-
-3. __Install manually__\n
+2. __Install manually__\n
 You can download the code from the official GitHub [repository][Hana.repository]
 and install the library manually by issuing the following commands from the root
 of the project (requires [CMake][]):
@@ -78,22 +72,18 @@ If you just want to contribute to Hana, you can see how to best setup your
 environment for development in the [README][Hana.hacking].
 
 @note
-- Both the manual installation and the Homebrew installation will also install
-a `HanaConfig.cmake` file for use with CMake and a `hana.pc` file for use with
-[pkg-config][].
-
-- Do not mix a standalone installation of Hana (i.e. Hana not installed through
-  Boost) with a full installation of Boost. The Hana provided within Boost and
-  the standalone one may clash, and you won't know which version is used where.
-  This is asking for trouble.
+Do not mix a standalone installation of Hana (i.e. Hana not installed through
+Boost) with a full installation of Boost. The Hana provided within Boost and
+the standalone one may clash, and you won't know which version is used where.
+This is asking for trouble.
 
 @subsection tutorial-installation-cmake Note for CMake users
 
-If you use [CMake][], depending on Hana has never been so easy. When installed,
-Hana creates a `HanaConfig.cmake` file that exports the `hana` interface library
-target with all the required settings. All you need is to install Hana (through
-Homebrew or manually), use `find_package(Hana)`, and then link your own targets
-against the `hana` target. Here is a minimal example of doing this:
+If you use [CMake][], depending on Hana has never been so easy. When installed
+manually, Hana creates a `HanaConfig.cmake` file that exports the `hana`
+interface library target with all the required settings. All you need is to
+install Hana manually with CMake, use `find_package(Hana)`, and then link your
+own targets against the `hana` target. Here is a minimal example of doing this:
 
 @snippet example/cmake_integration/CMakeLists.txt snip
 
@@ -114,14 +104,14 @@ installed.
 @subsection tutorial-installation-requirements Compiler requirements
 
 The library relies on a C++14 compiler and standard library, but nothing else
-is required. Here is a table of the current C++14 compilers/toolchains with
-comments regarding support for Hana:
+is required. However, we only guarantee support for the compilers listed
+below, which are tested on an ongoing basis:
 
 Compiler/Toolchain | Status
 ------------------ | ------
-Clang >= 3.5.0     | Fully working; tested on each push to GitHub
-Xcode >= 6.3       | Fully working; tested on each push to GitHub
-GCC >= 6.0.0       | Fully working; tested on each push to GitHub
+Clang >= 7         | Fully working; tested on each push to GitHub
+Xcode >= 11        | Fully working; tested on each push to GitHub
+GCC >= 8           | Fully working; tested on each push to GitHub
 VS2017 >= Update 7 | Fully working; tested on each push to GitHub
 
 More specifically, Hana requires a compiler/standard library supporting the
@@ -132,7 +122,9 @@ following C++14 features (non-exhaustively):
 - Automatically deduced return type
 - All the C++14 type traits from the `<type_traits>` header
 
-More information for specific platforms is available on [the wiki][Hana.wiki].
+Using a compiler not listed above may work, but support for such compilers is
+not guaranteed. More information for specific platforms is available on
+[the wiki][Hana.wiki].
 
 
 
@@ -204,7 +196,7 @@ constexpr int factorial(int n) {
 }
 
 template <typename T, std::size_t N, typename F>
-  constexpr std::array<std::result_of_t<F(T)>, N>
+  constexpr std::array<std::invoke_result_t<F, T>, N>
 transform(std::array<T, N> array, F f) {
   // ...
 }
@@ -846,7 +838,7 @@ constexpr auto operator"" _c() {
   // parse the digits and return an integral_constant
 }
 
-auto three = 1_c + 3_c;
+auto three = 1_c + 2_c;
 @endcode
 
 Hana provides its own `integral_constant`s, which define arithmetic operators
@@ -860,7 +852,7 @@ your namespace before using it:
 @code{cpp}
 using namespace hana::literals;
 
-auto three = 1_c + 3_c;
+auto three = 1_c + 2_c;
 @endcode
 
 This way, you may do compile-time arithmetic without having to struggle with
@@ -1402,7 +1394,7 @@ looked like:
 @code{cpp}
 template <typename T>
 constexpr auto add_pointer(hana::basic_type<T> const&) {
-  return hana::type<T*>;
+  return hana::type_c<T*>;
 }
 @endcode
 
@@ -1506,8 +1498,7 @@ and simplifying many tasks.
 
 @note
 Curious or skeptical readers should consider checking the minimal
-reimplementation of the MPL presented in the [appendices]
-(@ref tutorial-appendix-MPL).
+reimplementation of the MPL presented in the appendices.
 
 
 
@@ -2429,13 +2420,15 @@ for `Constant` and `IntegralConstant`.
 Hana's algorithms are `constexpr` function objects instead of being template
 functions. This allows passing them to higher-order algorithms, which is very
 useful. However, since those function objects are defined at namespace scope
-in the header files, this causes each translation unit to see a different
-algorithm object. Hence, the address of an algorithm function object is not
-guaranteed to be unique across translation units, which can cause an ODR
-violation if one relies on such an address. So, in short, do not rely on the
-uniqueness of the address of any global object provided by Hana, which does
-not make sense in the general case anyway because such objects are `constexpr`.
-See [issue #76](https://github.com/boostorg/hana/issues/76) for more information.
+in the header files, we require support for C++17 inline variables in order to
+avoid ODR violations (by means of the same object being defined twice in
+different translation units). When compiling in C++14 mode, where inline
+variables are not available, each translation unit will see a different
+algorithm object, so the address of an algorithm function object is not
+guaranteed to be unique across translation units. This is technically an ODR
+violation, but it shouldn't bite you unless you rely on the addresses being
+the same. So, in short, do not rely on the uniqueness of the address of any
+global object provided by Hana if you are compiling in C++14 mode.
 
 
 
@@ -3397,13 +3390,13 @@ some container defines what algorithms can be used with such a container.
 More specifically, the structure of the reference (available in the menu to
 the left) goes as follow:
 
-- @ref group-core\n
+- @ref group-core \n
   Documentation for the core module, which contains everything needed to
   create concepts, data types and related utilities. This is relevant
   if you need to extend the library, but otherwise you can probably
   ignore this.
 
-- @ref group-concepts\n
+- @ref group-concepts \n
   Documentation for all the concepts provided with the library. Each concept:
   - Documents which functions must be implemented absolutely in order to
     model that concept. The set of functions that must be provided is called
@@ -3421,25 +3414,25 @@ the left) goes as follow:
     automatically. When this happens, it will be documented but you don't have
     to do anything special to get that model.
 
-- @ref group-datatypes\n
+- @ref group-datatypes \n
   Documentation for all the data structures provided with the library. Each
   data structure documents the concept(s) it models, and how it does so. It
   also documents the methods tied to it but not to any concept, for example
   `maybe` for `optional`.
 
-- @ref group-functional\n
+- @ref group-functional \n
   General purpose function objects that are generally useful in a purely
   functional setting. These are currently not tied to any concept or container.
 
-- @ref group-ext\n
+- @ref group-ext \n
   Documentation for all the adapters for external libraries. These adapters
   are documented as if they were native types provided by Hana, but obviously
   Hana only provides the compatibility layer between them and the library.
 
-- @ref group-config\n
+- @ref group-config \n
   Macros that can be used to tweak the global behavior of the library.
 
-- @ref group-assertions\n
+- @ref group-assertions \n
   Macros to perform various types of assertions.
 
 - [<b>Alphabetical index</b>](functions.html)\n
@@ -3448,7 +3441,7 @@ the left) goes as follow:
 - [<b>Headers</b>](files.html)\n
   A list of all the headers provided by the library.
 
-- @ref group-details\n
+- @ref group-details \n
   Implementation details; don't go there. Anything not documented at all or
   documented in this group is not guaranteed to be stable.
 
@@ -3585,41 +3578,41 @@ in pseudo-code, the actual implementation sometimes being slightly hard to
 understand. This section defines terms used in the reference and in the
 pseudo-code used to describe some functions.
 
-@anchor tutorial-glossary-forwarded
-#### `forwarded(x)`
-Means that the object is forwarded optimally. This means that if `x` is a
-parameter, it is `std::forward`ed, and if it is a captured variable, it is
-moved from whenever the enclosing lambda is an rvalue.
+- @anchor tutorial-glossary-forwarded `forwarded(x)`
 
-Also note that when `x` can be moved from, the statement `return forwarded(x);`
-in a function with `decltype(auto)` does not mean that an rvalue reference to
-`x` will be returned, which would create a dangling reference. Rather, it
-means that `x` is returned by value, the value being constructed with the
-`std::forward`ed `x`.
+  Means that the object is forwarded optimally. This means that if `x` is a
+  parameter, it is `std::forward`ed, and if it is a captured variable, it is
+  moved from whenever the enclosing lambda is an rvalue.
 
-@anchor tutorial-glossary-perfect_capture
-#### `perfect-capture`
-This is used in lambdas to signify that the captured variables are
-initialized using perfect forwarding, as if `[x(forwarded(x))...]() { }`
-had been used.
+  Also note that when `x` can be moved from, the statement `return forwarded(x);`
+  in a function with `decltype(auto)` does not mean that an rvalue reference to
+  `x` will be returned, which would create a dangling reference. Rather, it
+  means that `x` is returned by value, the value being constructed with the
+  `std::forward`ed `x`.
 
-@anchor tutorial-glossary-tag_dispatched
-#### `tag-dispatched`
-This means that the documented function uses [tag dispatching]
-(@ref tutorial-core-tag_dispatching), and hence the exact
-implementation depends on the model of the concept associated
-to the function.
+- @anchor tutorial-glossary-perfect_capture `perfect-capture`
 
-@anchor tutorial-glossary-implementation_defined
-#### `implementation-defined`
-This expresses the fact that the exact implementation of an entity (usually a
-type) should not be relied upon by users. In particular, this means that one
-can not assume anything beyond what is written explicitly in the documentation.
-Usually, the concepts satisfied by an implementation-defined entity will be
-documented, because one could otherwise do nothing with it. Concretely,
-assuming too much about an implementation-defined entity will probably
-not kill you, but it will very probably break your code when you update
-to a newer version of Hana.
+  This is used in lambdas to signify that the captured variables are
+  initialized using perfect forwarding, as if `[x(forwarded(x))...]() { }`
+  had been used.
+
+- @anchor tutorial-glossary-tag_dispatched `tag-dispatched`
+
+  This means that the documented function uses [tag dispatching]
+  (@ref tutorial-core-tag_dispatching), and hence the exact
+  implementation depends on the model of the concept associated
+  to the function.
+
+- @anchor tutorial-glossary-implementation_defined `implementation-defined`
+
+  This expresses the fact that the exact implementation of an entity (usually a
+  type) should not be relied upon by users. In particular, this means that one
+  can not assume anything beyond what is written explicitly in the documentation.
+  Usually, the concepts satisfied by an implementation-defined entity will be
+  documented, because one could otherwise do nothing with it. Concretely,
+  assuming too much about an implementation-defined entity will probably
+  not kill you, but it will very probably break your code when you update
+  to a newer version of Hana.
 
 
 
@@ -4168,7 +4161,7 @@ modified as little as possible to work with this reimplementation.
 [Chandler.MeetingC++]: https://youtu.be/qkzaZumt_uk?t=4478
 [CMake]: http://www.cmake.org
 [constexpr_throw]: http://stackoverflow.com/a/8626450/627587
-[CopyConstructible]: http://en.cppreference.com/w/cpp/concept/CopyConstructible
+[CopyConstructible]: http://en.cppreference.com/w/cpp/named_req/CopyConstructible
 [CppCon]: http://cppcon.org
 [GOTW]: http://www.gotw.ca/gotw/index.htm
 [GSoC]: http://www.google-melange.com/gsoc/homepage/google/gsoc2014
@@ -4191,7 +4184,7 @@ modified as little as possible to work with this reimplementation.
 [N4461]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4461.html
 [N4487]: https://isocpp.org/files/papers/N4487.pdf
 [pkg-config]: http://www.freedesktop.org/wiki/Software/pkg-config/
-[POD]: http://en.cppreference.com/w/cpp/concept/PODType
+[POD]: http://en.cppreference.com/w/cpp/named_req/PODType
 [SFINAE]: http://en.cppreference.com/w/cpp/language/sfinae
 [slides.inst_must_go1]: https://github.com/boostcon/2010_presentations/raw/master/mon/instantiations_must_go.pdf
 [slides.inst_must_go2]: https://github.com/boostcon/2010_presentations/raw/master/mon/instantiations_must_go_2.pdf

@@ -5,20 +5,12 @@
 
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
+// https://www.boost.org/LICENSE_1_0.txt)
 
 //  libs/uuid/test/test_include1.cpp  -------------------------------//
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/uuid_serialize.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/nil_generator.hpp>
-#include <boost/uuid/name_generator.hpp>
-#include <boost/uuid/string_generator.hpp>
-#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid.hpp>
 
-int main(int, char*[])
+int main()
 {
-    return 0;
 }

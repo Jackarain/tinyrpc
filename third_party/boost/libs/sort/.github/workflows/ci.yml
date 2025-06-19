@@ -1,0 +1,64 @@
+name: GitHub Actions CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+      - githubactions*
+      - feature/**
+      - fix/**
+      - pr/**
+
+jobs:
+  posix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "g++-13"
+            os: ubuntu-latest
+            packages: "g++-13"
+            toolset: "gcc-13"
+          - name: "clang-15"
+            os: ubuntu-latest
+            packages: "clang-15"
+            toolset: "clang-15"
+          - name: "xcode"
+            os: macos-latest
+            toolset: "clang"
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@main
+      - name: Install
+        if: matrix.packages
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get -o Acquire::Retries=3 update -y
+          sudo apt-get -o Acquire::Retries=3 -y install ${{matrix.packages}}
+      - name: Setup
+        run: |
+          echo GITHUB_BASE_REF: $GITHUB_BASE_REF
+          echo GITHUB_REF: $GITHUB_REF
+          REF=${GITHUB_BASE_REF:-$GITHUB_REF}
+          REF=${REF#refs/heads/}
+          echo REF: $REF
+          BOOST_BRANCH=develop && ( test "${GITHUB_REF_NAME}" == "master" || test "${GITHUB_REF_NAME}" == "modular" ) && BOOST_BRANCH=${GITHUB_REF_NAME} || true
+          BOOST_GIT=https://github.com/${GITHUB_REPOSITORY/sort/boost}.git
+          echo BOOST_GIT: ${BOOST_GIT}
+          echo BOOST_BRANCH: ${BOOST_BRANCH}
+          cd ..
+          git clone -b "${BOOST_BRANCH}" --depth 1 "${BOOST_GIT}" boost-root
+          cd boost-root
+          git submodule update --init --jobs 3 tools/boostdep libs/assert libs/config libs/core libs/test libs/sort
+          python tools/boostdep/depinst/depinst.py -X test -g "--jobs 3" test
+          python tools/boostdep/depinst/depinst.py -X test -g "--jobs 3" sort
+          rm -rf libs/sort/*
+          cp -r $GITHUB_WORKSPACE/* libs/sort
+          ./bootstrap.sh
+          ./b2 -d0 headers
+      - name: Test
+        run: |
+          cd ../boost-root
+          ./b2 -j3 libs/sort/test toolset=${{matrix.toolset}} cxxstd=11,14,17,20

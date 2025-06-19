@@ -3,13 +3,16 @@
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#define BOOST_NO_EXCEPTIONS
+#include <boost/config.hpp>
+
+#if !defined( BOOST_NO_EXCEPTIONS )
+#   error This program requires exception handling disabled.
+#endif
+
 #include <boost/throw_exception.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <stdlib.h>
 
 class my_exception: public std::exception { };
-
-bool called=false;
 
 namespace
 boost
@@ -17,7 +20,7 @@ boost
     void
     throw_exception( std::exception const & )
         {
-        called=true;
+        exit(0);
         }
     }
 
@@ -25,6 +28,5 @@ int
 main()
     {
     boost::throw_exception(my_exception());
-    BOOST_TEST(called);
-    return boost::report_errors();
+    return 1;
     }

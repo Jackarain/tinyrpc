@@ -79,7 +79,7 @@ class expand_bwd_test_allocator
    {  typedef expand_bwd_test_allocator<T2>   other;   };
 
    //!Constructor from the segment manager. Never throws
-   expand_bwd_test_allocator(T *buffer, size_type sz, difference_type offset)
+   expand_bwd_test_allocator(T *buffer, size_type sz, size_type offset)
       : mp_buffer(buffer), m_size(sz)
       , m_offset(offset),  m_allocations(0){ }
 
@@ -137,20 +137,18 @@ class expand_bwd_test_allocator
       if(m_allocations == 0){
          if((m_offset + limit_size) > m_size){
             assert(0);
+            throw_bad_alloc();
          }
          ++m_allocations;
          reuse = 0;
          return (mp_buffer + m_offset);
       }
-      else if(m_allocations == 1){
-         if(limit_size > m_size){
-            assert(0);
-         }
-         ++m_allocations;
-         return mp_buffer;
-      }
       else{
-         throw_bad_alloc();
+         if(m_allocations != 1){
+            throw_bad_alloc();
+         }
+         assert(limit_size <= m_size);
+         ++m_allocations;
          return mp_buffer;
       }
    }
@@ -174,7 +172,7 @@ class expand_bwd_test_allocator
 
    pointer           mp_buffer;
    size_type         m_size;
-   difference_type   m_offset;
+   size_type         m_offset;
    char              m_allocations;
 };
 

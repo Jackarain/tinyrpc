@@ -15,15 +15,15 @@
 //   ensure const_array_ref doesn't allow assignment.
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/array.hpp"
-#include "boost/type.hpp"
+#include <boost/array.hpp>
+#include <boost/type.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   const int ndims=3;
   typedef boost::multi_array<int,ndims> array;
@@ -55,7 +55,7 @@ test_main(int,char*[])
         // FAIL! csma2 cannot be assigned to.
         csma2[i][j][k] = 0;
   
-  return boost::exit_success;
+  return boost::report_errors();
 }
 
 

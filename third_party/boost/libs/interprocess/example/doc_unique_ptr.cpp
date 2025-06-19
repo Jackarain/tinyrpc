@@ -8,14 +8,14 @@
 // See http://www.boost.org/libs/interprocess for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/interprocess/detail/config_begin.hpp>
+
 #include <boost/interprocess/detail/workaround.hpp>
 
 //[doc_unique_ptr
 #include <boost/interprocess/managed_mapped_file.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
-#include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/containers/list.hpp>
+#include <boost/container/vector.hpp>
+#include <boost/container/list.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <cassert>
 //<-
@@ -38,12 +38,12 @@ struct MyType
 typedef managed_unique_ptr<MyType, managed_mapped_file>::type unique_ptr_type;
 
 //Define containers of unique pointer. Unique pointer simplifies object management
-typedef vector
+typedef boost::container::vector
    < unique_ptr_type
    , allocator<unique_ptr_type, managed_mapped_file::segment_manager>
    > unique_ptr_vector_t;
 
-typedef list
+typedef boost::container::list
    < unique_ptr_type
    , allocator<unique_ptr_type, managed_mapped_file::segment_manager>
    > unique_ptr_list_t;
@@ -138,4 +138,4 @@ int main ()
    return 0;
 }
 //]
-#include <boost/interprocess/detail/config_end.hpp>
+

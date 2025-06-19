@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>list_of Reference</title>
 <link rel="stylesheet" href="../../boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.77.1">
 <link rel="home" href="../../index.html" title="Chapter&#160;1.&#160;Boost.Bimap">
 <link rel="up" href="../reference.html" title="Reference">
 <link rel="prev" href="unordered_set_of_reference.html" title="unordered_set_of Reference">
@@ -22,11 +22,11 @@
 <div class="spirit-nav">
 <a accesskey="p" href="unordered_set_of_reference.html"><img src="../../../../../../doc/src/images/prev.png" alt="Prev"></a><a accesskey="u" href="../reference.html"><img src="../../../../../../doc/src/images/up.png" alt="Up"></a><a accesskey="h" href="../../index.html"><img src="../../../../../../doc/src/images/home.png" alt="Home"></a><a accesskey="n" href="vector_of_reference.html"><img src="../../../../../../doc/src/images/next.png" alt="Next"></a>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference">
 <div class="titlepage"><div><div><h3 class="title">
 <a name="boost_bimap.reference.list_of_reference"></a><a class="link" href="list_of_reference.html" title="list_of Reference">list_of Reference</a>
 </h3></div></div></div>
-<div class="toc"><dl class="toc">
+<div class="toc"><dl>
 <dt><span class="section"><a href="list_of_reference.html#boost_bimap.reference.list_of_reference.header__boost_bimap_list_of_hpp__synopsis">Header
         "boost/bimap/list_of.hpp" synopsis</a></span></dt>
 <dt><span class="section"><a href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views">list_of
@@ -48,7 +48,7 @@
 <dt><span class="section"><a href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.serialization">Serialization</a></span></dt>
 </dl></dd>
 </dl></div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_header__boost_bimap_list_of_hpp__synopsis">
 <div class="titlepage"><div><div><h4 class="title">
 <a name="boost_bimap.reference.list_of_reference.header__boost_bimap_list_of_hpp__synopsis"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.header__boost_bimap_list_of_hpp__synopsis" title='Header "boost/bimap/list_of.hpp" synopsis'>Header
         "boost/bimap/list_of.hpp" synopsis</a>
@@ -67,12 +67,12 @@
 <span class="special">}</span> <span class="comment">// namespace boost</span>
 </pre>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views">
 <div class="titlepage"><div><div><h4 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views" title="list_of Views">list_of
         Views</a>
 </h4></div></div></div>
-<div class="toc"><dl class="toc">
+<div class="toc"><dl>
 <dt><span class="section"><a href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.complexity_signature">Complexity
           signature</a></span></dt>
 <dt><span class="section"><a href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.instantiation_types">Instantiation
@@ -110,7 +110,7 @@
         </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-              list_of views are not <a href="http://www.sgi.com/tech/stl/Assignable.html" target="_top">Assignable</a>
+              list_of views are not <a href="https://www.boost.org/sgi/stl/Assignable.html" target="_top">Assignable</a>
               (like any other view.)
             </li>
 <li class="listitem">
@@ -125,9 +125,9 @@
             </li>
 </ul></div>
 <p>
-          Having these restrictions into account, list_of views are models of <a href="http://www.sgi.com/tech/stl/ReversibleContainer.html" target="_top">Reversible Container</a>,
-          <a href="http://www.sgi.com/tech/stl/FrontInsertionSequence.html" target="_top">Front
-          Insertion Sequence</a> and <a href="http://www.sgi.com/tech/stl/BackInsertionSequence.html" target="_top">Back
+          Having these restrictions into account, list_of views are models of <a href="https://www.boost.org/sgi/stl/ReversibleContainer.html" target="_top">Reversible Container</a>,
+          <a href="https://www.boost.org/sgi/stl/FrontInsertionSequence.html" target="_top">Front
+          Insertion Sequence</a> and <a href="https://www.boost.org/sgi/stl/BackInsertionSequence.html" target="_top">Back
           Insertion Sequence</a>. We only provide descriptions of those types
           and operations that are either not present in the concepts modeled or do
           not exactly conform to the requirements for these types of containers.
@@ -316,7 +316,7 @@
 
 <span class="keyword">typedef</span> <span class="identifier">signature</span><span class="special">-</span><span class="identifier">compatible</span> <span class="identifier">with</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">pair</span><span class="special">&lt;</span> <span class="special">...</span> <span class="special">,</span> <span class="identifier">Left</span> <span class="special">&gt;</span> <span class="identifier">value_type</span><span class="special">;</span>
 </pre>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_complexity_signature">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.complexity_signature"></a><a name="list_of_complexity_signature"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.complexity_signature" title="Complexity signature">Complexity
           signature</a>
@@ -351,7 +351,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_instantiation_types">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.instantiation_types"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.instantiation_types" title="Instantiation types">Instantiation
           types</a>
@@ -371,7 +371,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_constructors__copy_and_assignment">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.constructors__copy_and_assignment"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.constructors__copy_and_assignment" title="Constructors, copy and assignment">Constructors,
           copy and assignment</a>
@@ -398,7 +398,7 @@
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
                 <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">InputIterator</span></code>
-                is a model of <a href="http://www.sgi.com/tech/stl/InputIterator.html" target="_top">Input
+                is a model of <a href="https://www.boost.org/sgi/stl/InputIterator.html" target="_top">Input
                 Iterator</a> over elements of type <code class="computeroutput"><span class="identifier">value_type</span></code>
                 or a type convertible to <code class="computeroutput"><span class="identifier">value_type</span></code>.
                 first and last are not iterators into any views of the <code class="computeroutput"><span class="identifier">bimap</span></code> to which this view belongs.
@@ -420,7 +420,7 @@
                 <span class="special">++</span><span class="identifier">n</span><span class="special">)</span> <span class="identifier">push_back</span><span class="special">(</span><span class="identifier">v</span><span class="special">);</span></code>
               </li></ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_capacity_operations">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.capacity_operations"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.capacity_operations" title="Capacity operations">Capacity
           operations</a>
@@ -447,7 +447,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_modifiers">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.modifiers"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.modifiers" title="Modifiers">Modifiers</a>
 </h5></div></div></div>
@@ -551,7 +551,7 @@
                 <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">position</span></code>
                 is a valid <code class="computeroutput"><span class="identifier">iterator</span></code>
                 of the view. <code class="computeroutput"><span class="identifier">InputIterator</span></code>
-                is a model of <a href="http://www.sgi.com/tech/stl/InputIterator.html" target="_top">Input
+                is a model of <a href="https://www.boost.org/sgi/stl/InputIterator.html" target="_top">Input
                 Iterator</a> over elements of type <code class="computeroutput"><span class="identifier">value_type</span></code>.
                 <code class="computeroutput"><span class="identifier">first</span></code> and <code class="computeroutput"><span class="identifier">last</span></code> are not iterators into any
                 view of the <code class="computeroutput"><span class="identifier">bimap</span></code>
@@ -726,7 +726,7 @@
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
                 <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">KeyModifier</span></code>
-                is a model of <a href="http://www.sgi.com/tech/stl/UnaryFunction.html" target="_top">Unary
+                is a model of <a href="https://www.boost.org/sgi/stl/UnaryFunction.html" target="_top">Unary
                 Function</a> accepting arguments of type: <code class="computeroutput"><span class="identifier">key_type</span><span class="special">&amp;</span></code>; <code class="computeroutput"><span class="identifier">position</span></code>
                 is a valid dereferenceable iterator of the view.
               </li>
@@ -765,7 +765,7 @@
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
                 <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">DataModifier</span></code>
-                is a model of <a href="http://www.sgi.com/tech/stl/UnaryFunction.html" target="_top">Unary
+                is a model of <a href="https://www.boost.org/sgi/stl/UnaryFunction.html" target="_top">Unary
                 Function</a> accepting arguments of type: <code class="computeroutput"><span class="identifier">mapped_type</span><span class="special">&amp;</span></code>; <code class="computeroutput"><span class="identifier">position</span></code>
                 is a valid dereferenceable iterator of the view.
               </li>
@@ -799,7 +799,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_list_operations">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.list_operations"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.list_operations" title="List operations">List
           operations</a>
@@ -967,7 +967,7 @@
 </pre>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-                <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">std</span><span class="special">::</span><span class="identifier">less</span><span class="special">&lt;</span><span class="identifier">value_type</span><span class="special">&gt;</span></code> is a <a href="http://www.sgi.com/tech/stl/StrictWeakOrdering.html" target="_top">Strict
+                <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">std</span><span class="special">::</span><span class="identifier">less</span><span class="special">&lt;</span><span class="identifier">value_type</span><span class="special">&gt;</span></code> is a <a href="https://www.boost.org/sgi/stl/StrictWeakOrdering.html" target="_top">Strict
                 Weak Ordering</a> over <code class="computeroutput"><span class="identifier">value_type</span></code>.
                 Both the view and <code class="computeroutput"><span class="identifier">x</span></code>
                 are sorted according to <code class="computeroutput"><span class="identifier">std</span><span class="special">::</span><span class="identifier">less</span><span class="special">&lt;</span><span class="identifier">value_type</span><span class="special">&gt;</span></code>.
@@ -1004,7 +1004,7 @@
 </pre>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-                <span class="bold"><strong>Requires:</strong></span> Compare is a <a href="http://www.sgi.com/tech/stl/StrictWeakOrdering.html" target="_top">Strict
+                <span class="bold"><strong>Requires:</strong></span> Compare is a <a href="https://www.boost.org/sgi/stl/StrictWeakOrdering.html" target="_top">Strict
                 Weak Ordering</a> over <code class="computeroutput"><span class="identifier">value_type</span></code>.
                 Both the view and <code class="computeroutput"><span class="identifier">x</span></code>
                 are sorted according to <code class="computeroutput"><span class="identifier">comp</span></code>.
@@ -1040,7 +1040,7 @@
 </pre>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-                <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">std</span><span class="special">::</span><span class="identifier">less</span><span class="special">&lt;</span><span class="identifier">value_type</span><span class="special">&gt;</span></code> is a <a href="http://www.sgi.com/tech/stl/StrictWeakOrdering.html" target="_top">Strict
+                <span class="bold"><strong>Requires: </strong></span> <code class="computeroutput"><span class="identifier">std</span><span class="special">::</span><span class="identifier">less</span><span class="special">&lt;</span><span class="identifier">value_type</span><span class="special">&gt;</span></code> is a <a href="https://www.boost.org/sgi/stl/StrictWeakOrdering.html" target="_top">Strict
                 Weak Ordering</a> over value_type.
               </li>
 <li class="listitem">
@@ -1066,7 +1066,7 @@
 </pre>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-                <span class="bold"><strong>Requires:</strong></span> Compare is a <a href="http://www.sgi.com/tech/stl/StrictWeakOrdering.html" target="_top">Strict
+                <span class="bold"><strong>Requires:</strong></span> Compare is a <a href="https://www.boost.org/sgi/stl/StrictWeakOrdering.html" target="_top">Strict
                 Weak Ordering</a> over value_type.
               </li>
 <li class="listitem">
@@ -1105,7 +1105,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_rearrange_operations">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.rearrange_operations"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.rearrange_operations" title="Rearrange operations">Rearrange
           operations</a>
@@ -1167,7 +1167,7 @@
               </li>
 </ul></div>
 </div>
-<div class="section">
+<div class="section boost_bimap_reference_list_of_reference_list_of_views_serialization">
 <div class="titlepage"><div><div><h5 class="title">
 <a name="boost_bimap.reference.list_of_reference.list_of_views.serialization"></a><a class="link" href="list_of_reference.html#boost_bimap.reference.list_of_reference.list_of_views.serialization" title="Serialization">Serialization</a>
 </h5></div></div></div>
@@ -1179,8 +1179,8 @@
             defined in the <code class="computeroutput"><span class="identifier">bimap</span></code>
             serialization section.
           </p>
-<div class="blurb">
-<div class="titlepage"><div><div><p class="title"><b></b></p></div></div></div>
+<div class="sidebar">
+<div class="titlepage"></div>
 <p>
             <span class="bold"><strong>Operation:</strong></span> saving of a <code class="computeroutput"><span class="identifier">bimap</span></code> b to an output archive (XML archive)
             ar.
@@ -1190,8 +1190,8 @@
                 <span class="bold"><strong>Requires:</strong></span> No additional requirements
                 to those imposed by the container.
               </li></ul></div>
-<div class="blurb">
-<div class="titlepage"><div><div><p class="title"><b></b></p></div></div></div>
+<div class="sidebar">
+<div class="titlepage"></div>
 <p>
             <span class="bold"><strong>Operation:</strong></span> loading of a <code class="computeroutput"><span class="identifier">bimap</span></code> b' from an input archive (XML
             archive) ar.
@@ -1206,8 +1206,8 @@
                 is the position of the <code class="computeroutput"><span class="identifier">list_of</span></code>
                 view in the container.
               </li></ul></div>
-<div class="blurb">
-<div class="titlepage"><div><div><p class="title"><b></b></p></div></div></div>
+<div class="sidebar">
+<div class="titlepage"></div>
 <p>
             <span class="bold"><strong>Operation:</strong></span> saving of an <code class="computeroutput"><span class="identifier">iterator</span></code> or <code class="computeroutput"><span class="identifier">const_iterator</span></code>
             it to an output archive (XML archive) ar.
@@ -1218,8 +1218,8 @@
                 is a valid iterator of the view. The associated <code class="computeroutput"><span class="identifier">bimap</span></code>
                 has been previously saved.
               </li></ul></div>
-<div class="blurb">
-<div class="titlepage"><div><div><p class="title"><b></b></p></div></div></div>
+<div class="sidebar">
+<div class="titlepage"></div>
 <p>
             <span class="bold"><strong>Operation:</strong></span> loading of an <code class="computeroutput"><span class="identifier">iterator</span></code> or <code class="computeroutput"><span class="identifier">const_iterator</span>
             <span class="identifier">it</span></code>' from an input archive (XML

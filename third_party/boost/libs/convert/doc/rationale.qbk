@@ -1,5 +1,5 @@
 [/
-  Copyright (c) Vladimir Batov 2009-2016
+  Copyright (c) Vladimir Batov 2009-2022
   Distributed under the Boost Software License, Version 1.0.
   See copy at http://www.boost.org/LICENSE_1_0.txt.
 ]
@@ -10,7 +10,7 @@ I was using textual configuration files extensively and was also processing and 
 
 The `boost::lexical_cast` library (with its orthogonal and extendible design) looked very promising compared to others (see [@http://www.gotw.ca/publications/mill19.htm The String Formatters of Manor Farm] by H. Sutter for the discussion of alternatives). Unfortunately, 
 
-* many deployed user types simply did not meet `boost::lexical_cast` requirements (namely, [@http://en.cppreference.com/w/cpp/concept/DefaultConstructible ['Default Constructibility]]); 
+* many deployed user types simply did not meet `boost::lexical_cast` requirements (namely, [@http://en.cppreference.com/w/cpp/named_req/DefaultConstructible ['Default Constructibility]]); 
 * failure to convert a user-provided configuration parameter was not that rare or exceptional to justify the hassle and the overhead of exception processing; consequently, additional flexibility (['if], ['when] and ['how]) in handling conversion failures was needed;
 * additional conversion-related functionality (such as formatting and locale support) were needed. 
 

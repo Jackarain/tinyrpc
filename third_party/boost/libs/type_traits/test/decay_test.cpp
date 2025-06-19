@@ -127,6 +127,7 @@ TT_TEST_BEGIN(decay)
           ::tt::decay<f2_type>::type,int (*)(int)>::value),
                                   true );
 
+#ifndef TEST_CUDA_DEVICE
 #ifndef BOOST_NO_TEMPLATED_ITERATOR_CONSTRUCTORS
    //
    // Don't test this if the std lib has no templated constructors (Oracle+STLPort):
@@ -138,6 +139,7 @@ TT_TEST_BEGIN(decay)
    std::pair<std::wstring, int>        p4  = boost::make_pair( L"foo", 1 );
 #endif
 #endif
+#endif
    //
    // Todo: make these work sometime. The test id not directly
    //       related to decay<T>::type and can be avoided for now.
@@ -145,7 +147,7 @@ TT_TEST_BEGIN(decay)
    /*
    int array[10];
    std::pair<int*,int*> p5 = boost::make_pair( array, array );
-#ifndef __BORLANDC__
+#ifndef BOOST_BORLANDC
    std::pair<int(*)(void), int(*)(int)> p6 = boost::make_pair(boost::proc1, boost::proc2);
    p6.first();
    p6.second(1);

@@ -63,9 +63,9 @@ public:
     emit_line_directive(ContextT const& ctx, ContainerT &pending, 
         typename ContextT::token_type const& act_token)
     {
-    // emit a #line directive showing the relative filename instead
-    typename ContextT::position_type pos = act_token.get_position();
-    unsigned int column = 1;
+        // emit a #line directive showing the relative filename instead
+        typename ContextT::position_type pos = act_token.get_position();
+        unsigned int column = 1;
 
         typedef typename ContextT::token_type result_type;
         using namespace boost::wave;
@@ -76,21 +76,16 @@ public:
         pos.set_column(++column);      // account for '#'
         pending.push_back(result_type(T_SPACE, " ", pos));
 
-    // 21 is the max required size for a 64 bit integer represented as a 
-    // string
-    char buffer[22];
-
-        using namespace std;    // for some systems sprintf is in namespace std
-        sprintf (buffer, "%d", pos.get_line());
+        std::string buffer = std::to_string(pos.get_line());
 
         pos.set_column(++column);                 // account for ' '
-        pending.push_back(result_type(T_INTLIT, buffer, pos));
-        pos.set_column(column += (unsigned int)strlen(buffer)); // account for <number>
+        pending.push_back(result_type(T_INTLIT, buffer.c_str(), pos));
+        pos.set_column(column += buffer.size()); // account for <number>
         pending.push_back(result_type(T_SPACE, " ", pos));
         pos.set_column(++column);                 // account for ' '
 
-    std::string file("\"");
-    boost::filesystem::path filename(
+        std::string file("\"");
+        boost::filesystem::path filename(
         boost::wave::util::create_path(ctx.get_current_relative_filename().c_str()));
 
         using boost::wave::util::impl::escape_lit;

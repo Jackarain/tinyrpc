@@ -15,7 +15,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 class V: public boost::enable_shared_from_this<V>
 {
@@ -39,7 +39,7 @@ void test()
 
     *p = V();
 
-    boost::weak_ptr<V> q4 = p->shared_from_this();
+    boost::weak_ptr<V> q4 = p->weak_from_this();
     BOOST_TEST( !q4.expired() );
     BOOST_TEST( !(q < q4) && !(q4 < q) );
     BOOST_TEST( !(q2 < q4) && !(q4 < q2) );

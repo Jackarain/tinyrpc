@@ -14,7 +14,8 @@
 // test ratio_divide
 
 #include <boost/ratio/ratio.hpp>
+#include <cstdint>
 
-typedef boost::ratio<BOOST_RATIO_INTMAX_T_MAX, 1> R1;
+typedef boost::ratio<INTMAX_MAX, 1> R1;
 typedef boost::ratio<1,2> R2;
 typedef boost::ratio_divide<R1, R2>::type RT;

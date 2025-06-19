@@ -4,6 +4,11 @@
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
+// Copyright (c) 2023 Adam Wulkiewicz, Lodz, Poland.
+
+// This file was modified by Oracle on 2021.
+// Modifications copyright (c) 2021, Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
@@ -15,6 +20,7 @@
 
 #include <geometry_test_common.hpp>
 
+#include <boost/geometry/util/condition.hpp>
 #include <boost/geometry/util/select_most_precise.hpp>
 
 
@@ -23,8 +29,8 @@ struct user_defined {};
 template <typename T1, typename T2, typename ExpectedType>
 void test()
 {
-    typedef typename bg::select_most_precise<T1, T2>::type type;
-    bool is_same = boost::is_same<type, ExpectedType>::type::value;
+    using type = typename bg::select_most_precise<T1, T2>::type;
+    bool is_same = std::is_same<type, ExpectedType>::value;
 
     BOOST_CHECK_MESSAGE(is_same,
                         "The most precise of types " <<
@@ -56,7 +62,7 @@ int test_main(int, char* [])
     test<float, int, float>();
     test<int, float, float>();
 
-    if ( sizeof(long double) > sizeof(double) )
+    if (BOOST_GEOMETRY_CONDITION(sizeof(long double) > sizeof(double)))
     {
         // This cannot be done for MSVC because double/long double is the same
         // This is also true for Android

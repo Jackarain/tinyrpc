@@ -17,7 +17,10 @@ run test_callable.cpp /boost//unit_test_framework ;
 run test_reference.cpp /boost//unit_test_framework ;
 run test_construct.cpp /boost//unit_test_framework ;
 run test_relaxed.cpp /boost//unit_test_framework ;
-run test_assign.cpp /boost//unit_test_framework ;
+run test_assign.cpp /boost//unit_test_framework : : :
+  <toolset>gcc,<target-os>windows:<cxxflags>-Wa,-mbig-obj
+  <toolset>gcc,<target-os>windows,<variant>debug:<build>no
+  ;
 run test_construct_ref.cpp /boost//unit_test_framework ;
 run test_construct_cref.cpp /boost//unit_test_framework ;
 run test_any_cast.cpp /boost//unit_test_framework ;

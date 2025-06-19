@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Compiler specifics</title>
 <link rel="stylesheet" href="../boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.77.1">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Boost.Bimap">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Boost.Bimap">
 <link rel="prev" href="reference/unconstrained_set_of_reference.html" title="unconstrained_set_of Reference">
@@ -22,7 +22,7 @@
 <div class="spirit-nav">
 <a accesskey="p" href="reference/unconstrained_set_of_reference.html"><img src="../../../../../doc/src/images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../../../../doc/src/images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../../../../doc/src/images/home.png" alt="Home"></a><a accesskey="n" href="performance.html"><img src="../../../../../doc/src/images/next.png" alt="Next"></a>
 </div>
-<div class="section">
+<div class="section boost_bimap_compiler_specifics">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="boost_bimap.compiler_specifics"></a><a class="link" href="compiler_specifics.html" title="Compiler specifics">Compiler specifics</a>
 </h2></div></div></div>
@@ -342,10 +342,10 @@
 <p>
       VC++ 8.0 warns on usage of certain Standard Library and API functions that
       can be cause buffer overruns or other possible security issues if misused.
-      See http://msdn.microsoft.com/msdnmag/issues/05/05/SafeCandC/default.aspx But
+      See https://web.archive.org/web/20071014014301/http://msdn.microsoft.com/msdnmag/issues/05/05/SafeCandC/default.aspx But
       the wording of the warning is misleading and unsettling, there are no portable
       alternative functions, and VC++ 8.0's own libraries use the functions in question.
-      In order to turn off the warnings add the followings defines at the begging
+      In order to turn off the warnings add the following defines at the begging
       of your .cpp files:
     </p>
 <pre class="programlisting"><span class="preprocessor">#define</span> <span class="identifier">_CRT_SECURE_NO_DEPRECATE</span>

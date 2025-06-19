@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -14,7 +14,7 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/string_body.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <type_traits>
 
 namespace boost {
@@ -205,7 +205,7 @@ public:
         bool get_keep_alive_impl(unsigned) const { return true; }
         bool has_content_length_impl() const { return false; }
         void set_method_impl(string_view) {}
-        void set_target_impl(string_view s) { target = s.to_string(); }
+        void set_target_impl(string_view s) { target = std::string(s); }
         void set_reason_impl(string_view) {}
         void set_chunked_impl(bool) {}
         void set_content_length_impl(boost::optional<std::uint64_t>) {}

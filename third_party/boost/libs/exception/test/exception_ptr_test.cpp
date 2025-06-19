@@ -3,6 +3,12 @@
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#include <boost/config.hpp>
+
+#if defined( BOOST_NO_EXCEPTIONS )
+#   error This program requires exception handling.
+#endif
+
 #include <boost/exception_ptr.hpp>
 #include <boost/exception/info.hpp>
 #include <boost/exception/get_error_info.hpp>
@@ -10,7 +16,7 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <boost/detail/atomic_count.hpp>
+#include <boost/smart_ptr/detail/atomic_count.hpp>
 #include <boost/detail/lightweight_test.hpp>
 #include <iostream>
 
@@ -87,7 +93,7 @@ exc:
         }
 
     virtual
-    ~exc() throw()
+    ~exc() BOOST_NOEXCEPT_OR_NOTHROW
         {
         --exc_count;
         }

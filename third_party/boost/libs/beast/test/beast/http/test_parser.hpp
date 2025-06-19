@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,7 +11,7 @@
 #define BOOST_BEAST_HTTP_TEST_PARSER_HPP
 
 #include <boost/beast/http/basic_parser.hpp>
-#include <boost/beast/experimental/test/fail_count.hpp>
+#include <boost/beast/_experimental/test/fail_count.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -21,13 +21,13 @@ namespace http {
 
 template<bool isRequest>
 class test_parser
-    : public basic_parser<isRequest, test_parser<isRequest>>
+    : public basic_parser<isRequest>
 {
     test::fail_count* fc_ = nullptr;
 
 public:
     using mutable_buffers_type =
-        boost::asio::mutable_buffer;
+        net::mutable_buffer;
 
     int status = 0;
     int version = 0;
@@ -65,8 +65,6 @@ public:
         ++got_on_begin;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 
     void
@@ -81,8 +79,6 @@ public:
         ++got_on_begin;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 
     void
@@ -92,9 +88,7 @@ public:
         ++got_on_field;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
-        fields[name.to_string()] = value.to_string();
+        fields[std::string(name)] = std::string(value);
     }
 
     void
@@ -103,8 +97,6 @@ public:
         ++got_on_header;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 
     void
@@ -112,13 +104,13 @@ public:
         boost::optional<std::uint64_t> const& content_length_,
         error_code& ec)
     {
+        // The real implementation clears out the error code in basic_string_body::reader::init
+        ec = {};
         ++got_on_body;
         got_content_length =
             static_cast<bool>(content_length_);
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 
     std::size_t
@@ -128,8 +120,6 @@ public:
         body.append(s.data(), s.size());
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
         return s.size();
     }
 
@@ -142,8 +132,6 @@ public:
         ++got_on_chunk;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 
     std::size_t
@@ -155,8 +143,6 @@ public:
         body.append(s.data(), s.size());
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
         return s.size();
     }
 
@@ -167,8 +153,6 @@ public:
         ++got_on_complete;
         if(fc_)
             fc_->fail(ec);
-        else
-            ec.assign(0, ec.category());
     }
 };
 

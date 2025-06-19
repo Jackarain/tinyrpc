@@ -1,5 +1,5 @@
 [/
-    Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+    Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -23,13 +23,13 @@ of the underlying TCP/IP connection.
 
 Asynchronous versions are available for all functions:
 
-[ws_snippet_20]
+[code_websocket_8_1]
 
 Calls to asynchronous initiation functions support the extensible asynchronous
 model developed by the Boost.Asio author, allowing for traditional completion
 handlers, stackful or stackless coroutines, and even futures:
 
-[ws_snippet_21]
+[code_websocket_8_1f]
 
 The example programs that come with the library demonstrate the usage of
 websocket stream operations with all asynchronous varieties.
@@ -56,17 +56,17 @@ following operations to be active at the same time:
 * [link beast.ref.boost__beast__websocket__stream.async_ping `async_ping`] or [link beast.ref.boost__beast__websocket__stream.async_pong `async_pong`]
 * [link beast.ref.boost__beast__websocket__stream.async_close `async_close`]
 
-For example, the following code is malformed, because the program is
-attempting to perform two simultaneous reads:
+For example, the following code is produces undefined behavior, because the
+program is attempting to perform two simultaneous reads:
 
-[ws_snippet_24]
+[code_websocket_8_2]
 
-However, this code is well-formed:
+However, this code is correct:
 
-[ws_snippet_25]
+[code_websocket_8_3]
 
 The implementation uses composed asynchronous operations; although
-some individiual operations can perform both reads and writes, this
+some individual operations can perform both reads and writes, this
 behavior is coordinated internally to make sure the underlying stream
 is operated in a safe fashion. This allows an asynchronous read operation
 to respond to a received ping frame even while a user-initiated call to

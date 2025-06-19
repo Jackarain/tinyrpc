@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Chapter&#160;1.&#160;Boost.Bind</title>
 <link rel="stylesheet" href="../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 <link rel="home" href="bind.html" title="Chapter&#160;1.&#160;Boost.Bind">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -900,8 +900,8 @@
 </h3></div></div></div>
 <p>
         The function objects that are produced by <code class="computeroutput"><span class="identifier">bind</span></code>
-        do not model the STL <a href="http://www.sgi.com/tech/stl/UnaryFunction.html" target="_top"><span class="emphasis"><em>Unary
-        Function</em></span></a> or <a href="http://www.sgi.com/tech/stl/BinaryFunction.html" target="_top"><span class="emphasis"><em>Binary
+        do not model the STL <a href="https://boost.org/sgi/stl/UnaryFunction.html" target="_top"><span class="emphasis"><em>Unary
+        Function</em></span></a> or <a href="https://boost.org/sgi/stl/BinaryFunction.html" target="_top"><span class="emphasis"><em>Binary
         Function</em></span></a> concepts, even when the function objects are
         unary or binary operations, because the function object types are missing
         public typedefs <code class="computeroutput"><span class="identifier">result_type</span></code>
@@ -916,7 +916,7 @@
 <p>
         The <code class="computeroutput"><span class="identifier">make_adaptable</span></code> function
         is defined in <a href="../../../../boost/bind/make_adaptable.hpp" target="_top"><code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">make_adaptable</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code></a>,
-        which must be included explicitly in addition to <a href="../../../../boost/bind.hpp" target="_top"><code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code></a>:
+        which must be included explicitly in addition to <a href="../../../../boost/bind/bind.hpp" target="_top"><code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code></a>:
       </p>
 <pre class="programlisting"><span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">make_adaptable</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
 
@@ -974,7 +974,7 @@
       specific: <code class="computeroutput"><span class="keyword">using</span> <span class="identifier">boost</span><span class="special">::</span><span class="identifier">bind</span><span class="special">;</span></code></a>
 </h3></div></div></div>
 <p>
-        On MSVC (up to version 7.0), when <code class="computeroutput"><span class="identifier">boostbind</span></code>
+        On MSVC (up to version 7.0), when <code class="computeroutput"><span class="identifier">boost</span><span class="special">::</span><span class="identifier">bind</span></code>
         is brought into scope with an using declaration:
       </p>
 <pre class="programlisting"><span class="keyword">using</span> <span class="identifier">boost</span><span class="special">::</span><span class="identifier">bind</span><span class="special">;</span>
@@ -1305,8 +1305,8 @@
 </h3></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
-            <a href="../../../../boost/bind.hpp" target="_top">boost/bind.hpp</a> (main
-            header)
+            <a href="../../../../boost/bind/bind.hpp" target="_top">boost/bind/bind.hpp</a>
+            (main header)
           </li>
 <li class="listitem">
             <a href="../../../../boost/bind/bind_cc.hpp" target="_top">boost/bind/bind_cc.hpp</a>
@@ -1427,29 +1427,29 @@
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">__stdcall</span></code> functions, <code class="computeroutput"><span class="preprocessor">#define</span></code>
         the macro <code class="computeroutput"><span class="identifier">BOOST_BIND_ENABLE_STDCALL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">__stdcall</span></code> member functions, <code class="computeroutput"><span class="preprocessor">#define</span></code> the macro <code class="computeroutput"><span class="identifier">BOOST_MEM_FN_ENABLE_STDCALL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">__fastcall</span></code> functions, <code class="computeroutput"><span class="preprocessor">#define</span></code>
         the macro <code class="computeroutput"><span class="identifier">BOOST_BIND_ENABLE_FASTCALL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">__fastcall</span></code> member functions, <code class="computeroutput"><span class="preprocessor">#define</span></code> the macro <code class="computeroutput"><span class="identifier">BOOST_MEM_FN_ENABLE_FASTCALL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">pascal</span></code> functions, <code class="computeroutput"><span class="preprocessor">#define</span></code>
         the macro <code class="computeroutput"><span class="identifier">BOOST_BIND_ENABLE_PASCAL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         To use <code class="computeroutput"><span class="identifier">bind</span></code> with <code class="computeroutput"><span class="identifier">__cdecl</span></code> member functions, <code class="computeroutput"><span class="preprocessor">#define</span></code> the macro <code class="computeroutput"><span class="identifier">BOOST_MEM_FN_ENABLE_CDECL</span></code>
-        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
+        before including <code class="computeroutput"><span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">bind</span><span class="special">/</span><span class="identifier">bind</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span></code>.
       </p>
 <p>
         <span class="bold"><strong>It is best to define these macros in the project options,
@@ -1543,7 +1543,7 @@
 </div>
 </div>
 <table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
-<td align="left"><p><small>Last revised: December 05, 2018 at 20:09:02 GMT</small></p></td>
+<td align="left"><p><small>Last revised: December 13, 2019 at 18:24:18 GMT</small></p></td>
 <td align="right"><div class="copyright-footer"></div></td>
 </tr></table>
 <hr>

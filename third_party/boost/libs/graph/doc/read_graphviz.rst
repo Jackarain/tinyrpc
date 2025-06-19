@@ -15,25 +15,25 @@ __ ../../../index.htm
 ::
 
   namespace boost {
-  
+
     template <typename MutableGraph>
     bool read_graphviz(std::istream& in, MutableGraph& graph,
-                       dynamic_properties& dp, 
+                       dynamic_properties& dp,
                        const std::string& node_id = "node_id");
-  
+
     template <typename MutableGraph>
     bool read_graphviz(std::string& str, MutableGraph& graph,
-                       dynamic_properties& dp, 
+                       dynamic_properties& dp,
                        const std::string& node_id = "node_id");
-  
+
     template <typename InputIterator, typename MutableGraph>
     bool read_graphviz(InputIterator begin, InputIterator end,
-                       MutableGraph& graph, dynamic_properties& dp, 
+                       MutableGraph& graph, dynamic_properties& dp,
                        const std::string& node_id = "node_id");
-  
+
   }
 
- 
+
 The ``read_graphviz`` function interprets a graph described using the
 GraphViz_ DOT language and builds a BGL graph that captures that
 description.  Using these functions, you can initialize a graph using
@@ -51,7 +51,7 @@ takes a dynamic_properties_ object and operates on its collection of
 property maps.  The reader passes all the properties encountered to
 this object, using the GraphViz string keys as the property keys.
 Furthermore, ``read_graphviz`` stores node identifier names under the
-vertex property map named ``node_id``. 
+vertex property map named ``node_id``.
 
 Requirements:
  - The type of the graph must model the `Mutable Graph`_ concept.
@@ -140,7 +140,7 @@ GraphViz reader to populate an ``adjacency_list`` graph
 
   // Vertex properties
   typedef property < vertex_name_t, std::string,
-            property < vertex_color_t, float > > vertex_p;  
+            property < vertex_color_t, float > > vertex_p;
   // Edge properties
   typedef property < edge_weight_t, double > edge_p;
   // Graph properties
@@ -166,7 +166,7 @@ GraphViz reader to populate an ``adjacency_list`` graph
   dp.property("weight",weight);
 
   // Use ref_property_map to turn a graph property into a property map
-  boost::ref_property_map<graph_t*,std::string> 
+  boost::ref_property_map<graph_t*,std::string>
     gname(get_property(graph,graph_name));
   dp.property("name",gname);
 
@@ -182,8 +182,8 @@ GraphViz reader to populate an ``adjacency_list`` graph
 Building the GraphViz Readers
 -----------------------------
 To use the GraphViz readers, you will need to build and link against
-the "boost_graph" and "boost_regex" libraries. These libraries can be built by following the
-`Boost Jam Build Instructions`_ for the subdirectories ``libs/graph/build`` and ``libs/regex/build``.
+the "boost_graph" library. This library can be built by following the
+`Boost Jam Build Instructions`_ for the subdirectory ``libs/graph/build``.
 
 
 Notes
@@ -209,7 +209,7 @@ Notes
    reflect subgraphs as actual entities in the BGL.  Rather, they are
    used to shorten some edge definitions as well as to give a subset
    of all nodes or edges certain properties. For example, the
-   DOT graphs ``digraph { a -> subgraph {b -> c} -> e }`` and 
+   DOT graphs ``digraph { a -> subgraph {b -> c} -> e }`` and
    ``digraph { a -> b -> e ; a -> c -> e ; b -> c}`` are equivalent.
 
  - Subgraph IDs refer to subgraphs defined earlier in the graph
@@ -234,7 +234,7 @@ Future Work
 
 .. _GraphViz: http://graphviz.org/
 .. _`Mutable Graph`: MutableGraph.html
-.. _`Input Iterator`: http://www.sgi.com/tech/stl/InputIterator.html
+.. _`Input Iterator`: http://www.boost.org/sgi/stl/InputIterator.html
 .. _dynamic_properties: ../../property_map/doc/dynamic_property_map.html
 .. _write_graphviz: write-graphviz.html
 .. _Boost Jam Build Instructions: ../../../more/getting_started.html#Build_Install

@@ -108,6 +108,10 @@
 
         struct Eval;
 
+        template<typename Expr, typename State, typename Data>
+        typename boost::result_of<Eval(Expr&, State&, Data&)>::type
+        eval_lambda(Expr& e, State& s, Data& d);
+
         struct EvalWhile : proto::transform<EvalWhile>
         {
             template<typename Expr, typename State, typename Data>
@@ -121,9 +125,9 @@
                   , typename impl::data_param data
                 ) const
                 {
-                    while(Eval()(proto::left(expr), state, data))
+                    while(eval_lambda(proto::left(expr), state, data))
                     {
-                        Eval()(proto::right(expr), state, data);
+                        eval_lambda(proto::right(expr), state, data);
                     }
                     return result_type();
                 }
@@ -145,9 +149,9 @@
                 {
                     do
                     {
-                        Eval()(proto::child_c<0>(expr), state, data);
+                        eval_lambda(proto::child_c<0>(expr), state, data);
                     }
-                    while(Eval()(proto::child_c<1>(expr), state, data));
+                    while(eval_lambda(proto::child_c<1>(expr), state, data));
 
                     return result_type();
                 }
@@ -167,11 +171,11 @@
                   , typename impl::data_param data
                 ) const
                 {
-                    for(Eval()(proto::child_c<0>(expr), state, data)
-                      ; Eval()(proto::child_c<1>(expr), state, data)
-                      ; Eval()(proto::child_c<2>(expr), state, data))
+                    for(eval_lambda(proto::child_c<0>(expr), state, data)
+                      ; eval_lambda(proto::child_c<1>(expr), state, data)
+                      ; eval_lambda(proto::child_c<2>(expr), state, data))
                     {
-                        Eval()(proto::child_c<3>(expr), state, data);
+                        eval_lambda(proto::child_c<3>(expr), state, data);
                     }
                     return result_type();
                 }
@@ -191,9 +195,9 @@
                   , typename impl::data_param data
                 ) const
                 {
-                    if(Eval()(proto::left(expr), state, data))
+                    if(eval_lambda(proto::left(expr), state, data))
                     {
-                        Eval()(proto::right(expr), state, data);
+                        eval_lambda(proto::right(expr), state, data);
                     }
                     return result_type();
                 }
@@ -213,13 +217,13 @@
                   , typename impl::data_param data
                 ) const
                 {
-                    if(Eval()(proto::child_c<0>(expr), state, data))
+                    if(eval_lambda(proto::child_c<0>(expr), state, data))
                     {
-                        Eval()(proto::child_c<1>(expr), state, data);
+                        eval_lambda(proto::child_c<1>(expr), state, data);
                     }
                     else
                     {
-                        Eval()(proto::child_c<2>(expr), state, data);
+                        eval_lambda(proto::child_c<2>(expr), state, data);
                     }
                     return result_type();
                 }
@@ -253,7 +257,7 @@
 
             #define M0(Z, N, DATA)                                                                  \
                 case proto::tag_of<typename proto::result_of::child_c<Expr, N>::type>::type::value: \
-                    Eval()(proto::child_c<N>(expr), state, data);                                   \
+                    eval_lambda(proto::child_c<N>(expr), state, data);                              \
                     break;                                                                          \
                     /**/
 
@@ -270,7 +274,7 @@
                   , typename impl2::data_param data                                                 \
                 ) const                                                                             \
                 {                                                                                   \
-                    switch(Eval()(proto::child_c<0>(expr), state, data))                            \
+                    switch(eval_lambda(proto::child_c<0>(expr), state, data))                       \
                     {                                                                               \
                         BOOST_PP_REPEAT_FROM_TO_ ## Z(1, N, M0, ~)                                  \
                     default:                                                                        \
@@ -291,11 +295,11 @@
                   , typename impl2::data_param data                                                 \
                 ) const                                                                             \
                 {                                                                                   \
-                    switch(Eval()(proto::child_c<0>(expr), state, data))                            \
+                    switch(eval_lambda(proto::child_c<0>(expr), state, data))                       \
                     {                                                                               \
                         BOOST_PP_REPEAT_FROM_TO_ ## Z(1, BOOST_PP_DEC(N), M0, ~)                    \
                     default:;                                                                       \
-                        Eval()(proto::child_c<BOOST_PP_DEC(N)>(expr), state, data);                 \
+                        eval_lambda(proto::child_c<BOOST_PP_DEC(N)>(expr), state, data);            \
                         break;                                                                      \
                     }                                                                               \
                 }                                                                                   \
@@ -440,6 +444,13 @@
           : proto::switch_<Cases>
         {};
 
+        template<typename Expr, typename State, typename Data>
+        typename boost::result_of<Eval(Expr&, State&, Data&)>::type
+        eval_lambda(Expr& e, State& s, Data& d)
+        {
+            return Eval()(e, s, d);
+        }
+
         // Use a grammar to disable Proto's assignment operator overloads.
         // We'll define our own because we want (x+=_1) to store x by
         // reference. (In all other cases, variables are stored by value
@@ -464,13 +475,8 @@
         template<> struct AssignOps::case_<proto::tag::bitwise_or_assign>   : proto::not_<proto::_> {};
         template<> struct AssignOps::case_<proto::tag::bitwise_xor_assign>  : proto::not_<proto::_> {};
 
-        namespace exprns_
-        {
-            template<typename Expr>
-            struct llexpr;
-        }
-
-        using exprns_::llexpr;
+        template<typename Expr>
+        struct llexpr;
 
         // Wrap expressions in lambda::llexpr<>.
         struct Generator
@@ -539,7 +545,7 @@
             operator()() const
             {
                 fusion::vector0<> args;
-                return Eval()(*this, no_exception, args);
+                return eval_lambda(*this, no_exception, args);
             }
 
             #define M1(Z, N, _) ((0)(1))
@@ -554,7 +560,7 @@
                     BOOST_MPL_ASSERT_RELATION(result_of<Arity(Expr const &)>::type::value, <=, SIZE);       \
                     BOOST_PP_CAT(fusion::vector, SIZE)<BOOST_PP_SEQ_FOR_EACH_I_R(R, M5, ~, PRODUCT)> args   \
                         (BOOST_PP_SEQ_FOR_EACH_I_R(R, M6, ~, PRODUCT));                                     \
-                    return Eval()(*this, no_exception, args);                                               \
+                    return eval_lambda(*this, no_exception, args);                                          \
                 }                                                                                           \
                 /**/
 
@@ -574,7 +580,7 @@
 
             #define C1 const
 
-            #define BOOST_PP_ITERATION_PARAMS_1 (3, (1, BOOST_LAMBDA_MAX_ARITY, "./lambda.hpp"))
+            #define BOOST_PP_ITERATION_PARAMS_1 (3, (1, BOOST_LAMBDA_MAX_ARITY, "lambda.hpp"))
             #include BOOST_PP_ITERATE()
 
             #undef C0
@@ -1460,7 +1466,7 @@
                 }
                 catch(Exception const &e)
                 {
-                    return static_cast<result_type>(Eval()(this->head, e, data));
+                    return static_cast<result_type>(eval_lambda(this->head, e, data));
                 }
             }
 
@@ -1476,7 +1482,7 @@
                 }
                 catch(...)
                 {
-                    return static_cast<result_type>(Eval()(this->head, tag::catch_all_(), data));
+                    return static_cast<result_type>(eval_lambda(this->head, tag::catch_all_(), data));
                 }
             }
 
@@ -1502,7 +1508,7 @@
             typename result_of<Eval(Head const &, State, Data)>::type
             operator()(State const &state, Data &data) const
             {
-                return Eval()(this->head, state, data);
+                return eval_lambda(this->head, state, data);
             }
 
         private:

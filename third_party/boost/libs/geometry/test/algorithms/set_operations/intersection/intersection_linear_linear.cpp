@@ -1,11 +1,12 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014-2015, Oracle and/or its affiliates.
+// Copyright (c) 2014-2023, Oracle and/or its affiliates.
+
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
+// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 
 // Licensed under the Boost Software License version 1.0.
 // http://www.boost.org/users/license.html
-
-// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 
 #include <iostream>
 
@@ -18,6 +19,7 @@
 #define BOOST_GEOMETRY_DEBUG_SEGMENT_IDENTIFIER
 #endif
 
+#include "geometry_test_common.hpp"
 #include <boost/test/included/unit_test.hpp>
 
 #include "test_intersection_linear_linear.hpp"
@@ -476,6 +478,28 @@ BOOST_AUTO_TEST_CASE( test_intersection_linestring_linestring )
          from_wkt<ML>("MULTILINESTRING((1 0,1 1))"),
          "lli25"
          );
+
+#if defined(BOOST_GEOMETRY_TEST_FAILURES)
+    {
+        // This test fails if side_by_triangle is used in intersection
+        ut_settings settings;
+        settings.tolerance = 1.0e-9;
+        settings.test_alternative_side_strategy = true;
+        settings.test_default_strategy = BG_IF_TEST_FAILURES;
+        settings.test_explicit_strategy = BG_IF_TEST_FAILURES;
+        settings.test_invariance = BG_IF_TEST_FAILURES;
+
+        tester::apply
+                (from_wkt<L>("LINESTRING(-2305843009213693956 4611686018427387906, -33 -92, 78 83)"),
+                 from_wkt<L>("LINESTRING(31 -97, -46 57, -20 -4)"),
+                 from_wkt<ML>("MULTILINESTRING((1.39042821159 -37.7808564232,1.39042821159 -37.7808564232))"),
+                 "lli26",
+                 settings
+                 );
+    }
+#endif
+
+
 }
 
 
@@ -1271,9 +1295,12 @@ BOOST_AUTO_TEST_CASE( test_intersection_ml_ml_degenerate )
     tester::apply
         (from_wkt<ML>("MULTILINESTRING((1 5, -4.3 -.1), (0 6, 8.6 6, 189.7654 5, 1 3, 6 3, 3 5, 6 2.232432, 0 4), (-6 5, 1 2.232432), (3 -1032.34324, 9 0, 189.7654 1, -1.4 3, 3 189.7654, +.3 10.0002, 1 5, 6 3, 5 1, 9 1, 10.0002 -1032.34324, -0.7654 0, 5 3, 3 4), (2.232432 2.232432, 8.6 +.4, 0.0 2.232432, 4 0, -8.8 10.0002), (1 0, 6 6, 7 2, -0 8.4), (-0.7654 3, +.6 8, 4 -1032.34324, 1 6, 0 4), (0 7, 2 1, 8 -7, 7 -.7, -1032.34324 9), (5 0, 10.0002 4, 8 7, 3 3, -8.1 5))"),
          from_wkt<ML>("MULTILINESTRING((5 10.0002, 2 7, -0.7654 0, 5 3), (0 -0.7654, 4 10.0002, 4 +.1, -.8 3, -.1 8, 10.0002 2, +.9 -1032.34324))"),
-#ifdef BOOST_GEOMETRY_INTERSECTION_DO_NOT_INCLUDE_ISOLATED_POINTS
-         from_wkt<ML>("MULTILINESTRING((-0.7654 8.88178e-16,-0.7654 0,5 3))"),
-#else
+
+    // NOTE: if get_turn_info uses policy_verify_all then the result is different
+
+  #if BOOST_GEOMETRY_INTERSECTION_DO_NOT_INCLUDE_ISOLATED_POINTS
+         from_wkt<ML>("MULTILINESTRING((-0.7654 0,5 3))"),
+  #else
          from_wkt<ML>("MULTILINESTRING((-0.756651 3.30964),(1.60494 6),\
                       (2.51371 6),(3.26673 6),(4 6),(8.18862 3.07616),\
                       (4 3.03179),(1.40063 3.00424),(1.39905 3),\
@@ -1309,7 +1336,7 @@ BOOST_AUTO_TEST_CASE( test_intersection_ml_ml_degenerate )
                       (8.5655 2.85228),(5.26567 4.81254),(4 3.8),\
                       (1.4995 3.27036),(0.591231 3.43401),\
                       (-0.706503 3.66784),\
-                      (-0.7654 8.88178e-16,-0.7654 0,5 3))"),
+                      (-0.7654 0,5 3))"),
          from_wkt<ML>("MULTILINESTRING((1.87562 6.68515),(1.60494 6),\
                       (1.18124 4.9275),(1.00439 4.47984),(0.91526 4.25422),\
                       (0.729883 3.78498),(0.614728 3.49349),\
@@ -1340,8 +1367,8 @@ BOOST_AUTO_TEST_CASE( test_intersection_ml_ml_degenerate )
                       (9.98265 0.00543606),(9.09826 -100.515944),\
                       (7.08745 -329.0674155),(5.06428 -559.024344),\
                       (3.23365 -767.0972558),(3.16036 -775.427199),\
-                      (-0.7654 8.88178e-16,-0.7654 0,5 3))"),
-#endif
+                      (-0.7654 0,5 3))"),
+  #endif // isolated
           "mlmli21",
           1e-4
          );
@@ -1355,11 +1382,13 @@ BOOST_AUTO_TEST_CASE( test_intersection_ml_ml_spikes )
 {
 #ifdef BOOST_GEOMETRY_TEST_DEBUG
     std::cout << std::endl << std::endl << std::endl;
-    std::cout << "*** MULTILINESTRING / MULTILINESTRING INTERSECTION" 
+    std::cout << "*** MULTILINESTRING / MULTILINESTRING INTERSECTION"
               << " (WITH SPIKES) ***"
               << std::endl;
     std::cout << std::endl;
 #endif
+
+    BoostGeometryWriteTestConfiguration();
 
     typedef multi_linestring_type ML;
 
@@ -1599,7 +1628,7 @@ BOOST_AUTO_TEST_CASE( test_intersection_ml_ml_spikes )
          "mlmli-spikes-17"
          );
 
-    // test cases sent by Adam on the mailing list (equal slikes)
+    // test cases sent by Adam on the mailing list (equal spikes)
     tester::apply
         (from_wkt<ML>("MULTILINESTRING((0 0,1 1,0 0))"),
          from_wkt<ML>("MULTILINESTRING((0 0,1 1,0 0))"),

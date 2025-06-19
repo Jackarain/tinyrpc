@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,7 @@
 // Test that header file is self-contained.
 #include <boost/beast/http/field.hpp>
 
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 namespace boost {
 namespace beast {
@@ -32,7 +32,6 @@ public:
         match(field::accept, "accept");
         match(field::accept, "aCcept");
         match(field::accept, "ACCEPT");
-
 
         match(field::a_im, "A-IM");
         match(field::accept, "Accept");
@@ -310,6 +309,10 @@ public:
         match(field::safe, "Safe");
         match(field::schedule_reply, "Schedule-Reply");
         match(field::schedule_tag, "Schedule-Tag");
+        match(field::sec_fetch_dest, "Sec-Fetch-Dest");
+        match(field::sec_fetch_mode, "Sec-Fetch-Mode");
+        match(field::sec_fetch_site, "Sec-Fetch-Site");
+        match(field::sec_fetch_user, "Sec-Fetch-User");
         match(field::sec_websocket_accept, "Sec-WebSocket-Accept");
         match(field::sec_websocket_extensions, "Sec-WebSocket-Extensions");
         match(field::sec_websocket_key, "Sec-WebSocket-Key");

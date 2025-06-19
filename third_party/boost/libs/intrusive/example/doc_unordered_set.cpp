@@ -13,7 +13,6 @@
 #include <boost/intrusive/unordered_set.hpp>
 #include <vector>
 #include <functional>
-#include <boost/functional/hash.hpp>
 
 using namespace boost::intrusive;
 

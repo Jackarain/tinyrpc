@@ -3,6 +3,11 @@
 
 // Copyright (c) 2010-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
+// This file was modified by Oracle on 2021-2024.
+// Modifications copyright (c) 2021-2024, Oracle and/or its affiliates.
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -13,11 +18,11 @@
 #include <iostream>
 #include <iomanip>
 
-#include <boost/foreach.hpp>
-
 #include <geometry_test_common.hpp>
 
-#include <boost/geometry/geometry.hpp>
+#include <boost/geometry/algorithms/correct.hpp>
+#include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>
+#include <boost/geometry/algorithms/detail/overlay/overlay.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/io/wkt/wkt.hpp>
@@ -26,14 +31,10 @@
 #  include <boost/geometry/io/svg/svg_mapper.hpp>
 #endif
 
-#include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>
-#include <boost/geometry/policies/robustness/get_rescale_policy.hpp>
-
 #include <algorithms/overlay/overlay_cases.hpp>
 
 template <typename Geometry>
-struct rev : boost::mpl::if_c<bg::point_order<Geometry>::value == bg::counterclockwise, boost::true_type, boost::false_type>::type
-{};
+using rev = bg::util::bool_constant<bg::point_order<Geometry>::value == bg::counterclockwise>;
 
 template <typename Geometry1, typename Geometry2>
 inline typename bg::coordinate_type<Geometry1>::type
@@ -50,16 +51,10 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
 
     typedef typename bg::point_type<Geometry1>::type point_type;
 
-    typedef typename bg::rescale_policy_type<point_type>::type
-        rescale_policy_type;
-
-    rescale_policy_type rescale_policy
-            = bg::get_rescale_policy<rescale_policy_type>(g1, g2);
-
     typedef bg::detail::overlay::traversal_turn_info
     <
         point_type,
-        typename bg::segment_ratio_type<point_type, rescale_policy_type>::type
+        typename bg::detail::segment_ratio_type<point_type>::type
     > turn_info;
     std::vector<turn_info> turns;
 
@@ -69,14 +64,14 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
             rev<Geometry1>::value,
             rev<Geometry2>::value,
             bg::detail::overlay::assign_null_policy
-        >(g1, g2, rescale_policy, turns, policy);
+        >(g1, g2, turns, policy);
 
     bg::enrich_intersection_points
             <
                 rev<Geometry1>::value, rev<Geometry2>::value,
                 bg::overlay_intersection
             >(turns, bg::detail::overlay::operation_intersection,
-        g1, g2, rescale_policy, side_strategy_type());
+        g1, g2, side_strategy_type());
 
     typedef bg::model::ring<typename bg::point_type<Geometry1>::type> ring_type;
     typedef std::deque<ring_type> out_vector;
@@ -86,10 +81,10 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
         <
             rev<Geometry1>::value, rev<Geometry2>::value,
             Geometry1, Geometry2
-        >::apply(g1, g2, op, rescale_policy, turns, v);
+        >::apply(g1, g2, op, turns, v);
 
     typename bg::coordinate_type<Geometry1>::type result = 0.0;
-    BOOST_FOREACH(ring_type& ring, v)
+    for (ring_type& ring : v)
     {
         result += bg::area(ring);
     }
@@ -117,7 +112,7 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
                 "stroke:rgb(51,51,153);stroke-width:3");
 
         // Traversal rings in magenta/light yellow fill
-        BOOST_FOREACH(ring_type const& ring, v)
+        for  (ring_type const& ring : v)
         {
             mapper.map(ring, "fill-opacity:0.3;stroke-opacity:0.4;fill:rgb(255,255,0);"
                     "stroke:rgb(255,0,255);stroke-width:8");
@@ -132,7 +127,7 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
         int const lineheight = 10;
         int const margin = 5;
 
-        BOOST_FOREACH(turn_info const& turn, turns)
+        for (turn_info const& turn : turns)
         {
             mapper.map(turn.point, "fill:rgb(255,128,0);"
                     "stroke:rgb(0,0,0);stroke-width:1", 3);
@@ -142,8 +137,8 @@ intersect(Geometry1 const& g1, Geometry2 const& g2, std::string const& name,
                 // Create a rounded off point
                 std::pair<int, int> p
                     = std::make_pair(
-                        boost::numeric_cast<int>(0.5 + 10 * bg::get<0>(turn.point)),
-                        boost::numeric_cast<int>(0.5 + 10 * bg::get<1>(turn.point))
+                        util::numeric_cast<int>(0.5 + 10 * bg::get<0>(turn.point)),
+                        util::numeric_cast<int>(0.5 + 10 * bg::get<1>(turn.point))
                         );
                 std::string style =  "fill:rgb(0,0,0);font-family:Arial;font-size:10px";
 

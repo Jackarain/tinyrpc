@@ -9,6 +9,11 @@
 //////////////////////////////////////////////////////////////////////////////
 #include <boost/container/detail/tree.hpp>
 #include <boost/container/adaptive_pool.hpp>
+#include <boost/container/new_allocator.hpp>
+#include <boost/move/traits.hpp>
+
+#include <iostream>
+#include <memory> //for std::allocator
 
 #include "movable_int.hpp"
 #include "dummy_test_allocator.hpp"

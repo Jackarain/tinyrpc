@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2016 Vladimir Batov.
+// Copyright (c) 2009-2020 Vladimir Batov.
 // Use, modification and distribution are subject to the Boost Software License,
 // Version 1.0. See http://www.boost.org/LICENSE_1_0.txt.
 
@@ -6,14 +6,19 @@
 #define BOOST_CONVERT_TEST_HPP
 
 #include <boost/convert/detail/config.hpp>
+
+#if !defined(BOOST_CONVERT_CXX14)
+#else
+
 #include <boost/make_default.hpp>
-#include <boost/static_assert.hpp>
+#include <boost/detail/lightweight_test.hpp>
 #include <string>
 #include <istream>
-#include <string.h> // For strlen, strcmp, memcpy
-#include <memory.h> // Is needed for 'memset'
-#include <stdio.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring> // For strlen, strcmp, memcpy
+#include <climits>
+#include <ctime>
 
 #if defined(_MSC_VER)
 #   pragma warning(disable: 4189) // local variable is initialized but not referenced.
@@ -112,10 +117,10 @@ namespace boost
 //[my_string_declaration
 struct my_string
 {
-    typedef my_string              this_type;
-    typedef char                  value_type;
-    typedef value_type*             iterator;
-    typedef value_type const* const_iterator;
+    using      this_type = my_string;
+    using     value_type = char;
+    using       iterator = value_type*;
+    using const_iterator = value_type const*;
 
     my_string ();
     my_string (const_iterator, const_iterator =0);
@@ -184,4 +189,5 @@ namespace test
     };
 }
 
+#endif
 #endif // BOOST_CONVERT_TEST_HPP

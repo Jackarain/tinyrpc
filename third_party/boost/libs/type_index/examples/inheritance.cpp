@@ -1,4 +1,4 @@
-// Copyright 2013-2014 Antony Polukhin
+// Copyright 2013-2025 Antony Polukhin
 
 // Distributed under the Boost Software License, Version 1.0.
 // (See the accompanying file LICENSE_1_0.txt
@@ -22,7 +22,7 @@ struct A {
 };
 struct B: public A { BOOST_TYPE_INDEX_REGISTER_CLASS };
 struct C: public B { BOOST_TYPE_INDEX_REGISTER_CLASS };
-struct D: public C { BOOST_TYPE_INDEX_REGISTER_RUNTIME_CLASS(BOOST_TYPE_INDEX_NO_BASE_CLASS) };
+struct D: public C { BOOST_TYPE_INDEX_REGISTER_RUNTIME_CLASS() };
 
 void print_real_type(const A& a) {
     std::cout << boost::typeindex::type_id_runtime(a).pretty_name() << '\n';

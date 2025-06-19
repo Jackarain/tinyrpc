@@ -12,6 +12,8 @@ project boost/serialization
       <conditional>@include-spirit
 ;
 
+import ../../config/checks/config : requires ;
+
 SPIRIT_ROOT = [ modules.peek : SPIRIT_ROOT ] ;
 rule include-spirit ( properties * )
 {
@@ -53,6 +55,7 @@ rule include-spirit ( properties * )
 }
 
 SOURCES = 
+    archive_exception
     basic_archive
     basic_iarchive
     basic_iserializer
@@ -81,15 +84,17 @@ SOURCES =
     polymorphic_xml_iarchive
     polymorphic_xml_oarchive
     void_cast
-    archive_exception
     xml_grammar
     xml_iarchive
-    xml_oarchive
     xml_archive_exception
     codecvt_null
-    utf8_codecvt_facet
  ;
-    
+
+SOURCES_HAS_STD_WSTREAMBUF = 
+    xml_oarchive
+    utf8_codecvt_facet
+;
+
 WSOURCES = 
     basic_text_wiprimitive
     basic_text_woprimitive
@@ -105,10 +110,13 @@ WSOURCES =
 ;
 
 lib boost_serialization 
-    : $(SOURCES).cpp
-    : 
+    : ## sources ##
+     $(SOURCES).cpp
+    : ## requirements ##
+    [ check-target-builds ../../config/checks//std_wstreambuf : <source>../src/$(SOURCES_HAS_STD_WSTREAMBUF).cpp ]
     <toolset>msvc:<cxxflags>/Gy
     <toolset>msvc:<define>_SCL_SECURE_NO_WARNINGS
+    <toolset>msvc:<define>_CRT_SECURE_NO_WARNINGS
     <toolset>clang:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"
     <toolset>gcc:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"
     <toolset>darwin:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"
@@ -120,9 +128,11 @@ lib boost_serialization
 
 lib boost_wserialization 
     : $(WSOURCES).cpp boost_serialization 
-    :     
+    : 
+    [ requires std_wstreambuf ]
     <toolset>msvc:<cxxflags>/Gy 
     <toolset>msvc:<define>_SCL_SECURE_NO_WARNINGS
+    <toolset>msvc:<define>_CRT_SECURE_NO_WARNINGS
     <toolset>clang:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"
     <toolset>gcc:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"
     <toolset>darwin:<cxxflags>"-fvisibility=hidden -fvisibility-inlines-hidden"

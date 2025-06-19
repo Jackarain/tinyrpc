@@ -8,7 +8,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 
 #if defined(BOOST_INTERPROCESS_XSI_SHARED_MEMORY_OBJECTS)
@@ -19,6 +18,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/detail/file_wrapper.hpp>
+#include <boost/interprocess/detail/os_thread_functions.hpp>
 #include <string>
 #include <iostream>
 #include "get_process_id_name.hpp"
@@ -27,14 +27,14 @@ using namespace boost::interprocess;
 
 void remove_shared_memory(const xsi_key &key)
 {
-   try{
+   BOOST_INTERPROCESS_TRY{
       xsi_shared_memory xsi(open_only, key);
       xsi_shared_memory::remove(xsi.get_shmid());
    }
-   catch(interprocess_exception &e){
+   BOOST_INTERPROCESS_CATCH(interprocess_exception &e){
       if(e.get_error_code() != not_found_error)
-         throw;
-   }
+         BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
 }
 
 class xsi_shared_memory_remover
@@ -50,14 +50,6 @@ class xsi_shared_memory_remover
    xsi_shared_memory & xsi_shm_;
 };
 
-inline std::string get_filename()
-{
-   std::string ret (ipcdetail::get_temporary_path());
-   ret += "/";
-   ret += test::get_process_id_name();
-   return ret;
-}
-
 int main ()
 {
    std::string filename(get_filename());
@@ -65,39 +57,45 @@ int main ()
 
    file_mapping::remove(names[0]);
    {  ipcdetail::file_wrapper(create_only, names[0], read_write); }
-   xsi_key key(names[0], 1);
+
+   xsi_key key(names[0], static_cast<boost::uint8_t>(boost::interprocess::ipcdetail::get_current_system_highres_rand()));
    file_mapping::remove(names[0]);
    remove_shared_memory(key);
 
    unsigned int i;
-   try{
+   BOOST_INTERPROCESS_TRY{
       for(i = 0; i < sizeof(names)/sizeof(names[0]); ++i)
       {
-         const std::size_t FileSize = 99999*2;
+         const std::size_t FileSize = 16*1024;
          //Create a file mapping
          xsi_shared_memory mapping (create_only, names[i] ? key : xsi_key(), FileSize);
          xsi_shared_memory_remover rem(mapping);
-         try{
+         BOOST_INTERPROCESS_TRY{
             {
                //Partial mapping should fail fox XSI shared memory
                bool thrown = false;
-               try{
+               BOOST_INTERPROCESS_TRY{
                   mapped_region region2(mapping, read_write, FileSize/2, FileSize - FileSize/2, 0);
                }
-               catch(...){
+               BOOST_INTERPROCESS_CATCH(...){
                   thrown = true;
-               }
+               } BOOST_INTERPROCESS_CATCH_END
                if(thrown == false){
                   return 1;
                }
-               //Create a mapped region
-               mapped_region region (mapping, read_write, 0, FileSize, 0);
+               BOOST_INTERPROCESS_TRY{
+                  //Create a mapped region
+                  mapped_region region (mapping, read_write, 0, FileSize, 0);
 
-               //Fill two regions with a pattern
-               unsigned char *filler = static_cast<unsigned char*>(region.get_address());
-               for(std::size_t i = 0; i < FileSize; ++i){
-                  *filler++ = static_cast<unsigned char>(i);
+                  //Fill two regions with a pattern
+                  unsigned char *filler = static_cast<unsigned char*>(region.get_address());
+                  for(std::size_t i = 0; i < FileSize; ++i){
+                     *filler++ = static_cast<unsigned char>(i);
+                  }
                }
+               BOOST_INTERPROCESS_CATCH(std::exception& exc){
+                  std::cout << "Unhandled exception 0: " << exc.what() << " name: " << (names[i] ? names[i] : "null") << std::endl;
+               } BOOST_INTERPROCESS_CATCH_END
             }
 
             //Now check the pattern mapping a single read only mapped_region
@@ -114,16 +112,16 @@ int main ()
                }
             }
          }
-         catch(std::exception &exc){
-            std::cout << "Unhandled exception: " << exc.what() << std::endl;
+         BOOST_INTERPROCESS_CATCH(std::exception &exc){
+            std::cout << "Unhandled exception 1: " << exc.what() << " name: " << (names[i] ? names[i] : "null") << std::endl;
             return 1;
-         }
+         } BOOST_INTERPROCESS_CATCH_END
       }
    }
-   catch(std::exception &exc){
-      std::cout << "Unhandled exception: " << exc.what() << std::endl;
+   BOOST_INTERPROCESS_CATCH(std::exception &exc){
+      std::cout << "Unhandled exception 2: " << exc.what() << " name: " << (names[i] ? names[i] : "null") << std::endl;
       return 1;
-   }
+   } BOOST_INTERPROCESS_CATCH_END
    return 0;
 }
 
@@ -135,5 +133,3 @@ int main()
 }
 
 #endif   //BOOST_INTERPROCESS_XSI_SHARED_MEMORY_OBJECTS
-
-#include <boost/interprocess/detail/config_end.hpp>

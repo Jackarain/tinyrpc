@@ -18,9 +18,36 @@
     numeric types. Note that this concept is distinct from the C++ standard
     library type traits <code>is_integral</code> and
     <code>is_arithmetic</code>. These latter fulfill the requirement of the
-    concept Numeric. But there are types T which fulfill this concept for
-    which <code>is_arithmetic&lt;T&gt;::value == false</code>. For example see
-    <code>safe_signed_integer&lt;int&gt;</code>.</para>
+    concept Numeric. But there may types which fulfill the concept of Numeric
+    for which <code>std::is_arithmetic&lt;T&gt; == false</code>.</para>
+
+    <para>There are multiple reasons that we cannot use
+    std::is_arithmetic&lt;T&gt; to identify number-like types for our
+    purposes:</para>
+
+    <para><itemizedlist>
+        <listitem>
+          <para>The main purpose of our concept of Numeric&lt;T&gt; is to
+          indicate that the range of type T is available to be queried. Since
+          all specializations of Numeric&lt;T&gt; have a member in
+          std::numeric_limits&lt;T&gt; we have access to this information when
+          needed through the members std::numeric_limits&lt;T&gt;::min() and
+          std::numeric_limits&lt;T&gt;::max().</para>
+        </listitem>
+
+        <listitem>
+          <para>There are types which do not fulfill std::arithmetic&lt;T&gt;
+          (that is are not built-in numeric types) but still fulfill the
+          concept of Numeric&lt;T&gt; (number like "things").</para>
+        </listitem>
+
+        <listitem>
+          <para>The library creates new result types for every expression
+          which should also fulfill this concept Numeric. But
+          is_arithmetic&lt;T&gt; cannot be specialized for user types.</para>
+        </listitem>
+      </itemizedlist>So is_arithmetic&lt;T&gt; does not correspond to the same
+    set of types as Numeric&lt;T&gt; does.</para>
   </section>
 
   <section>
@@ -36,13 +63,25 @@
           <row>
             <entry><code>T, U, V</code></entry>
 
-            <entry>A type that is a model of Numeric</entry>
+            <entry>A type that is a model of a Numeric type</entry>
           </row>
 
           <row>
             <entry><code>t, u</code></entry>
 
-            <entry>An object of a type modeling Numeric</entry>
+            <entry>An object of a type modeling a Numeric type</entry>
+          </row>
+
+          <row>
+            <entry><code>OS, IS</code></entry>
+
+            <entry>A type that is a model of an output or input stream</entry>
+          </row>
+
+          <row>
+            <entry><code>os, is</code></entry>
+
+            <entry>An object of a type modeling output or input stream</entry>
           </row>
         </tbody>
       </tgroup>
@@ -77,9 +116,15 @@
 
     <para>In addition to the expressions defined in <ulink
     url="http://www.sgi.com/tech/stl/Assignable.html">Assignable</ulink> the
-    following expressions must be valid. Any operations which result in
-    integers which cannot be represented as some Numeric type will throw an
-    exception.<table>
+    following expressions must be valid. In the safe_numerics library, a type
+    is considered Numeric if and only if it it has an entry in the
+    std::numeric_limits table with the following members. Note that this is
+    different from the the definition of std::is_arithmetic in that the later
+    is required to support all valid expressions which Numeric does not
+    require support for all these expressions but only requires that they be
+    correctly implemented if they are defined. Also is_arithmetic is only
+    defined for built in numeric types while Numeric applies to any user types
+    which "look like" a number.<table>
         <title>General</title>
 
         <tgroup cols="3">
@@ -101,12 +146,27 @@
 
           <tbody>
             <row>
-              <entry><code>std::numeric_limits&lt;T&gt;::is_bounded
-              </code></entry>
+              <entry><code>Numeric&lt;T&gt;</code></entry>
+
+              <entry><code>true_type</code></entry>
+
+              <entry/>
+            </row>
+
+            <row>
+              <entry><code>Numeric&lt;T&gt;()</code></entry>
 
               <entry><code>bool</code></entry>
 
-              <entry><code>true</code> or <code>false</code></entry>
+              <entry>true</entry>
+            </row>
+
+            <row>
+              <entry><code>std::numeric_limits&lt;T&gt;::is_specialized</code></entry>
+
+              <entry><code>bool</code></entry>
+
+              <entry><code>true</code></entry>
             </row>
 
             <row>
@@ -124,18 +184,12 @@
 
               <entry><code>true</code> or <code>false</code></entry>
             </row>
-
-            <row>
-              <entry><code>std::numeric_limits&lt;T&gt;::is_specialized
-              </code></entry>
-
-              <entry><code>bool</code></entry>
-
-              <entry><code>true</code></entry>
-            </row>
           </tbody>
         </tgroup>
       </table></para>
+
+    <para>Any or all of the following unary operators MAY be defined. Any such
+    defined operators shall implement the semantics as described below</para>
 
     <table>
       <title>Unary Operators</title>
@@ -209,6 +263,9 @@
       </tgroup>
     </table>
 
+    <para>Any or all of the following binary operators MAY be defined. Any
+    defined operators shall implement the semantics as described bellow</para>
+
     <table>
       <title>Binary Operators</title>
 
@@ -260,14 +317,6 @@
             <entry><code>T</code></entry>
 
             <entry>divide t by u</entry>
-          </row>
-
-          <row>
-            <entry><code>t % u</code></entry>
-
-            <entry><code>T</code></entry>
-
-            <entry>t modulus u</entry>
           </row>
 
           <row>
@@ -363,6 +412,22 @@
 
             <entry>divide t by u and assign to t</entry>
           </row>
+
+          <row>
+            <entry><code>os &lt;&lt; t</code></entry>
+
+            <entry><code><code>OS &amp;</code></code></entry>
+
+            <entry>write contents of t to output stream</entry>
+          </row>
+
+          <row>
+            <entry><code>is &gt;&gt; t</code></entry>
+
+            <entry><code><code>IS &amp;</code></code></entry>
+
+            <entry>read contents of an input stream into t</entry>
+          </row>
         </tbody>
       </tgroup>
     </table>
@@ -372,14 +437,47 @@
     <title>Models</title>
 
     <para><code>int, float, safe_signed_integer&lt;int&gt;,
-    safe_signed_range&lt;int&gt;, etc.</code></para>
+    safe_signed_range&lt;int&gt;, checked_result&lt;int&gt;,
+    etc.</code></para>
   </section>
 
   <section>
     <title>Header</title>
 
-    <para><ulink url="../../include/concept/numeric.hpp"><code>#include
-    &lt;boost/numeric/safe_numerics/concepts/numeric.hpp&gt;
-    </code></ulink></para>
+    <para><ulink
+    url="../../include/boost/safe_numerics/concept/numeric.hpp"><code>#include
+    &lt;boost/safe_numerics/concepts/numeric.hpp&gt; </code></ulink></para>
+  </section>
+
+  <section>
+    <title>Note on Usage of <code>std::numeric_limits</code></title>
+
+    <para>This in turn raises another question: Is it "legal" to specialize
+    <code>std::numeric_limits</code> for one's own types such as
+    <code>safe&lt;int&gt;</code>. In my view the standard is ambiguous on
+    this. See various interpretations: <itemizedlist>
+        <listitem>
+          <para><ulink
+          url="https://stackoverflow.com/questions/16122912/is-it-ok-to-specialize-stdnumeric-limitst-for-user-defined-number-like-class">is-it-ok-to-specialize-stdnumeric-limitst-for-user-defined-number-like-class</ulink></para>
+        </listitem>
+
+        <listitem>
+          <para><ulink
+          url="https://en.cppreference.com/w/cpp/types/numeric_limits">cppreference.com/w/cpp/types/numeric_limits</ulink></para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>In any case, it seems pretty clear that no harm will come of it. In
+    spite of the consideration given to this issue, it turns out that the
+    found no real need to implement these predicates. For example, there is no
+    "is_numeric&lt;T&gt;" implemented as part of the safe numerics library.
+    This may change in the future though. Even if not used, defining and
+    maintaining these type requirements in this document has been very
+    valuable in keeping the concepts and code more unified and
+    understandable.</para>
+
+    <para>Remember that above considerations apply to other numeric types used
+    in this library even though we don't explicitly repeat this information
+    for every case.</para>
   </section>
 </section>

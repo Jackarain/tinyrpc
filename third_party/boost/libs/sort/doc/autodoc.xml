@@ -3,31 +3,6 @@
 <namespace name="boost">
 <namespace name="sort">
 <namespace name="spreadsort">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <function name="float_mem_cast"><type>Cast_type</type><template>
           <template-type-parameter name="Data_type"><purpose><para>Floating-point IEEE 754/IEC559 type. </para></purpose></template-type-parameter>
           <template-type-parameter name="Cast_type"><purpose><para>Integer type (same size) to which to cast.</para></purpose></template-type-parameter>
@@ -78,6 +53,31 @@ spreadsort(vec.begin(), vec.end());
           <template-type-parameter name="Compare"/>
         </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="rshift"><paramtype>Right_shift</paramtype><description><para>Functor that returns the result of shifting the value_type right a specified number of bits. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order. </para></description></parameter><purpose>Float sort algorithm using range with both right-shift and user-defined comparison operator. </purpose><description><para>
 </para></description></function>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </namespace>
 </namespace>
 </namespace>
@@ -93,21 +93,9 @@ spreadsort(vec.begin(), vec.end());
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Integer sort algorithm using random access iterators. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Integer sort algorithm using random access iterators. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -116,13 +104,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting.</para></description></parameter><purpose>Integer sort algorithm using range. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting.</para></description></parameter><purpose>Integer sort algorithm using range. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -131,15 +126,19 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Right_shift"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>Functor that returns the result of shifting the value_type right a specified number of bits. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Integer sort algorithm using random access iterators with both right-shift and user-defined comparison operator. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>Functor that returns the result of shifting the value_type right a specified number of bits. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Integer sort algorithm using random access iterators with both right-shift and user-defined comparison operator. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -149,15 +148,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Right_shift"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>Functor that returns the result of shifting the value_type right a specified number of bits. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Integer sort algorithm using range with both right-shift and user-defined comparison operator. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>Functor that returns the result of shifting the value_type right a specified number of bits. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Integer sort algorithm using range with both right-shift and user-defined comparison operator. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -167,14 +171,18 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Right_shift"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>A functor that returns the result of shifting the value_type right a specified number of bits.</para></description></parameter><purpose>Integer sort algorithm using random access iterators with just right-shift functor. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>A functor that returns the result of shifting the value_type right a specified number of bits.</para></description></parameter><purpose>Integer sort algorithm using random access iterators with just right-shift functor. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
  <formalpara><title>Performance:</title><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -184,14 +192,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="integer_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Right_shift"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>A functor that returns the result of shifting the value_type right a specified number of bits.</para></description></parameter><purpose>Integer sort algorithm using range with just right-shift functor. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="shift"><paramtype>Right_shift</paramtype><description><para>A functor that returns the result of shifting the value_type right a specified number of bits.</para></description></parameter><purpose>Integer sort algorithm using range with just right-shift functor. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>integer_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
  <formalpara><title>Performance:</title><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>integer_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <computeroutput>s</computeroutput> is <computeroutput>max_splits</computeroutput>, which defaults to 11, so its worst-case with default settings for 32-bit integers is <emphasis> O(N * ((32/11) </emphasis> slow radix-based iterations fast comparison-based iterations).<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -201,10 +215,26 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -233,35 +263,46 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-
 <function name="spreadsort"><type>boost::enable_if_c&lt; std::numeric_limits&lt; typename std::iterator_traits&lt; RandomAccessIter &gt;::value_type &gt;::is_integer, void &gt;::type</type><template>
           <template-type-parameter name="RandomAccessIter"/>
         </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Generic <computeroutput>spreadsort</computeroutput> variant detecting integer-type elements so call to <computeroutput>integer_sort</computeroutput>. </purpose><description><para>If the data type provided is an integer, <computeroutput>integer_sort</computeroutput> is used. <note><para>Sorting other data types requires picking between <computeroutput>integer_sort</computeroutput>, <computeroutput>float_sort</computeroutput> and <computeroutput>string_sort</computeroutput> directly, as <computeroutput>spreadsort</computeroutput> won't accept types that don't have the appropriate <computeroutput>type_traits</computeroutput>. </para></note>
 
 
 
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
+
+
+
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
 <function name="spreadsort"><type>boost::enable_if_c&lt; !std::numeric_limits&lt; typename std::iterator_traits&lt; RandomAccessIter &gt;::value_type &gt;::is_integer &amp;&amp;std::numeric_limits&lt; typename std::iterator_traits&lt; RandomAccessIter &gt;::value_type &gt;::is_iec559, void &gt;::type</type><template>
           <template-type-parameter name="RandomAccessIter"/>
         </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Generic <computeroutput>spreadsort</computeroutput> variant detecting float element type so call to <computeroutput>float_sort</computeroutput>. </purpose><description><para>If the data type provided is a float or castable-float, <computeroutput>float_sort</computeroutput> is used. <note><para>Sorting other data types requires picking between <computeroutput>integer_sort</computeroutput>, <computeroutput>float_sort</computeroutput> and <computeroutput>string_sort</computeroutput> directly, as <computeroutput>spreadsort</computeroutput> won't accept types that don't have the appropriate <computeroutput>type_traits</computeroutput>.</para></note>
 
 
 
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
+
+
+
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
 <function name="spreadsort"><type>boost::enable_if_c&lt; is_same&lt; typename std::iterator_traits&lt; RandomAccessIter &gt;::value_type, typename std::string &gt;::value, void &gt;::type</type><template>
           <template-type-parameter name="RandomAccessIter"/>
         </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Generic <computeroutput>spreadsort</computeroutput> variant detecting string element type so call to <computeroutput>string_sort</computeroutput> for <computeroutput>std::strings</computeroutput>. </purpose><description><para>If the data type provided is a string, <computeroutput>string_sort</computeroutput> is used. <note><para>Sorting other data types requires picking between <computeroutput>integer_sort</computeroutput>, <computeroutput>float_sort</computeroutput> and <computeroutput>string_sort</computeroutput> directly, as <computeroutput>spreadsort</computeroutput> won't accept types that don't have the appropriate <computeroutput>type_traits</computeroutput>.</para></note>
 
 
 
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
+
+
+
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
 <function name="spreadsort"><type>boost::enable_if_c&lt; is_same&lt; typename std::iterator_traits&lt; RandomAccessIter &gt;::value_type, typename std::wstring &gt;::value &amp;&amp;sizeof(wchar_t)==2, void &gt;::type</type><template>
           <template-type-parameter name="RandomAccessIter"/>
         </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>Generic <computeroutput>spreadsort</computeroutput> variant detecting string element type so call to <computeroutput>string_sort</computeroutput> for <computeroutput>std::wstrings</computeroutput>. </purpose><description><para>If the data type provided is a wstring, <computeroutput>string_sort</computeroutput> is used. <note><para>Sorting other data types requires picking between <computeroutput>integer_sort</computeroutput>, <computeroutput>float_sort</computeroutput> and <computeroutput>string_sort</computeroutput> directly, as <computeroutput>spreadsort</computeroutput> won't accept types that don't have the appropriate <computeroutput>type_traits</computeroutput>. Also, 2-byte wide-characters are the limit above which string_sort is inefficient, so on platforms with wider characters, this will not accept wstrings.</para></note>
 
 
 
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
+
+
+
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
 <function name="spreadsort"><type>void</type><template>
           <template-type-parameter name="Range"/>
         </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting.</para></description></parameter><purpose>Generic <computeroutput>spreadsort</computeroutput> variant detects value_type and calls required sort function. </purpose><description><para><note><para>Sorting other data types requires picking between <computeroutput>integer_sort</computeroutput>, <computeroutput>float_sort</computeroutput> and <computeroutput>string_sort</computeroutput> directly, as <computeroutput>spreadsort</computeroutput> won't accept types that don't have the appropriate <computeroutput>type_traits</computeroutput>.</para></note>
@@ -269,6 +310,7 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order. </para></postconditions></function>
+
 
 
 
@@ -290,11 +332,29 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 <namespace name="boost">
 <namespace name="sort">
 <namespace name="spreadsort">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"><purpose><para><ulink url="http://www.cplusplus.com/reference/iterator/RandomAccessIterator/">Random access iterator</ulink> </para></purpose></template-type-parameter>
           <template-type-parameter name="Unsigned_char_type"><purpose><para>Unsigned character type used for string. </para></purpose></template-type-parameter>
         </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using random access iterators, allowing character-type overloads.<sbr/>
- (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+ (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -305,15 +365,22 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Unsigned_char_type"><purpose><para>Unsigned character type used for string. </para></purpose></template-type-parameter>
         </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using range, allowing character-type overloads.<sbr/>
- (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+ (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -324,13 +391,17 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of unsigned char. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of unsigned char. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -339,13 +410,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of unsigned char. (All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of unsigned char. (All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>). </purpose><description><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -354,15 +432,19 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"><purpose><para><ulink url="http://www.cplusplus.com/reference/iterator/RandomAccessIterator/">Random access iterator</ulink> </para></purpose></template-type-parameter>
           <template-type-parameter name="Compare"/>
           <template-type-parameter name="Unsigned_char_type"><purpose><para>Unsigned character type used for string.</para></purpose></template-type-parameter>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using random access iterators, allowing character-type overloads. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; detail::min_sort_size).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using random access iterators, allowing character-type overloads. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; detail::min_sort_size).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -374,15 +456,22 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Compare"/>
           <template-type-parameter name="Unsigned_char_type"><purpose><para>Unsigned character type used for string.</para></purpose></template-type-parameter>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using range, allowing character-type overloads. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; detail::min_sort_size).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order. </para></description></parameter><parameter name="unused"><paramtype>Unsigned_char_type</paramtype><description><para>value with the same type as the result of the [] operator, defining the Unsigned_char_type. The actual value is unused.</para></description></parameter><purpose>String sort algorithm using range, allowing character-type overloads. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; detail::min_sort_size).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -393,14 +482,18 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms.<sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -411,14 +504,21 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -429,15 +529,19 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -448,15 +552,22 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> supports the <computeroutput>operator&gt;&gt;</computeroutput>, which returns an integer-type right-shifted a specified number of bits. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -467,16 +578,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using random access iterators, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -487,16 +602,22 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>String sort algorithm using range, wraps using default of <computeroutput>unsigned</computeroutput> char. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -507,16 +628,20 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="RandomAccessIter"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Reverse String sort algorithm using random access iterators. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="first"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointer to first element. </para></description></parameter><parameter name="last"><paramtype>RandomAccessIter</paramtype><description><para>Iterator pointing to one beyond the end of data. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Reverse String sort algorithm using random access iterators. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -527,16 +652,22 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+
+
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
-</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+</para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is mutable. </para></requires><requires><para><computeroutput>RandomAccessIter</computeroutput> <computeroutput>value_type</computeroutput> is <ulink url="http://en.cppreference.com/w/cpp/concept/LessThanComparable">LessThanComparable</ulink> </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
 <function name="reverse_string_sort"><type>void</type><template>
           <template-type-parameter name="Range"/>
           <template-type-parameter name="Get_char"/>
           <template-type-parameter name="Get_length"/>
           <template-type-parameter name="Compare"/>
-        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Reverse String sort algorithm using range. </purpose><description><para>(All variants fall back to <computeroutput>boost::sort::pdqsort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
+        </template><parameter name="range"><paramtype>Range &amp;</paramtype><description><para>Range [first, last) for sorting. </para></description></parameter><parameter name="get_character"><paramtype>Get_char</paramtype><description><para>Bracket functor equivalent to <computeroutput>operator</computeroutput>[], taking a number corresponding to the character offset. </para></description></parameter><parameter name="length"><paramtype>Get_length</paramtype><description><para>Functor to get the length of the string in characters. </para></description></parameter><parameter name="comp"><paramtype>Compare</paramtype><description><para>A binary functor that returns whether the first element passed to it should go before the second in order.</para></description></parameter><purpose>Reverse String sort algorithm using range. </purpose><description><para>(All variants fall back to <computeroutput>std::sort</computeroutput> if the data size is too small, &lt; <computeroutput>detail::min_sort_size</computeroutput>).</para><para><computeroutput>string_sort</computeroutput> is a fast templated in-place hybrid radix/comparison algorithm, which in testing tends to be roughly 50% to 2X faster than <computeroutput>std::sort</computeroutput> for large tests (&gt;=100kB).<sbr/>
 <formalpara><title/><para>Worst-case performance is <emphasis> O(N * (lg(range)/s + s)) </emphasis>, so <computeroutput>string_sort</computeroutput> is asymptotically faster than pure comparison-based algorithms. <sbr/>
 <sbr/>
 Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
@@ -547,28 +678,14 @@ Some performance plots of runtime vs. n and log(range) are provided:<sbr/>
 
 
 
-<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para><para>Invalid arguments cause undefined behaviour. </para></warning>
+<warning><para>Throwing an exception may cause data loss. This will also throw if a small vector resize throws, in which case there will be no data loss. </para></warning>
+<warning><para>Invalid arguments cause undefined behaviour. </para></warning>
 <note><para><computeroutput>spreadsort</computeroutput> function provides a wrapper that calls the fastest sorting algorithm available for a data type, enabling faster generic-programming.</para></note>
-<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para><para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para><para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para><para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
+<para>The lesser of <emphasis> O(N*log(N)) </emphasis> comparisons and <emphasis> O(N*log(K/S + S)) </emphasis>operations worst-case, where: </para>
+<para>* N is <computeroutput>last</computeroutput> - <computeroutput>first</computeroutput>, </para>
+<para>* K is the log of the range in bits (32 for 32-bit integers using their full range), </para>
+<para>* S is a constant called max_splits, defaulting to 11 (except for strings where it is the log of the character size). </para>
 </para></description><requires><para>[<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) is a valid range. </para></requires><postconditions><para>The elements in the range [<computeroutput>first</computeroutput>, <computeroutput>last</computeroutput>) are sorted in ascending order.</para></postconditions><returns><para><computeroutput>void</computeroutput>.</para></returns><throws><simpara><classname>std::exception</classname> Propagates exceptions if any of the element comparisons, the element swaps (or moves), the right shift, subtraction of right-shifted elements, functors, or any operations on iterators throw.</simpara></throws></function>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </namespace>
 </namespace>
 </namespace>

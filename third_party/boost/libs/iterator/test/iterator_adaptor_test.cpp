@@ -13,13 +13,12 @@
 #include <numeric>
 
 #include <boost/iterator/iterator_adaptor.hpp>
-#if !BOOST_WORKAROUND(__MWERKS__, <= 0x2407)
-# include <boost/iterator/is_readable_iterator.hpp>
-# include <boost/iterator/is_lvalue_iterator.hpp>
-#endif 
+#include <boost/iterator/is_readable_iterator.hpp>
+#include <boost/iterator/is_lvalue_iterator.hpp>
+#include <boost/iterator/enable_if_convertible.hpp>
 #include <boost/pending/iterator_tests.hpp>
 
-# include <boost/detail/lightweight_test.hpp>
+# include <boost/core/lightweight_test.hpp>
 
 #include <stdlib.h>
 #include <vector>
@@ -28,8 +27,6 @@
 #include <list>
 
 #include "static_assert_same.hpp"
-
-#include <boost/iterator/detail/config_def.hpp>
 
 using boost::dummyT;
 
@@ -56,9 +53,6 @@ struct ptr_iterator
       , V*
       , V
       , boost::random_access_traversal_tag
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
-      , V&
-#endif 
    >
 {
 private:
@@ -67,11 +61,8 @@ private:
       , V*
       , V
       , boost::random_access_traversal_tag
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
-      , V&
-#endif 
     > super_t;
-    
+
 public:
   ptr_iterator() { }
   ptr_iterator(V* d) : super_t(d) { }
@@ -95,7 +86,7 @@ struct modify_traversal
        , Traversal
      >
 {};
-  
+
 template <class T>
 struct fwd_iterator
   : boost::iterator_adaptor<
@@ -108,7 +99,7 @@ private:
         fwd_iterator<T>
       , boost::forward_iterator_archetype<T>
   > super_t;
-    
+
 public:
   fwd_iterator() { }
   fwd_iterator(boost::forward_iterator_archetype<T> d) : super_t(d) { }
@@ -126,7 +117,7 @@ private:
         in_iterator<T>
       , boost::input_iterator_archetype_no_proxy<T>
   > super_t;
-    
+
 public:
   in_iterator() { }
   in_iterator(boost::input_iterator_archetype_no_proxy<T> d) : super_t(d) { }
@@ -145,7 +136,7 @@ struct constant_iterator
       , Iter
       , typename std::iterator_traits<Iter>::value_type const
     > base_t;
-    
+
   constant_iterator() {}
   constant_iterator(Iter it)
     : base_t(it) {}
@@ -181,7 +172,7 @@ int static_assert_traversal(Iter* = 0, Trav* = 0)
 int
 main()
 {
-  dummyT array[] = { dummyT(0), dummyT(1), dummyT(2), 
+  dummyT array[] = { dummyT(0), dummyT(1), dummyT(2),
                      dummyT(3), dummyT(4), dummyT(5) };
   const int N = sizeof(array)/sizeof(dummyT);
 
@@ -192,7 +183,7 @@ main()
   {
     ptr_iterator<dummyT> i(array);
     boost::random_access_iterator_test(i, N, array);
-    
+
     ptr_iterator<const dummyT> j(array);
     boost::random_access_iterator_test(j, N, array);
     boost::const_nonconst_iterator_test(i, ++j);
@@ -208,27 +199,22 @@ main()
     test = static_assert_same<Iter1::reference, int&>::value;
     test = static_assert_same<Iter1::pointer, int*>::value;
     test = static_assert_same<Iter1::difference_type, std::ptrdiff_t>::value;
-#if !BOOST_WORKAROUND(__MWERKS__, <= 0x2407)
-    BOOST_STATIC_ASSERT((boost::is_convertible<Iter1::iterator_category, std::random_access_iterator_tag>::value));
-#endif 
+    static_assert(
+        std::is_convertible<Iter1::iterator_category, std::random_access_iterator_tag>::value,
+        "Iterator must have a random access category."
+    );
   }
-  
-  {  
+
+  {
     // Test computation of default when the Value is const
     typedef ptr_iterator<int const> Iter1;
     test = static_assert_same<Iter1::value_type, int>::value;
     test = static_assert_same<Iter1::reference, const int&>::value;
-    
-#if !BOOST_WORKAROUND(__MWERKS__, <= 0x2407)
-    BOOST_STATIC_ASSERT(boost::is_readable_iterator<Iter1>::value);
-# ifndef BOOST_NO_LVALUE_RETURN_DETECTION
-    BOOST_STATIC_ASSERT(boost::is_lvalue_iterator<Iter1>::value);
-# endif 
-#endif
 
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) // borland drops constness
+    static_assert(boost::is_readable_iterator<Iter1>::value, "Iter1 is expected to be readable.");
+    static_assert(boost::is_lvalue_iterator<Iter1>::value, "Iter1 is expected to be lvalue iterator.");
+
     test = static_assert_same<Iter1::pointer, int const*>::value;
-#endif 
   }
 
   {
@@ -238,26 +224,28 @@ main()
 
     test = static_assert_same<Iter::value_type, int>::value;
     test = static_assert_same<Iter::reference, int const&>::value;
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) // borland drops constness
     test = static_assert_same<Iter::pointer, int const*>::value;
-#endif 
 
-#ifndef BOOST_NO_LVALUE_RETURN_DETECTION
-    BOOST_STATIC_ASSERT(boost::is_non_const_lvalue_iterator<BaseIter>::value);
-    BOOST_STATIC_ASSERT(boost::is_lvalue_iterator<Iter>::value);
-#endif 
-    
+    static_assert(
+      boost::is_non_const_lvalue_iterator<BaseIter>::value,
+      "boost::is_non_const_lvalue_iterator<BaseIter>::value is expected to be true."
+    );
+    static_assert(
+      boost::is_lvalue_iterator<Iter>::value,
+      "boost::is_lvalue_iterator<Iter>::value is expected to be true."
+    );
+
     typedef modify_traversal<BaseIter, boost::incrementable_traversal_tag> IncrementableIter;
 
     static_assert_traversal<BaseIter,boost::random_access_traversal_tag>();
     static_assert_traversal<IncrementableIter,boost::incrementable_traversal_tag>();
   }
-  
+
   // Test the iterator_adaptor
   {
     ptr_iterator<dummyT> i(array);
     boost::random_access_iterator_test(i, N, array);
-    
+
     ptr_iterator<const dummyT> j(array);
     boost::random_access_iterator_test(j, N, array);
     boost::const_nonconst_iterator_test(i, ++j);
@@ -272,9 +260,9 @@ main()
     adaptor_type i(forward_iter);
     int zero = 0;
     if (zero) // don't do this, just make sure it compiles
-      BOOST_TEST((*i).m_x == i->foo());      
+      BOOST_TEST((*i).m_x == i->foo());
   }
-  
+
   // check operator-> with an input iterator
   {
     boost::input_iterator_archetype_no_proxy<dummyT> input_iter;
@@ -282,7 +270,7 @@ main()
     adaptor_type i(input_iter);
     int zero = 0;
     if (zero) // don't do this, just make sure it compiles
-      BOOST_TEST((*i).m_x == i->foo());      
+      BOOST_TEST((*i).m_x == i->foo());
   }
 
   // check that base_type is correct

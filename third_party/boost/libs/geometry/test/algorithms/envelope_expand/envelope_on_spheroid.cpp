@@ -1,7 +1,7 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 // Unit Test
 
-// Copyright (c) 2015-2017, Oracle and/or its affiliates.
+// Copyright (c) 2015-2023, Oracle and/or its affiliates.
 
 // Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
 // Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
@@ -22,30 +22,23 @@
 #include <iostream>
 #include <string>
 
-#include <geometry_test_common.hpp>
 #include <from_wkt.hpp>
-
-#include <boost/numeric/conversion/bounds.hpp>
-#include <boost/type_traits/is_same.hpp>
-
-#include <boost/geometry/core/coordinate_dimension.hpp>
-#include <boost/geometry/core/tag.hpp>
-#include <boost/geometry/core/tags.hpp>
-
-#include <boost/geometry/geometries/geometries.hpp>
-
-#include <boost/geometry/util/condition.hpp>
-
-#include <boost/geometry/io/dsv/write.hpp>
-#include <boost/geometry/io/wkt/wkt.hpp>
+#include <geometry_test_common.hpp>
+#include "test_envelope_expand_on_spheroid.hpp"
 
 #include <boost/geometry/algorithms/convert.hpp>
 #include <boost/geometry/algorithms/envelope.hpp>
 #include <boost/geometry/algorithms/reverse.hpp>
-
+#include <boost/geometry/core/coordinate_dimension.hpp>
+#include <boost/geometry/core/tag.hpp>
+#include <boost/geometry/core/tags.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
 #include <boost/geometry/index/detail/algorithms/is_valid.hpp>
-
-#include "test_envelope_expand_on_spheroid.hpp"
+#include <boost/geometry/io/dsv/write.hpp>
+#include <boost/geometry/io/wkt/wkt.hpp>
+#include <boost/geometry/util/bounds.hpp>
+#include <boost/geometry/util/condition.hpp>
+#include <boost/geometry/util/type_traits.hpp>
 
 
 template <typename FormulaPolicy, typename CS_Tag>
@@ -65,14 +58,29 @@ struct test_envelope<FormulaPolicy, bg::geographic_tag>
     static inline void apply(Geometry& geometry,
                              Box& detected)
     {
-        bg::strategy::envelope::geographic_segment
-                <
-                    FormulaPolicy,
-                    bg::srs::spheroid<double>,
-                    double                                        
-                > envelope_geographic_segment_strategy;
+        typedef bg::strategy::envelope::spherical_point point_strategy_t;
+        typedef bg::strategy::envelope::spherical_multipoint multi_point_strategy_t;
+        typedef bg::strategy::envelope::spherical_box box_strategy_t;
+        typedef bg::strategy::envelope::geographic<FormulaPolicy, bg::srs::spheroid<double>, double> strategy_t;
 
-        bg::envelope(geometry, detected, envelope_geographic_segment_strategy);
+        std::conditional_t
+            <
+                std::is_same<typename bg::tag<Geometry>::type, bg::point_tag>::value,
+                point_strategy_t,
+                std::conditional_t
+                    <
+                        std::is_same<typename bg::tag<Geometry>::type, bg::multi_point_tag>::value,
+                        multi_point_strategy_t,
+                        std::conditional_t
+                            <
+                                std::is_same<typename bg::tag<Geometry>::type, bg::box_tag>::value,
+                                box_strategy_t,
+                                strategy_t
+                            >
+                    >
+            > strategy;
+
+        bg::envelope(geometry, detected, strategy);
     }
 };
 
@@ -166,7 +174,7 @@ private:
         stream << std::setprecision(17);
 
         stream << "; " << "expected: ";
-        
+
         if (BOOST_GEOMETRY_CONDITION(bg::dimension<Box>::value == 2))
         {
             stream << "(" << lon_min << " " << lat_min
@@ -193,7 +201,7 @@ private:
         T3 const& lon_max, T4 const& lat_max, double height_max,
         double tolerance)
     {
-        typedef typename bg::coordinate_system<Box>::type::units box_units_type;
+        using box_units_type = bg::detail::coordinate_system_units_t<Box>;
 
         std::string const units_str = units2string<box_units_type>();
 
@@ -308,26 +316,16 @@ public:
 
 
 // test the reverse of a geometry if it is either linear or ring
-template <typename Geometry, typename Tag = typename bg::tag<Geometry>::type>
+template <typename Geometry>
 struct test_reverse_geometry
 {
-    static bool const is_linear =
-        boost::is_same<Tag, bg::segment_tag>::value
-        || boost::is_same<Tag, bg::linestring_tag>::value
-        || boost::is_same<Tag, bg::multi_linestring_tag>::value;
+    static bool const is_linear = bg::util::is_linear<Geometry>::value;
 
     // currently disable rings
     static bool const is_ring = false;
-    //    static bool const is_ring = boost::is_same<Tag, bg::ring_tag>::value;
+    //    static bool const is_ring = bg::util::is_ring<Geometry>::value;
 
-    typedef typename boost::mpl::if_c
-        <
-            is_linear || is_ring,
-            boost::true_type,
-            boost::false_type
-        >::type type;
-
-    static bool const value = type::value;
+    static bool const value = (is_linear || is_ring);
 };
 
 template
@@ -493,8 +491,8 @@ void test_empty_geometry(std::string const& case_id, std::string const& wkt)
     typedef test_envelope_on_sphere_or_spheroid<Geometry, B> tester;
 
     typedef typename bg::coordinate_type<Geometry>::type ct;
-    ct high_val = boost::numeric::bounds<ct>::highest();
-    ct low_val = boost::numeric::bounds<ct>::lowest();
+    ct const high_val = bg::util::bounds<ct>::highest();
+    ct const low_val = bg::util::bounds<ct>::lowest();
 
     if (BOOST_GEOMETRY_CONDITION(dim == 2))
     {
@@ -1661,13 +1659,16 @@ void test_envelope_multipoint()
                   -10, 25, 40, 45);
 #endif
 
+    // For eps2 = eps or smaller the resulting box is invalid due to
+    // inaccurate calculation of bg::math::smaller() for fp numbers that are
+    // very close
     double eps = std::numeric_limits<double>::epsilon();
-    double heps = eps / 2;
+    double eps2 = eps * 2;
     {
         G mp;
         mp.push_back(P(1, 1));
-        mp.push_back(P(1-heps, 1-heps));
-        tester::apply("mp20", mp, 1-heps, 1-heps, 1, 1);
+        mp.push_back(P(1-eps2, 1-eps2));
+        tester::apply("mp20", mp, 1-eps2, 1-eps2, 1, 1);
     }
 }
 
@@ -2075,6 +2076,15 @@ BOOST_AUTO_TEST_CASE( envelope_sphere_linestring )
                   from_wkt<G>("LINESTRING(-170 0,160 0)"),
                   160, 0, 190, 0);
 
+    // https://github.com/boostorg/geometry/issues/935
+    tester::apply("github_issue_935",
+                  from_wkt<G>("LINESTRING(4.5055430885891123e-05 -2.7518149670422367e-06,\
+                                          4.5055130529987143e-05 8.2400127103300943e-07,\
+                                          4.5054830174083163e-05 4.3998175091082556e-06)"),
+                  4.5054830174083163e-05, -2.7518149670422367e-06,
+                  4.5055430885891123e-05, 4.3998175091082556e-06);
+
+
     double eps = std::numeric_limits<double>::epsilon();
     double heps = eps / 2;
 
@@ -2207,6 +2217,14 @@ BOOST_AUTO_TEST_CASE( envelope_spheroid_linestring )
                   from_wkt<G>("LINESTRING(-170 0,160 0)"),
                   160, 0, 190, 0);
 
+    // https://github.com/boostorg/geometry/issues/935
+    tester::apply("github_issue_935",
+                  from_wkt<G>("LINESTRING(4.5055430885891123e-05 -2.7518149670422367e-06,\
+                                          4.5055130529987143e-05 8.2400127103300943e-07,\
+                                          4.5054830174083163e-05 4.3998175091082556e-06)"),
+                  4.5054830174083163e-05, -2.7518149670422367e-06,
+                  4.5055430885891123e-05, 4.3998175091082556e-06);
+
     double eps = std::numeric_limits<double>::epsilon();
     double heps = eps / 2;
 
@@ -2293,11 +2311,11 @@ BOOST_AUTO_TEST_CASE( envelope_sphere_multilinestring )
                   from_wkt<G>("MULTILINESTRING((10 15))"),
                   10, 15, 10, 15);
 
-#ifdef BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#ifdef BOOST_GEOMETRY_TEST_FAILURES
     tester::apply("ml01a",
                   from_wkt<G>("MULTILINESTRING((),(),(10 15),())"),
                   10, 15, 10, 15);
-#endif // BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#endif
 
     tester::apply("ml02",
                   from_wkt<G>("MULTILINESTRING((-170 40,-100 80,10 40),(-10 25,10 35,100 45),(50 30,150 45,-160 30))"),
@@ -2357,11 +2375,11 @@ BOOST_AUTO_TEST_CASE( envelope_spheroid_multilinestring )
                   from_wkt<G>("MULTILINESTRING((10 15))"),
                   10, 15, 10, 15);
 
-#ifdef BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#ifdef BOOST_GEOMETRY_TEST_FAILURES
     tester::apply("ml01a",
                   from_wkt<G>("MULTILINESTRING((),(),(10 15),())"),
                   10, 15, 10, 15);
-#endif // BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#endif
 
     tester::apply("ml02",
                   from_wkt<G>("MULTILINESTRING((-170 40,-100 80,10 40),(-10 25,10 35,100 45),(50 30,150 45,-160 30))"),
@@ -2401,11 +2419,11 @@ BOOST_AUTO_TEST_CASE( envelope_multilinestring_sphere_with_height )
                   from_wkt<G>("MULTILINESTRING((10 15 1000))"),
                   10, 15, 1000, 10, 15, 1000);
 
-#ifdef BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#ifdef BOOST_GEOMETRY_TEST_FAILURES
     tester::apply("mlh01a",
                   from_wkt<G>("MULTILINESTRING((),(),(10 15 1000),())"),
                   10, 15, 1000, 10, 15, 1000);
-#endif // BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#endif
 
     tester::apply("mlh02",
                   from_wkt<G>("MULTILINESTRING((-170 40 400,-100 80 300),(-10 25 600,10 35 700,120 45 450))"),
@@ -2424,11 +2442,11 @@ BOOST_AUTO_TEST_CASE( envelope_multilinestring_spheroid_with_height )
                   from_wkt<G>("MULTILINESTRING((10 15 1000))"),
                   10, 15, 1000, 10, 15, 1000);
 
-#ifdef BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#ifdef BOOST_GEOMETRY_TEST_FAILURES
     tester::apply("mlh01a",
                   from_wkt<G>("MULTILINESTRING((),(),(10 15 1000),())"),
                   10, 15, 1000, 10, 15, 1000);
-#endif // BOOST_GEOMETRY_INCLUDE_FAILING_TESTS
+#endif
 
     tester::apply("mlh02",
                   from_wkt<G>("MULTILINESTRING((-170 40 400,-100 80 300),(-10 25 600,10 35 700,120 45 450))"),
@@ -2469,6 +2487,17 @@ BOOST_AUTO_TEST_CASE( envelope_polygon )
                   from_wkt<G>("POLYGON((),(0.5 0.5,0.5 0.7,0.7 0.7,0.5 0.5),\
                               (0.7 0.5,0.9 0.5,0.9 0.7,0.7 0.5))"),
                   0.5, 0.5, 0.9, 0.70000106605644807);
+
+    // https://github.com/boostorg/geometry/issues/466
+    tester::apply("p5-issue466",
+                  from_wkt<G>("POLYGON((2.4 48.9021,2.4 48.89,2.3 48.89,2.3 48.9021,2.4 48.9021))"),
+                  2.3, 48.89, 2.4, 48.902110807274966);
+    tester::apply("p6-issue466",
+                  from_wkt<G>("POLYGON((2.4 48.90215,2.4 48.89,2.3 48.89,2.3 48.90215,2.4 48.90215))"),
+                  2.3, 48.89, 2.4, 48.902160807272381);
+    tester::apply("p7-issue466",
+                  from_wkt<G>("POLYGON((2.4 48.9022,2.4 48.89,2.3 48.89,2.3 48.9022,2.4 48.9022))"),
+                  2.3, 48.89, 2.4, 48.902210807269796);
 }
 
 // unit test for rings de-activated for now (current implementation
@@ -2483,16 +2512,18 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
     typedef bg::model::box<point_type> B;
     typedef test_envelope_on_sphere_or_spheroid<G, B> tester;
 
-    //double const eps = std::numeric_limits<double>::epsilon();
+    double const eps = std::numeric_limits<double>::epsilon();
 
     tester::apply("r01cw",
                   from_wkt<G>("POLYGON((0 10,0 45,50 10,0 10))"),
                   0, 10, 50, 45);
-#if 0
+
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that contains both the north and south poles in its interior
     tester::apply("r01cw-r",
                   from_wkt<G>("POLYGON((0 10,50 10,0 45,0 10))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that contains the north pole in its interior
     tester::apply("r02cw",
@@ -2518,10 +2549,12 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   -180, -90, 180, -10);
     //                  -180, -19.42540014068282, 180, 90);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that has the north pole as vertex and contains the south pole
     tester::apply("r04cw",
                   from_wkt<G>("POLYGON((0 0,-50 90,-50 0,0 0))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that has the north pole as vertex
     tester::apply("r04cw-r",
@@ -2551,10 +2584,12 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((0 0,-50 0,-50 90,0 0))"),
                   -50, 0, 0, 90);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that goes through the south pole and contains the north pole
     tester::apply("r09cw",
                   from_wkt<G>("POLYGON((0 0,0 -90,50 0,0 0))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that goes through the south pole
     tester::apply("r09cw-r",
@@ -2589,11 +2624,13 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((100 45,0 45,-100 45,-100 90,100 45))"),
                   -100, 45, 100, 90);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that represents the complement of a spherical cap
     // near the north pole
     tester::apply("r13cw-r",
                   from_wkt<G>("POLYGON((-100 45,0 45,100 45,100 90,-100 45))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that represents the complement of a spherical cap
     // that touches the south pole
@@ -2601,10 +2638,12 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((-100 45,0 45,100 45,100 -90,-100 45))"),
                   -100, -90, 100, 57.26759279038765);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that represents a spherical cap that touches the south pole
     tester::apply("r14cw-r",
                   from_wkt<G>("POLYGON((100 45,0 45,-100 45,-100 -90,100 45))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring with edge that goes through the south pole
     tester::apply("r15cw",
@@ -2622,6 +2661,7 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((-50 -80,-50 -40,-30 -40,-30 -80,-50 -80))"),
                   -50, -80.14892388341609, -30, -40);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that lies in the lower hemisphere and contains both poles
     tester::apply("r16-r",
                   from_wkt<G>("POLYGON((-50 -80,-30 -80,-30 -40,-50 -40,-50 -80))"),
@@ -2631,26 +2671,31 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
     tester::apply("r17cw",
                   from_wkt<G>("POLYGON((50 0,50 -90,100 0,50 0))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that goes through the south pole
     tester::apply("r17cw-r",
                   from_wkt<G>("POLYGON((50 0,100 0,100 -90,50 0))"),
                   50, -90, 100, 0);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that goes through the south pole and contains the north pole
     tester::apply("r18cw",
                   from_wkt<G>("POLYGON((50 0,50 -90,460 0,50 0))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that goes through the south pole
     tester::apply("r18cw-r",
                   from_wkt<G>("POLYGON((50 0,460 0,100 -90,50 0))"),
                   50, -90, 100, 0);
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that goes through the south pole and contains the north pole
     tester::apply("r19cw",
                   from_wkt<G>("POLYGON((50 0,50 -90,-260 0,50 0))"),
                   -180, -90, 180, 90);
+#endif
 
     // ring that goes through the south pole
     tester::apply("r19cw-r",
@@ -2662,10 +2707,12 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((10 0,10 90,20 0,20 -90,10 0))"),
                   10, -90, 20, 90); // SUCCEEDS FOR WRONG REASON
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that goes through both poles
     tester::apply("r20cw-r",
                   from_wkt<G>("POLYGON((10 0,10 -90,20 0,20 90,10 0))"),
-        -180, -90, 180, 90); // FAILS NOW
+                  -180, -90, 180, 90);
+#endif
 
     // ring that goes through both poles and its boundary forms
     // a great circle
@@ -2673,11 +2720,55 @@ BOOST_AUTO_TEST_CASE( envelope_cw_ring )
                   from_wkt<G>("POLYGON((-10 0,-10 90,170 0,170 -90,-10 0))"),
                   -10, -90, 170, 90); // SUCCEEDS FOR WRONG REASON
 
+#ifdef BOOST_GEOMETRY_TEST_ENABLE_FAILING
     // ring that goes through both poles and its boundary forms
     // a great circle
     tester::apply("r21cw-r",
                   from_wkt<G>("POLYGON((-10 0,-10 -90,170 0,170 90,-10 0))"),
-                  170, -90, 350, 90); // FAILS NOW
+                  170, -90, 350, 90);
 #endif
+
+    // From disjoint  https://svn.boost.org/trac/boost/ticket/9162
+    // Polygons containing poles
+    tester::apply("r22cw",
+                  from_wkt<G>("POLYGON((0 80,-90 80,-180 80,90 80,0 80))"),
+                  -180, 80, 180, 90);
+    tester::apply("r23cw",
+                  from_wkt<G>("POLYGON((0 -80,90 -80,-180 -80,-90 -80,0 -80))"),
+                  -180, -90, 180, -80);
+    // Polygons greater than half of the globe
+    tester::apply("r24cw",
+                  from_wkt<G>("POLYGON((0 80,90 80,-180 80,-90 80,0 80))"),
+                  -180, -90, 180, 82.892923889553458);
+    tester::apply("r25cw",
+                  from_wkt<G>("POLYGON((0 -80,-90 -80,-180 -80,90 -80,0 -80))"),
+                  -180, -82.892923889553458, 180, 90);
+    // Normal test case
+    tester::apply("r26cw",
+                  from_wkt<G>("POLYGON((30 0,30 30,90 30, 90 0, 30 0))"),
+                  30, 0, 90, 33.690067525979771);
+
+    // Invalid polygons with holes containing poles
+    tester::apply("r27cw",
+                  from_wkt<G>("POLYGON((),(0 80,90 80,-180 80,-90 80,0 80))"),
+                  -180, 80, 180, 90);
+    tester::apply("r28cw",
+                  from_wkt<G>("POLYGON((),(0 -80,-90 -80,-180 -80,90 -80,0 -80))"),
+                  -180, -90, 180, -80);
 }
 
+BOOST_AUTO_TEST_CASE(envelope_ccw_ring)
+{
+    typedef bg::cs::spherical_equatorial<bg::degree> coordinate_system_type;
+    typedef bg::model::point<double, 2, coordinate_system_type> point_type;
+    typedef bg::model::polygon<point_type, false> G;
+    typedef bg::model::box<point_type> B;
+    typedef test_envelope_on_sphere_or_spheroid<G, B> tester;
+
+    tester::apply("r27ccw",
+                  from_wkt<G>("POLYGON((),(0 80,-90 80,-180 80,90 80,0 80))"),
+                  -180, 80, 180, 90);
+    tester::apply("r28ccw",
+                  from_wkt<G>("POLYGON((),(0 -80,90 -80,-180 -80,-90 -80,0 -80))"),
+                  -180, -90, 180, -80);
+}

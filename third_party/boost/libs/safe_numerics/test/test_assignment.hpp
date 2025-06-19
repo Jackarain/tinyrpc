@@ -8,11 +8,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <iostream>
-#include <exception>
-#include <typeinfo>
 
 #include <boost/core/demangle.hpp>
-
 #include <boost/safe_numerics/safe_integer.hpp>
 #include <boost/safe_numerics/range_value.hpp>
 
@@ -26,8 +23,8 @@ bool test_assignment(
 ){
     std::cout << "testing " << std::endl;
     {
-        //std::cout << "safe<" << at1 << "> = " << at2 << std::endl;
-        std::cout << boost::core::demangle(typeid(t1).name()) << " = " << at2 << std::endl;
+        std::cout << "safe<" << at1 << "> = " << at2 << std::endl;
+        // std::cout << boost::core::demangle(typeid(t1).name()) << " = " << at2 << std::endl;
         safe_t<T2> s2(t2);
 
         static_assert(
@@ -47,7 +44,7 @@ bool test_assignment(
                 return false;
             }
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                     std::cout
                         << "erroneously detected error in assignment "
@@ -58,7 +55,7 @@ bool test_assignment(
                 try{
                     t1 = s2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }
@@ -83,7 +80,7 @@ bool test_assignment(
                 return false;
             }
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                 std::cout
                     << "erroneously detected error in assignment "
@@ -94,7 +91,7 @@ bool test_assignment(
                 try{
                     s1 = t2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }

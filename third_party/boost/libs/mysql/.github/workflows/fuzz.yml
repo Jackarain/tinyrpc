@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2019-2025 Ruben Perez Hidalgo (rubenperez038 at gmail dot com)
+#
+# Distributed under the Boost Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+
+name: fuzz
+
+on:
+  push:
+    branches: [develop, master]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 00 * * *"
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/anarthal-containers/build-clang18:61b5b771ffefa8c04c43ddc9e023152461a8295f
+      volumes:
+        - /var/run/mysqld:/var/run/mysqld
+    services:
+      mysql:
+        image: ghcr.io/anarthal-containers/ci-db:mysql-8.4.1-61b5b771ffefa8c04c43ddc9e023152461a8295f
+        ports:
+          - 3306:3306
+        volumes:
+          - /var/run/mysqld:/var/run/mysqld
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v4
+
+      - name: Restore corpus
+        uses: actions/cache@v4
+        with:
+          path: /tmp/corpus.tar.gz
+          key: corpus-${{ github.run_id }}
+          restore-keys: corpus-
+        
+      # Note: this will take care of using the corpus and updating it
+      - name: Build and run the fuzzer
+        run: |
+          python tools/ci/main.py \
+            --source-dir=$(pwd) \
+            fuzz \
+            --server-host=mysql
+
+      - name: Archive any crashes as an artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crashes
+          path: |
+            ~/boost-root/crash-*
+            ~/boost-root/leak-*
+            ~/boost-root/timeout-*
+          if-no-files-found: ignore

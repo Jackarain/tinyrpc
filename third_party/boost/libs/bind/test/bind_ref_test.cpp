@@ -8,9 +8,20 @@
 //  http://www.boost.org/LICENSE_1_0.txt
 //
 
-#include <boost/bind.hpp>
+#if defined(__GNUC__)
+// -Warray-bounds false positive under GCC 14 UBSAN
+// ./boost/bind/mem_fn.hpp:74:59: error: array subscript 'int (**)(...)[0]' is partly outside array bounds of 'X [1]' [-Werror=array-bounds=]
+//    74 |         return (get_pointer( std::forward<U>( u ) )->*pm_)( std::forward<A>( a )... );
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
+#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
+
+using namespace boost::placeholders;
+
+//
 
 struct X
 {

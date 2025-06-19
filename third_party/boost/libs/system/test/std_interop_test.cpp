@@ -8,28 +8,9 @@
 
 // See library home page at http://www.boost.org/libs/system
 
-// Avoid spurious VC++ warnings
-# define _CRT_SECURE_NO_WARNINGS
-
 #include <boost/system/error_code.hpp>
-#include <boost/config.hpp>
-#include <boost/config/pragma_message.hpp>
-#include <iostream>
-
-#if !defined(BOOST_SYSTEM_HAS_SYSTEM_ERROR)
-
-BOOST_PRAGMA_MESSAGE( "BOOST_SYSTEM_HAS_SYSTEM_ERROR not defined, test will be skipped" )
-
-int main()
-{
-  std::cout
-    << "The version of the C++ standard library being used does not"
-    " support header <system_error> so interoperation will not be tested.\n";
-}
-
-#else
-
 #include <boost/core/lightweight_test.hpp>
+#include <boost/core/snprintf.hpp>
 #include <system_error>
 #include <cerrno>
 #include <string>
@@ -44,7 +25,8 @@ static void test_generic_category()
 
     int ev = ENOENT;
 
-    BOOST_TEST_EQ( bt.message( ev ), st.message( ev ) );
+    // Under MSVC, it's "no such file or directory" instead of "No such file or directory"
+    BOOST_TEST_EQ( bt.message( ev ).substr( 1 ), st.message( ev ).substr( 1 ) );
 
     {
         boost::system::error_code bc( ev, bt );
@@ -82,34 +64,13 @@ static void test_system_category()
 
     BOOST_TEST_CSTR_EQ( bt.name(), st.name() );
 
+    for( int ev = 1; ev < 6; ++ev )
     {
-        int ev = 5;
-        BOOST_TEST_EQ( bt.message( ev ), st.message( ev ) );
+        std::string bm = bt.message( ev );
+        std::string sm = st.message( ev );
 
-        {
-            boost::system::error_code bc( ev, bt );
-
-            BOOST_TEST_EQ( bc.value(), ev );
-            BOOST_TEST_EQ( &bc.category(), &bt );
-
-            std::error_code sc( bc );
-
-            BOOST_TEST_EQ( sc.value(), ev );
-            BOOST_TEST_EQ( &sc.category(), &st );
-        }
-
-        {
-            boost::system::error_condition bn = bt.default_error_condition( ev );
-            BOOST_TEST( bt.equivalent( ev, bn ) );
-
-            std::error_condition sn( bn );
-            BOOST_TEST( st.equivalent( ev, sn ) );
-        }
-    }
-
-    {
-        int ev = 4;
-        BOOST_TEST_EQ( bt.message( ev ), st.message( ev ) );
+        // We strip whitespace and the trailing dot, MSVC not so much
+        BOOST_TEST_EQ( bm, sm.substr( 0, bm.size() ) );
 
         {
             boost::system::error_code bc( ev, bt );
@@ -139,7 +100,7 @@ class user_category_impl: public boost::system::error_category
 {
 public:
 
-    virtual const char * name() const BOOST_NOEXCEPT
+    virtual const char * name() const noexcept
     {
         return "user";
     }
@@ -147,12 +108,12 @@ public:
     virtual std::string message( int ev ) const
     {
         char buffer[ 256 ];
-        std::sprintf( buffer, "user message %d", ev );
+        boost::core::snprintf( buffer, sizeof( buffer ), "user message %d", ev );
 
         return buffer;
     }
 
-    virtual boost::system::error_condition default_error_condition( int ev ) const BOOST_NOEXCEPT
+    virtual boost::system::error_condition default_error_condition( int ev ) const noexcept
     {
         if( ev == 4 )
         {
@@ -168,7 +129,7 @@ public:
         }
     }
 
-    virtual bool equivalent( int code, const boost::system::error_condition & condition ) const BOOST_NOEXCEPT
+    virtual bool equivalent( int code, const boost::system::error_condition & condition ) const noexcept
     {
         if( code == 4 && condition == make_error_condition( boost::system::errc::too_many_files_open_in_system ) )
         {
@@ -183,7 +144,7 @@ public:
         return default_error_condition( code ) == condition;
     }
 
-    // virtual bool equivalent( const error_code & code, int condition ) const BOOST_NOEXCEPT;
+    // virtual bool equivalent( const error_code & code, int condition ) const noexcept;
 };
 
 boost::system::error_category const & user_category()
@@ -279,7 +240,7 @@ class user2_category_impl: public boost::system::error_category
 {
 public:
 
-    virtual const char * name() const BOOST_NOEXCEPT
+    virtual const char * name() const noexcept
     {
         return "user2";
     }
@@ -287,22 +248,22 @@ public:
     virtual std::string message( int ev ) const
     {
         char buffer[ 256 ];
-        std::sprintf( buffer, "user2 message %d", ev );
+        boost::core::snprintf( buffer, sizeof( buffer ), "user2 message %d", ev );
 
         return buffer;
     }
 
-    virtual boost::system::error_condition default_error_condition( int ev ) const BOOST_NOEXCEPT
+    virtual boost::system::error_condition default_error_condition( int ev ) const noexcept
     {
         return boost::system::error_condition( ev, *this );
     }
 
-    virtual bool equivalent( int code, const boost::system::error_condition & condition ) const BOOST_NOEXCEPT
+    virtual bool equivalent( int code, const boost::system::error_condition & condition ) const noexcept
     {
         return default_error_condition( code ) == condition;
     }
 
-    virtual bool equivalent( const boost::system::error_code & code, int condition ) const BOOST_NOEXCEPT
+    virtual bool equivalent( const boost::system::error_code & code, int condition ) const noexcept
     {
         if( code.category() == *this )
         {
@@ -359,9 +320,6 @@ static void test_user2_category()
 
 int main()
 {
-    std::cout
-      << "The version of the C++ standard library being used"
-      " supports header <system_error> so interoperation will be tested.\n";
     test_generic_category();
     test_system_category();
     test_user_category();
@@ -369,5 +327,3 @@ int main()
 
     return boost::report_errors();
 }
-
-#endif

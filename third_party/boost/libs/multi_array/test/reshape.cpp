@@ -14,15 +14,15 @@
 // reshape.cpp - testing reshaping functionality
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/array.hpp"
-#include "boost/type.hpp"
+#include <boost/array.hpp>
+#include <boost/type.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   const int ndims=3;
   typedef boost::multi_array<int,ndims> array;
@@ -52,9 +52,9 @@ test_main(int,char*[])
     for (array::index i = 0; i != 4; ++i)
       for (array::index j = 0; j != 3; ++j)
         for (array::index k = 0; k != 2; ++k) {
-          BOOST_CHECK(A[i][j][k] == *ptr);
-          BOOST_CHECK(B[i][j][k] == *ptr);
-          BOOST_CHECK(C[i][j][k] == *ptr++);
+          BOOST_TEST(A[i][j][k] == *ptr);
+          BOOST_TEST(B[i][j][k] == *ptr);
+          BOOST_TEST(C[i][j][k] == *ptr++);
         }
   }
 
@@ -80,13 +80,13 @@ test_main(int,char*[])
     for (array::index i = 0; i != 4; ++i)
       for (array::index j = 1; j != 4; ++j)
         for (array::index k = -1; k != 1; ++k) {
-          BOOST_CHECK(A[i][j][k] == *ptr);
-          BOOST_CHECK(B[i][j][k] == *ptr);
-          BOOST_CHECK(C[i][j][k] == *ptr++);
+          BOOST_TEST(A[i][j][k] == *ptr);
+          BOOST_TEST(B[i][j][k] == *ptr);
+          BOOST_TEST(C[i][j][k] == *ptr++);
         }
   }
   
-  return boost::exit_success;
+  return boost::report_errors();
 }
 
 

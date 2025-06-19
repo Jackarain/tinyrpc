@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Then There&#8217;s Boost.Asio</title>
 <link rel="stylesheet" href="../../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../callbacks.html" title="Integrating Fibers with Asynchronous Callbacks">
 <link rel="prev" href="success_error_virtual_methods.html" title="Success/Error Virtual Methods">
@@ -25,7 +25,7 @@
 <div class="section">
 <div class="titlepage"><div><div><h3 class="title">
 <a name="fiber.callbacks.then_there_s____boost_asio__"></a><a name="callbacks_asio"></a><a class="link" href="then_there_s____boost_asio__.html" title="Then There&#8217;s Boost.Asio">Then
-      There&#8217;s Boost.Asio</a>
+      There&#8217;s <a href="http://www.boost.org/doc/libs/release/libs/asio/index.html" target="_top">Boost.Asio</a></a>
 </h3></div></div></div>
 <p>
         Since the simplest form of Boost.Asio asynchronous operation completion token
@@ -34,13 +34,13 @@
         operations.
       </p>
 <p>
-        Fortunately we need not. Boost.Asio incorporates a mechanism<a href="#ftn.fiber.callbacks.then_there_s____boost_asio__.f0" class="footnote" name="fiber.callbacks.then_there_s____boost_asio__.f0"><sup class="footnote">[5]</sup></a> by which the caller can customize the notification behavior of
+        Fortunately we need not. Boost.Asio incorporates a mechanism<sup>[<a name="fiber.callbacks.then_there_s____boost_asio__.f0" href="#ftn.fiber.callbacks.then_there_s____boost_asio__.f0" class="footnote">5</a>]</sup> by which the caller can customize the notification behavior of
         any async operation. Therefore we can construct a <span class="emphasis"><em>completion token</em></span>
         which, when passed to a <a href="http://www.boost.org/doc/libs/release/libs/asio/index.html" target="_top">Boost.Asio</a>
         async operation, requests blocking for the calling fiber.
       </p>
 <p>
-        A typical Asio async function might look something like this:<a href="#ftn.fiber.callbacks.then_there_s____boost_asio__.f1" class="footnote" name="fiber.callbacks.then_there_s____boost_asio__.f1"><sup class="footnote">[6]</sup></a>
+        A typical Asio async function might look something like this:<sup>[<a name="fiber.callbacks.then_there_s____boost_asio__.f1" href="#ftn.fiber.callbacks.then_there_s____boost_asio__.f1" class="footnote">6</a>]</sup>
       </p>
 <pre class="programlisting"><span class="keyword">template</span> <span class="special">&lt;</span> <span class="special">...,</span> <span class="keyword">class</span> <span class="identifier">CompletionToken</span> <span class="special">&gt;</span>
 <span class="emphasis"><em>deduced_return_type</em></span>
@@ -445,7 +445,7 @@
         <code class="computeroutput"><span class="identifier">yield_completion</span><span class="special">::</span><span class="identifier">wait</span><span class="special">()</span></code>,
         which returns to <code class="computeroutput"><span class="identifier">async_result_base</span><span class="special">::</span><span class="identifier">get</span><span class="special">()</span></code>.
       </p>
-<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<div class="itemizedlist"><ul class="itemizedlist" type="disc">
 <li class="listitem">
             If the original caller passed <code class="computeroutput"><span class="identifier">yield</span><span class="special">[</span><span class="identifier">my_ec</span><span class="special">]</span></code> to <code class="computeroutput"><span class="identifier">async_something</span><span class="special">()</span></code> to bind a local <code class="computeroutput"><span class="identifier">error_code</span></code>
             instance, then <code class="computeroutput"><span class="identifier">yield_handler_base</span><span class="special">::</span><span class="keyword">operator</span><span class="special">()</span></code> stored its <code class="computeroutput"><span class="identifier">error_code</span></code>
@@ -604,12 +604,12 @@
         and <a href="../../../../examples/asio/detail/yield.hpp" target="_top">detail/yield.hpp</a>.
       </p>
 <div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.callbacks.then_there_s____boost_asio__.f0" class="footnote"><p><a href="#fiber.callbacks.then_there_s____boost_asio__.f0" class="para"><sup class="para">[5] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.callbacks.then_there_s____boost_asio__.f0" href="#fiber.callbacks.then_there_s____boost_asio__.f0" class="para">5</a>] </sup>
           This mechanism has been proposed as a conventional way to allow the caller
           of an arbitrary async function to specify completion handling: <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4045.pdf" target="_top">N4045</a>.
         </p></div>
-<div id="ftn.fiber.callbacks.then_there_s____boost_asio__.f1" class="footnote"><p><a href="#fiber.callbacks.then_there_s____boost_asio__.f1" class="para"><sup class="para">[6] </sup></a>
+<div class="footnote"><p><sup>[<a name="ftn.fiber.callbacks.then_there_s____boost_asio__.f1" href="#fiber.callbacks.then_there_s____boost_asio__.f1" class="para">6</a>] </sup>
           per <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4045.pdf" target="_top">N4045</a>
         </p></div>
 </div>

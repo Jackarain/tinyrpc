@@ -1,6 +1,6 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014-2017, Oracle and/or its affiliates.
+// Copyright (c) 2014-2020, Oracle and/or its affiliates.
 // Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
@@ -13,10 +13,14 @@
 
 #include <limits>
 
+#include <boost/range/value_type.hpp>
+
 #include <boost/geometry/geometry.hpp>
 #include "../test_set_ops_linear_linear.hpp"
 #include <from_wkt.hpp>
+#ifdef TEST_WITH_SVG
 #include <to_svg.hpp>
+#endif
 
 
 //==================================================================
@@ -73,6 +77,10 @@ private:
                 Geometry1, Geometry2
             >::type strategy_type;
         bg::sym_difference(geometry1, geometry2, mls_output, strategy_type());
+
+#ifdef TEST_WITH_SVG
+        to_svg(geometry1, geometry2, mls_output, case_id);
+#endif
 
         check_result(geometry1, geometry2, mls_output, mls_sym_diff, case_id, tolerance);
 
@@ -159,11 +167,6 @@ public:
     {
 #ifdef BOOST_GEOMETRY_TEST_DEBUG
         std::cout << "test case: " << case_id << std::endl;
-        std::stringstream sstr;
-        sstr << "svgs/" << case_id << ".svg";
-#ifdef TEST_WITH_SVG
-        to_svg(geometry1, geometry2, sstr.str());
-#endif
 #endif
 
         Geometry1 rg1(geometry1);

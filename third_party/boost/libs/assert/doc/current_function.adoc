@@ -7,6 +7,7 @@ See accompanying file LICENSE_1_0.txt or copy at
 http://www.boost.org/LICENSE_1_0.txt
 ////
 
+[#current_function_macro]
 # Current Function Macro, <boost/current_function.hpp>
 :toc:
 :toc-title:
@@ -17,9 +18,10 @@ http://www.boost.org/LICENSE_1_0.txt
 The header `<boost/current_function.hpp>` defines a single macro, `BOOST_CURRENT_FUNCTION`,
 similar to the C99 predefined identifier `\\__func__`.
 
-`BOOST_CURRENT_FUNCTION` expands to a string literal containing 
-the (fully qualified, if possible) name of the enclosing function. If there is
-no enclosing function, the behavior is unspecified.
+`BOOST_CURRENT_FUNCTION` expands to either a string literal, or the name of a
+character array local to the current function, containing the (fully qualified,
+if possible) name of the enclosing function. If there is no enclosing function,
+the behavior varies by compiler, but is usually a compile error.
 
 Some compilers do not provide a way to obtain the name of the current enclosing
 function. On such compilers, or when the macro `BOOST_DISABLE_CURRENT_FUNCTION`

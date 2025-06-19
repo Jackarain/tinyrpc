@@ -9,20 +9,20 @@
 #include <boost/math/tools/test.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/next.hpp>
 #include <boost/math/special_functions/ulp.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <iostream>
 #include <iomanip>
 
-#ifdef BOOST_MSVC
+#ifdef _MSC_VER
 #pragma warning(disable:4127)
 #endif
 
 #if !defined(_CRAYC) && !defined(__CUDACC__) && (!defined(__GNUC__) || (__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ > 3)))
 #if (defined(_M_IX86_FP) && (_M_IX86_FP >= 2)) || defined(__SSE2__) || defined(TEST_SSE2)
-#include <float.h>
+#include <cfloat>
 #include "xmmintrin.h"
 #define TEST_SSE2
 #endif
@@ -56,7 +56,7 @@ void test_value(const T& val, const char* name)
 
    BOOST_CHECK_EQUAL(float_distance(float_advance(val, 4), val), -4);
    BOOST_CHECK_EQUAL(float_distance(float_advance(val, -4), val), 4);
-   if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present))
+   if(std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>())
    {
       BOOST_CHECK_EQUAL(float_distance(float_advance(float_next(float_next(val)), 4), float_next(float_next(val))), -4);
       BOOST_CHECK_EQUAL(float_distance(float_advance(float_next(float_next(val)), -4), float_next(float_next(val))), 4);
@@ -122,7 +122,7 @@ void test_values(const T& val, const char* name)
    test_value(-boost::math::tools::epsilon<T>(), name);
    test_value(boost::math::tools::min_value<T>(), name);
    test_value(-boost::math::tools::min_value<T>(), name);
-   if (std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present) && ((std::numeric_limits<T>::min)() / 2 != 0))
+   if (std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>() && ((std::numeric_limits<T>::min)() / 2 != 0))
    {
       test_value(z, name);
       test_value(-z, name);
@@ -135,7 +135,7 @@ void test_values(const T& val, const char* name)
    if((_mm_getcsr() & (_MM_FLUSH_ZERO_ON | 0x40)) == 0)
    {
 #endif
-      if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present) && ((std::numeric_limits<T>::min)() / 2 != 0))
+      if(std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>() && ((std::numeric_limits<T>::min)() / 2 != 0))
       {
          test_value(std::numeric_limits<T>::denorm_min(), name);
          test_value(-std::numeric_limits<T>::denorm_min(), name);
@@ -171,12 +171,12 @@ void test_values(const T& val, const char* name)
       BOOST_CHECK_EQUAL(boost::math::float_advance(val, primes[i]), v1);
       BOOST_CHECK_EQUAL(boost::math::float_advance(val, -primes[i]), v2);
    }
-   if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_infinity))
+   BOOST_IF_CONSTEXPR(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_infinity))
    {
       BOOST_CHECK_EQUAL(boost::math::float_prior(std::numeric_limits<T>::infinity()), (std::numeric_limits<T>::max)());
       BOOST_CHECK_EQUAL(boost::math::float_next(-std::numeric_limits<T>::infinity()), -(std::numeric_limits<T>::max)());
-      BOOST_MATH_CHECK_THROW(boost::math::float_prior(-std::numeric_limits<T>::infinity()), std::domain_error);
-      BOOST_MATH_CHECK_THROW(boost::math::float_next(std::numeric_limits<T>::infinity()), std::domain_error);
+      BOOST_CHECK_EQUAL(boost::math::float_prior(-std::numeric_limits<T>::infinity()), -std::numeric_limits<T>::infinity());
+      BOOST_CHECK_EQUAL(boost::math::float_next(std::numeric_limits<T>::infinity()), std::numeric_limits<T>::infinity());
       if(boost::math::policies:: BOOST_MATH_OVERFLOW_ERROR_POLICY == boost::math::policies::throw_on_error)
       {
          BOOST_MATH_CHECK_THROW(boost::math::float_prior(-(std::numeric_limits<T>::max)()), std::overflow_error);
@@ -188,15 +188,20 @@ void test_values(const T& val, const char* name)
          BOOST_CHECK_EQUAL(boost::math::float_next((std::numeric_limits<T>::max)()), std::numeric_limits<T>::infinity());
       }
    }
+   BOOST_IF_CONSTEXPR(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_quiet_NaN))
+   {
+      BOOST_MATH_CHECK_THROW(boost::math::float_prior((std::numeric_limits<T>::quiet_NaN)()), std::domain_error);
+      BOOST_MATH_CHECK_THROW(boost::math::float_next((std::numeric_limits<T>::quiet_NaN)()), std::domain_error);
+   }
    //
-   // We need to test float_distance over mulyiple orders of magnitude,
+   // We need to test float_distance over multiple orders of magnitude,
    // the only way to get an accurate true result is to count the representations
    // between the two end points, but we can only really do this for type float:
    //
    if (std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::digits < 30) && (std::numeric_limits<T>::radix == 2))
    {
       T left, right, dist, fresult;
-      boost::uintmax_t result;
+      std::uintmax_t result;
 
       left = static_cast<T>(0.1);
       right = left * static_cast<T>(4.2);
@@ -233,7 +238,12 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_values(1.0, "double");
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_values(1.0L, "long double");
+
+   // MSVC-14.3 fails with real concept on Github Actions, but the failure cannot be reproduced locally
+   // See: https://github.com/boostorg/math/pull/720
+   #if !defined(_MSC_VER) || _MSC_VER < 1930
    test_values(boost::math::concepts::real_concept(0), "real_concept");
+   #endif
 #endif
 
    //
@@ -257,7 +267,7 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_values(1.0, "double");
    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_OFF);
 #endif
-   BOOST_ASSERT((_mm_getcsr() & 0x40) == 0);
+   BOOST_MATH_ASSERT((_mm_getcsr() & 0x40) == 0);
    _mm_setcsr(_mm_getcsr() | 0x40);
    std::cout << "Testing again with Denormals-Are-Zero set" << std::endl;
    std::cout << "SSE2 control word is: " << std::hex << _mm_getcsr() << std::endl;

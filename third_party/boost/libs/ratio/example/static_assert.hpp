@@ -9,7 +9,7 @@
 #ifndef BOOST_EX_CHRONO_DETAIL_STATIC_ASSERT_HPP
 #define BOOST_EX_CHRONO_DETAIL_STATIC_ASSERT_HPP
 
-#include "config.hpp"
+#include <boost/config.hpp>
 
 #ifndef BOOST_NO_CXX11_STATIC_ASSERT
 #define BOOST_EX_CHRONO_STATIC_ASSERT(CND, MSG, TYPES) static_assert(CND,MSG)

@@ -1,46 +1,38 @@
 #
-# Copyright (c) 2017 Mateusz Loskot <mateusz at loskot dot net>
+# Copyright (c) 2019 Mateusz Loskot <mateusz at loskot dot net>
 #
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at
 # http://www.boost.org/LICENSE_1_0.txt)
 #
-message(STATUS "Boost.GIL: configuring core tests")
 
-foreach(name channel pixel pixel_iterator promote_integral)
-  add_executable(gil_test_${name} "")
-  target_sources(gil_test_${name}
+foreach(_name
+  test_utility_output_stream)
+  set(_test t_utility_${_name})
+  set(_target test_utility_${_name})
+
+  add_executable(${_target} "")
+  target_sources(${_target} PRIVATE ${_name}.cpp)
+  target_link_libraries(${_target}
     PRIVATE
-      ${_boost_gil_headers}
-      ${_boost_gil_test_headers}
-      ${name}.cpp
-      error_if.cpp)
-  target_link_libraries(gil_test_${name}
-    PRIVATE
-      Boost::disable_autolinking
-      Boost::filesystem
-      Boost::unit_test_framework)
-  add_test(gil.tests.core.${name} gil_test_${name})
+      gil_compile_options
+      gil_include_directories
+      gil_dependencies)
+  target_compile_definitions(${_target} PRIVATE BOOST_GIL_USE_CONCEPT_CHECK)
+  add_test(NAME ${_test} COMMAND ${_target})
+
+  unset(_name)
+  unset(_target)
+  unset(_test)
 endforeach()
 
-add_executable(gil_test_image "")
-target_sources(gil_test_image
-  PRIVATE
-    ${_boost_gil_headers}
-    ${_boost_gil_test_headers}
-    error_if.cpp
-    image.cpp
-    sample_image.cpp)
-target_link_libraries(gil_test_image
-  PRIVATE
-    Boost::disable_autolinking
-    Boost::filesystem
-    Boost::unit_test_framework)
-add_test(gil.tests.core.image
-  gil_test_image
-  ${CMAKE_CURRENT_SOURCE_DIR}/gil_reference_checksums.txt)
+add_subdirectory(core)
 
-add_subdirectory(algorithm)
-add_subdirectory(channel)
-add_subdirectory(image_view)
-add_subdirectory(point)
+add_subdirectory(legacy)
+
+add_subdirectory(extension)
+
+# TODO: Split headers tests into core and extensions, see Jamfile-s
+if(BOOST_GIL_BUILD_HEADER_TESTS)
+  add_subdirectory(header)
+endif()

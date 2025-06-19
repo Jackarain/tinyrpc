@@ -7,7 +7,6 @@
 // See http://www.boost.org/libs/container for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/container/detail/config_begin.hpp>
 #include <set>
 #include <boost/container/set.hpp>
 #include <boost/container/adaptive_pool.hpp>
@@ -19,6 +18,7 @@
 #include "propagate_allocator_test.hpp"
 #include "emplace_test.hpp"
 #include "../../intrusive/test/iterator_test.hpp"
+#include <utility> //for std::pair
 
 using namespace boost::container;
 
@@ -26,10 +26,17 @@ using namespace boost::container;
 class recursive_set
 {
 public:
-   recursive_set & operator=(const recursive_set &x)
-   {  id_ = x.id_;  set_ = x.set_; return *this; }
 
-   int id_;
+   recursive_set()
+   {}
+
+   recursive_set(const recursive_set &x)
+      : set_(x.set_)
+   {}
+
+   recursive_set & operator=(const recursive_set &x)
+   {  set_ = x.set_; return *this; }
+
    set<recursive_set> set_;
    set<recursive_set>::iterator it_;
    set<recursive_set>::const_iterator cit_;
@@ -37,17 +44,23 @@ public:
    set<recursive_set>::const_reverse_iterator crit_;
 
    friend bool operator< (const recursive_set &a, const recursive_set &b)
-   {  return a.id_ < b.id_;   }
+   {  return a.set_ < b.set_;   }
 };
 
 //Test recursive structures
 class recursive_multiset
 {
    public:
-   recursive_multiset & operator=(const recursive_multiset &x)
-   {  id_ = x.id_;  multiset_ = x.multiset_; return *this;  }
+   recursive_multiset()
+   {}
 
-   int id_;
+   recursive_multiset(const recursive_multiset &x)
+      : multiset_(x.multiset_)
+   {}
+
+   recursive_multiset & operator=(const recursive_multiset &x)
+   {  multiset_ = x.multiset_; return *this;  }
+
    multiset<recursive_multiset> multiset_;
    multiset<recursive_multiset>::iterator it_;
    multiset<recursive_multiset>::const_iterator cit_;
@@ -55,7 +68,7 @@ class recursive_multiset
    multiset<recursive_multiset>::const_reverse_iterator crit_;
 
    friend bool operator< (const recursive_multiset &a, const recursive_multiset &b)
-   {  return a.id_ < b.id_;   }
+   {  return a.multiset_ < b.multiset_;   }
 };
 
 template<class C>
@@ -530,6 +543,15 @@ int main ()
          std::cout << "Error in set_test<new_allocator<void>, red_black_tree>" << std::endl;
          return 1;
       }
+
+      if (0 != test::set_test
+         < GetAllocatorSet<new_allocator<void>, red_black_tree>::apply<test::moveconstruct_int>::set_type
+         , MyStdSet
+         , GetAllocatorSet<new_allocator<void>, red_black_tree>::apply<test::moveconstruct_int>::multiset_type
+         , MyStdMultiSet>()) {
+         std::cout << "Error in set_test<new_allocator<void>, red_black_tree>" << std::endl;
+         return 1;
+      }
    }
 
    ////////////////////////////////////
@@ -576,8 +598,8 @@ int main ()
    typedef multiset< int*, std::less<int*>, std::allocator<int*>
                    , tree_assoc_options< optimize_size<false>, tree_type<avl_tree> >::type > avlmset_size_optimized_no;
 
-   BOOST_STATIC_ASSERT(sizeof(rbmset_size_optimized_yes) < sizeof(rbset_size_optimized_no));
-   BOOST_STATIC_ASSERT(sizeof(avlset_size_optimized_yes) < sizeof(avlmset_size_optimized_no));
+   BOOST_CONTAINER_STATIC_ASSERT(sizeof(rbmset_size_optimized_yes) < sizeof(rbset_size_optimized_no));
+   BOOST_CONTAINER_STATIC_ASSERT(sizeof(avlset_size_optimized_yes) < sizeof(avlmset_size_optimized_no));
 
    ////////////////////////////////////
    //    Iterator testing
@@ -605,7 +627,45 @@ int main ()
    if(!node_type_test())
       return 1;
 
+   ////////////////////////////////////
+   //    has_trivial_destructor_after_move testing
+   ////////////////////////////////////
+   // set, default allocator
+   {
+      typedef boost::container::set<int> cont;
+      typedef boost::container::dtl::tree<int, void, std::less<int>, void, void> tree;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG(
+        !(boost::has_trivial_destructor_after_move<cont>::value !=
+          boost::has_trivial_destructor_after_move<tree>::value)
+        , "has_trivial_destructor_after_move(set, default allocator) test failed");
+   }
+   // set, std::allocator
+   {
+      typedef boost::container::set<int, std::less<int>, std::allocator<int> > cont;
+      typedef boost::container::dtl::tree<int, void, std::less<int>, std::allocator<int>, void> tree;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG(
+        !(boost::has_trivial_destructor_after_move<cont>::value !=
+          boost::has_trivial_destructor_after_move<tree>::value)
+        , "has_trivial_destructor_after_move(set, std::allocator) test failed");
+   }
+   // multiset, default allocator
+   {
+      typedef boost::container::multiset<int> cont;
+      typedef boost::container::dtl::tree<int, void, std::less<int>, void, void> tree;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG(
+        !(boost::has_trivial_destructor_after_move<cont>::value !=
+          boost::has_trivial_destructor_after_move<tree>::value)
+        , "has_trivial_destructor_after_move(multiset, default allocator) test failed");
+   }
+   // multiset, std::allocator
+   {
+      typedef boost::container::multiset<int, std::less<int>, std::allocator<int> > cont;
+      typedef boost::container::dtl::tree<int, void, std::less<int>, std::allocator<int>, void> tree;
+      BOOST_CONTAINER_STATIC_ASSERT_MSG(
+        !(boost::has_trivial_destructor_after_move<cont>::value !=
+          boost::has_trivial_destructor_after_move<tree>::value)
+        , "has_trivial_destructor_after_move(multiset, std::allocator) test failed");
+   }
+
    return 0;
 }
-
-#include <boost/container/detail/config_end.hpp>

@@ -9,7 +9,7 @@
 // See http://www.boost.org/libs/intrusive for documentation.
 //
 /////////////////////////////////////////////////////////////////////////////
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <cstddef>
 
 #include <boost/intrusive/list.hpp>
@@ -21,7 +21,6 @@
 #include <boost/intrusive/splay_set.hpp>
 #include <boost/intrusive/treap_set.hpp>
 #include <boost/intrusive/unordered_set.hpp>
-#include <boost/static_assert.hpp>
 #include "itestvalue.hpp"
 
 using namespace boost::intrusive;

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -23,8 +23,11 @@
 #include <iostream>
 #include <string>
 
-using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
-namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 // Sends a WebSocket message and prints the response
 int main(int argc, char** argv)
@@ -40,12 +43,12 @@ int main(int argc, char** argv)
                 "    websocket-client-sync echo.websocket.org 80 \"Hello, world!\"\n";
             return EXIT_FAILURE;
         }
-        auto const host = argv[1];
-        auto const port = argv[2];
-        auto const text = argv[3];
+        std::string host = argv[1];
+        auto const  port = argv[2];
+        auto const  text = argv[3];
 
         // The io_context is required for all I/O
-        boost::asio::io_context ioc;
+        net::io_context ioc;
 
         // These objects perform our I/O
         tcp::resolver resolver{ioc};
@@ -55,16 +58,30 @@ int main(int argc, char** argv)
         auto const results = resolver.resolve(host, port);
 
         // Make the connection on the IP address we get from a lookup
-        boost::asio::connect(ws.next_layer(), results.begin(), results.end());
+        auto ep = net::connect(ws.next_layer(), results);
+
+        // Update the host_ string. This will provide the value of the
+        // Host HTTP header during the WebSocket handshake.
+        // See https://tools.ietf.org/html/rfc7230#section-5.4
+        host += ':' + std::to_string(ep.port());
+
+        // Set a decorator to change the User-Agent of the handshake
+        ws.set_option(websocket::stream_base::decorator(
+            [](websocket::request_type& req)
+            {
+                req.set(http::field::user_agent,
+                    std::string(BOOST_BEAST_VERSION_STRING) +
+                        " websocket-client-coro");
+            }));
 
         // Perform the websocket handshake
         ws.handshake(host, "/");
 
         // Send the message
-        ws.write(boost::asio::buffer(std::string(text)));
+        ws.write(net::buffer(std::string(text)));
 
         // This buffer will hold the incoming message
-        boost::beast::multi_buffer buffer;
+        beast::flat_buffer buffer;
 
         // Read a message into our buffer
         ws.read(buffer);
@@ -74,8 +91,8 @@ int main(int argc, char** argv)
 
         // If we get here then the connection is closed gracefully
 
-        // The buffers() function helps print a ConstBufferSequence
-        std::cout << boost::beast::buffers(buffer.data()) << std::endl;
+        // The make_printable() function helps print a ConstBufferSequence
+        std::cout << beast::make_printable(buffer.data()) << std::endl;
     }
     catch(std::exception const& e)
     {

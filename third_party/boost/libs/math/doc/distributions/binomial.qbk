@@ -130,8 +130,7 @@ best estimate for the success fraction is simply ['k/n], but if you
 want to be 95% sure that the true value is [*greater than] some value,
 ['p[sub min]], then:
 
-   p``[sub min]`` = binomial_distribution<RealType>::find_lower_bound_on_p(
-                       n, k, 0.05);
+   p``[sub min]`` = binomial_distribution<RealType>::find_lower_bound_on_p(n, k, 0.05);
 
 [link math_toolkit.stat_tut.weg.binom_eg.binom_conf See worked example.]
 
@@ -210,8 +209,7 @@ best estimate for the success fraction is simply ['k/n], but if you
 want to be 95% sure that the true value is [*less than] some value,
 ['p[sub max]], then:
 
-   p``[sub max]`` = binomial_distribution<RealType>::find_upper_bound_on_p(
-                       n, k, 0.05);
+   p``[sub max]`` = binomial_distribution<RealType>::find_upper_bound_on_p(n, k, 0.05);
 
 [link math_toolkit.stat_tut.weg.binom_eg.binom_conf See worked example.]
 
@@ -311,19 +309,17 @@ the context of this distribution:
 
 `cdf(complement(binomial(n, p), k))`]]
 [[__quantile]
-   [The [*greatest] number of successes that may be observed from n trials
-   with success fraction p, at probability P.  Note that the value returned
-   is a real-number, and not an integer.  Depending on the use case you may
-   want to take either the floor or ceiling of the result.  For example:
-
-`quantile(binomial(n, p), P)`]]
+   [Given a binomial distribution with ['n] trials, success fraction ['p] and probability ['P], 
+   finds the largest number of successes ['k] whose CDF is less than ['P].
+   It is strongly recommended that you read the tutorial 
+   [link math_toolkit.pol_tutorial.understand_dis_quant Understanding Quantiles of Discrete Distributions] before
+   using the quantile function.]]
 [[__quantile_c]
-   [The [*smallest] number of successes that may be observed from n trials
-   with success fraction p, at probability P.  Note that the value returned
-   is a real-number, and not an integer.  Depending on the use case you may
-   want to take either the floor or ceiling of the result. For example:
-
-`quantile(complement(binomial(n, p), P))`]]
+   [Given a binomial distribution with ['n] trials, success fraction ['p] and probability ['Q], 
+   finds the smallest number of successes ['k] whose CDF is greater than ['1-Q].
+   It is strongly recommended that you read the tutorial 
+   [link math_toolkit.pol_tutorial.understand_dis_quant Understanding Quantiles of Discrete Distributions] before
+   using the quantile function.]]
 ]
 
 [h4 Examples]
@@ -392,7 +388,7 @@ There are also various special cases: refer to the code for details. ]]
 
 * [@http://mathworld.wolfram.com/BinomialDistribution.html Weisstein, Eric W. "Binomial Distribution." From MathWorld--A Wolfram Web Resource].
 * [@http://en.wikipedia.org/wiki/Beta_distribution Wikipedia binomial distribution].
-* [@http://www.itl.nist.gov/div898/handbook/eda/section3/eda366i.htm  NIST Explorary Data Analysis].
+* [@http://www.itl.nist.gov/div898/handbook/eda/section3/eda366i.htm  NIST Exploratory Data Analysis].
 
 [endsect] [/section:binomial_dist Binomial]
 

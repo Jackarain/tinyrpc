@@ -1,5 +1,5 @@
 [/
-              Copyright Andrey Semashev 2007 - 2015.
+              Copyright Andrey Semashev 2007 - 2024.
      Distributed under the Boost Software License, Version 1.0.
         (See accompanying file LICENSE_1_0.txt or copy at
               http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +13,9 @@
     #include <``[boost_log_attributes_attribute_cast_hpp]``>
     #include <``[boost_log_attributes_attribute_value_hpp]``>
 
-All attributes in the library are implemented using the [@http://c2.com/cgi/wiki?PimplIdiom pimpl idiom], or more specifically - shared pimpl idiom. Every attribute provides an interface class which derives from the [class_log_attribute] class and an implementation class that derives from [class_log_attribute_impl]. The interface class only holds a reference counted pointer to the actual implementation of the attribute; this pointer is a member of the [class_log_attribute] class, so derived interface classes don't have any data members. When the interface class is default constructed, it creates the corresponding implementation object and initializes the [class_log_attribute] base class with a pointer to the implementation. Therefore the pimpl nature of attributes is transparent for users in a typical workflow.
+As described in the [link log.design Design overview], attributes in Boost.Log represent information to be associated with log records. An attribute is essentially a function that produces an attribute value upon being invoked. The function may produce a different value each time it is called, or always produce the same value on every call. For example, the [link log.detailed.attributes.clock `local_clock`] attribute produces timestamp values according to the local wall time clock, and [link log.detailed.attributes.constant `constant`] always produces the same value every time.
+
+All attributes in the library are implemented using the [@https://en.cppreference.com/w/cpp/language/pimpl pimpl idiom], or more specifically - shared pimpl idiom. Every attribute provides an interface class which derives from the [class_log_attribute] class and an implementation class that derives from [class_log_attribute_impl]. The interface class only holds a reference counted pointer to the actual implementation of the attribute; this pointer is a member of the [class_log_attribute] class, so derived interface classes don't have any data members. When the interface class is default constructed, it creates the corresponding implementation object and initializes the [class_log_attribute] base class with a pointer to the implementation. Therefore the pimpl nature of attributes is transparent for users in a typical workflow.
 
 The shared pimpl design comes significant in a few cases though. One such case is copying the attribute. The copy operation is shallow, so multiple interface objects may refer to a single implementation object. There is no way to deep copy an attribute. Another case is default construction of [class_log_attribute] which creates an empty object that does not refer to an implementation. Attributes in such empty state should not be passed to the library but can be useful in some cases, e.g. when a delayed variable initialization is needed.
 
@@ -24,9 +26,9 @@ It is possible to upcast the attribute interface from [class_log_attribute] to t
 
 In this example, the cast will succeed (i.e. the `const_attr` will be non-empty) if the attribute `attr` was originally created as `attrs::constant< int >`. Since all data is stored in the implementation object, no data is lost in the casting process.
 
-The main purpose of attributes is to generate attribute values. Values are semantically distinct from the attributes. Such separation allows implementing attributes that can return different values at different time points (like clock-related attributes, for example) and, on the other hand, allows using different values of the same attribute independently. The [class_log_attribute] interface has a method named `get_value` that returns the actual attribute value. Attribute values are also implemented using the shared pimpl approach, the interface class is [class_log_attribute_value] and implementation classes derive from [class_log_attribute_value_impl].
+As it was said, the main purpose of attributes is to generate attribute values. Values are semantically distinct from the attributes. Such separation allows implementing attributes that can return different values at different times and, on the other hand, allows using different values of the same attribute independently. The [class_log_attribute] interface has a method named `get_value` that returns the actual attribute value. Attribute values are also implemented using the shared pimpl approach, the interface class is [class_log_attribute_value] and implementation classes derive from [class_log_attribute_value_impl].
 
-The attribute value object is mostly intended to store the actual attribute value and implement type dispatching in order to be able to extract the stored value. One should not confuse the attribute value object type and the stored value type. The former is in most cases not needed by users and provides type erasure, but the latter is needed to be able to extract the value. For brevity we call the stored attribute value type simply the attribute value type in this documentation.
+The attribute value object is intended to store the actual attribute value and implement type dispatching in order to be able to extract the stored value. One should not confuse the attribute value implementation type and the stored value type. The former is in most cases not important to users and provides type erasure, but the latter is needed to be able to extract the value. In the example above, the `constant< int >` type is the attribute type, its `get_value()` method produces an object of type [class_log_attribute_value], which is a pimpl wrapper for the [classref boost::log::attributes::attribute_value_impl `attribute_value_impl< int >`] implementation type. The actual stored attribute value type here is `int`, which is what the attribute generates, and what is needed by the user in order to be able to extract the value from [class_log_attribute_value]. For brevity we call the stored attribute value type simply the attribute value type in this documentation.
 
 [section:constant Constants]
 
@@ -173,6 +175,8 @@ One of the "must-have" features of any logging library is support for attaching 
         BOOST_LOG(lg) << "This record has a time stamp";
     }
 
+[note As any other attribute, the value of the wall clock attribute is obtained at the point of the log record creation, not at the point of its processing in a sink. This means that (a) timetamps attached to log records always reflect the time point of the event occurrence, not the time of storing the log record, and (b) if the same log record is processed by multiple sinks, even at different points in time, these sinks will process (e.g. store in their respective files) the same timestamp. This is a useful property of the wall clock attribute, although it may result in [link log.rationale.why_weak_record_ordering weak ordering of log records] in the output.]
+
 [endsect]
 
 [section:timer Stop watch (timer)]
@@ -265,6 +269,8 @@ Now we can mark execution scopes with the macros `BOOST_LOG_FUNCTION` and `BOOST
 After executing `foo` we will be able to see in the log that the `bar` function was called from `foo` and, more precisely, from the case statement that corresponds to the value of `n`. This may be very useful when tracking down subtle bugs that show up only when `bar` is called from a specific location (e.g. if `bar` is being passed invalid arguments in that particular location).
 
 [note The `BOOST_LOG_FUNCTION` macro uses compiler-specific extensions to generate the scope name from the enclosing function. C++11 defines a standard macro `__func__` for this purpose, but it is not universally supported. Additionally, format of the string is not standardized and may vary from one compiler to another. For this reason it is generally advised to use `BOOST_LOG_NAMED_SCOPE` instead of `BOOST_LOG_FUNCTION` to ensure consistent and portable behavior.]
+
+[warning The `BOOST_LOG_FUNCTION` and `BOOST_LOG_NAMED_SCOPE` macros effectively form a linked list of scope descriptors on the stack, which is automatically maintained as control enters and leaves scopes in the LIFO (last in, first out) order. The attribute implementation relies on this LIFO order. This breaks when execution switches to another stack and back at arbitrary points, which allows control to enter and leave scopes in any order. This is what happens on thread context switching, for example when using coroutines or low level system APIs like [@https://pubs.opengroup.org/onlinepubs/7908799/xsh/ucontext.h.html ucontext] and [@https://docs.microsoft.com/en-us/windows/win32/procthread/fibers fibers]. Using named scopes in code that utilizes such context switching facilities requires careful programming to maintain the LIFO order of entering/leaving scopes marked with named scope macros. Otherwise, using named scopes will result in undefined behavior and should be avoided. Note that with arbitrary context switching the list of scopes would not provide meaningful information anyway.]
 
 Another good use case is attaching the scope stack information to an exception. With the help of __boost_exception__, this is possible:
 
@@ -362,7 +368,7 @@ This attribute is a simple wrapper around a user-defined function object. Each a
         logging::core::get()->add_global_attribute("MyRandomAttr", attrs::make_function(&std::rand));
     }
 
-Auto-generated function objects, like the ones defined in __boost_bind__ or STL, are also supported.
+Auto-generated function objects, like the ones defined in __boost_bind__ or C++ standard library, are also supported.
 
 [note Some deficient compilers may not support `result_of` construct properly. This metafunction is used in the `make_function` function to automatically detect the return type of the function object. If `result_of` breaks or detects incorrect type, one can try to explicitly specify the return type of the function object as a template argument to the `make_function` function.]
 
@@ -390,7 +396,7 @@ The [class_log_attribute_name] class supports an empty (uninitialized) state whe
 
     #include <``[boost_log_attributes_attribute_set_hpp]``>
 
-Attribute set is an unordered associative container that maps [link log.detailed.attributes.related_components.attribute_name attribute names] to [link log.detailed.attributes attributes]. It is used in [link log.detailed.sources loggers] and the [link log.detailed.core.core logging core] to store source-specific, thread-specific and global attributes. The interface is very similar to STL associative containers and is described in the [class_log_attribute_set] class reference.
+Attribute set is an unordered associative container that maps [link log.detailed.attributes.related_components.attribute_name attribute names] to [link log.detailed.attributes attributes]. It is used in [link log.detailed.sources loggers] and the [link log.detailed.core.core logging core] to store source-specific, thread-specific and global attributes. The interface is very similar to standard library associative containers and is described in the [class_log_attribute_set] class reference.
 
 [endsect]
 

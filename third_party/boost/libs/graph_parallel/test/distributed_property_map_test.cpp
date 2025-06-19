@@ -11,7 +11,8 @@
 #include <boost/throw_exception.hpp>
 #include <boost/graph/distributed/mpi_process_group.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <boost/test/minimal.hpp>
+#include <boost/property_map/parallel/parallel_property_maps.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <vector>
 #include <string>
 #include <boost/serialization/vector.hpp>
@@ -121,7 +122,7 @@ void colored_test()
   // check local processor colors
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(colors, k) == my_start_color);
+    BOOST_TEST(get(colors, k) == my_start_color);
   }
 
   colors.set_consistency_model(boost::parallel::cm_bidirectional);
@@ -129,7 +130,7 @@ void colored_test()
   // check next processor's colors
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(colors, k) == color_t());
+    BOOST_TEST(get(colors, k) == color_t());
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -139,7 +140,7 @@ void colored_test()
   // check next processor's colors
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(colors, k) == next_start_color);
+    BOOST_TEST(get(colors, k) == next_start_color);
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -161,14 +162,14 @@ void colored_test()
   color_t my_finish_color = process_id(pg) % 2 == 0? ::blue : ::red;
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(colors, k) == my_finish_color);
+    BOOST_TEST(get(colors, k) == my_finish_color);
   }
 
   // check our neighbor's colors
   if (process_id(pg) == 0) std::cerr << "OK.\nChecking changed colors on neighbor...";
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(colors, k) == next_finish_color);
+    BOOST_TEST(get(colors, k) == next_finish_color);
   }
 
   synchronize(pg);
@@ -206,7 +207,7 @@ void bool_test()
   // check local processor values
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(values, k) == my_start_value);
+    BOOST_TEST(get(values, k) == my_start_value);
   }
 
   values.set_consistency_model(boost::parallel::cm_bidirectional);
@@ -214,7 +215,7 @@ void bool_test()
   // check next processor's values
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(values, k) == false);
+    BOOST_TEST(get(values, k) == false);
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -224,7 +225,7 @@ void bool_test()
   // check next processor's values
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(values, k) == next_start_value);
+    BOOST_TEST(get(values, k) == next_start_value);
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -246,14 +247,14 @@ void bool_test()
   bool my_finish_value = process_id(pg) % 2 == 0;
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(values, k) == my_finish_value);
+    BOOST_TEST(get(values, k) == my_finish_value);
   }
 
   // check our neighbor's values
   if (process_id(pg) == 0) std::cerr << "OK.\nChecking changed values on neighbor...";
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(values, k) == next_finish_value);
+    BOOST_TEST(get(values, k) == next_finish_value);
   }
 
   synchronize(pg);
@@ -291,7 +292,7 @@ void string_test()
   // check local processor strings
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(strings, k) == my_start_string);
+    BOOST_TEST(get(strings, k) == my_start_string);
   }
 
   strings.set_consistency_model(boost::parallel::cm_bidirectional);
@@ -299,7 +300,7 @@ void string_test()
   // check next processor's strings
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(strings, k) == (num_processes(pg) == 1 ? my_start_string : std::string()));
+    BOOST_TEST(get(strings, k) == (num_processes(pg) == 1 ? my_start_string : std::string()));
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -309,7 +310,7 @@ void string_test()
   // check next processor's strings
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(strings, k) == next_start_string);
+    BOOST_TEST(get(strings, k) == next_start_string);
   }
 
   if (process_id(pg) == 0) std::cerr << "OK.\nSynchronizing...";
@@ -331,14 +332,14 @@ void string_test()
   std::string my_finish_string = my_start_string + my_start_string;
   for (int i = 0; i < n; ++i) {
     remote_key k(process_id(pg), i);
-    BOOST_CHECK(get(strings, k) == my_finish_string);
+    BOOST_TEST(get(strings, k) == my_finish_string);
   }
 
   // check our neighbor's strings
   if (process_id(pg) == 0) std::cerr << "OK.\nChecking changed strings on neighbor...";
   for (int i = 0; i < n; ++i) {
     remote_key k(next_processor, i);
-    BOOST_CHECK(get(strings, k) == next_finish_string);
+    BOOST_TEST(get(strings, k) == next_finish_string);
   }
 
   synchronize(pg);
@@ -346,11 +347,11 @@ void string_test()
   if (process_id(pg) == 0) std::cerr << "OK.\n";
 }
 
-int test_main(int argc, char** argv)
+int main(int argc, char** argv)
 {
   boost::mpi::environment env(argc, argv);
   colored_test();
   bool_test();
   string_test();
-  return 0;
+  return boost::report_errors();
 }

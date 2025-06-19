@@ -4,16 +4,18 @@
 
 import testing ;
 
-lib boost_unit_test_framework ;
-lib boost_thread ;
+lib boost_chrono ;
+lib boost_interprocess ;
 lib boost_system ;
+lib boost_thread ;
+lib boost_unit_test_framework ;
 
 project
-    : source-location .
     : requirements
-        <hardcode-dll-paths>true
-        <library>../../test/build//boost_unit_test_framework
-        <library>../../atomic/build//boost_atomic
+        <library>/boost/lockfree//boost_lockfree
+        <library>/boost/test//boost_unit_test_framework
+        <library>/boost/thread//boost_thread
+        <library>/boost/interprocess//boost_interprocess
     ;
 
 
@@ -31,8 +33,10 @@ rule test_all
         <toolset>acc-pa_risc:<linkflags>-lrt
         <target-os>windows,<toolset>gcc:<linkflags>"-lole32 -loleaut32 -lpsapi -ladvapi32"
         <host-os>hpux,<toolset>gcc:<linkflags>"-Wl,+as,mpas"
-        <library>../../thread/build//boost_thread/
+        <host-os>linux,<toolset>clang:<linkflags>"-latomic"
         <threading>multi
+        <link>static
+        <define>BOOST_TEST_NO_OLD_TOOLS
       ] ;
    }
 

@@ -4,10 +4,13 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
@@ -56,6 +59,41 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    double epsilon = 1e-5;
+    std::stringstream ss;
+    {
+        accumulator_set<int, stats<tag::variance(lazy)> > acc1;
+        accumulator_set<int, stats<tag::variance> > acc2;
+        acc1(1);
+        acc1(2);
+        acc1(3);
+        acc1(4);
+        acc1(5);
+        acc2(1);
+        acc2(2);
+        acc2(3);
+        acc2(4);
+        acc2(5);
+        BOOST_CHECK_CLOSE(2., variance(acc2), epsilon);
+        BOOST_CHECK_CLOSE(2., variance(acc1), epsilon);
+        boost::archive::text_oarchive oa(ss);
+        acc1.serialize(oa, 0);
+        acc2.serialize(oa, 0);
+    }
+    accumulator_set<int, stats<tag::variance(lazy)> > acc1;
+    accumulator_set<int, stats<tag::variance> > acc2;
+    boost::archive::text_iarchive ia(ss);
+    acc1.serialize(ia, 0);
+    acc2.serialize(ia, 0);
+    BOOST_CHECK_CLOSE(2., variance(acc2), epsilon);
+    BOOST_CHECK_CLOSE(2., variance(acc1), epsilon);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -63,6 +101,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("variance test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

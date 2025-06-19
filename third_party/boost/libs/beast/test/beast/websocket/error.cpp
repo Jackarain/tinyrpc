@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,7 @@
 // Test that header file is self-contained.
 #include <boost/beast/websocket/error.hpp>
 
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <memory>
 
 namespace boost {
@@ -35,6 +35,9 @@ public:
         BEAST_EXPECT(ec.category().name() != nullptr);
         BEAST_EXPECT(! ec.message().empty());
         BEAST_EXPECT(ec == c);
+
+        BEAST_EXPECT(ec.message() != "");
+        BEAST_EXPECT(make_error_condition(c).message() != "");
     }
 
     void run() override

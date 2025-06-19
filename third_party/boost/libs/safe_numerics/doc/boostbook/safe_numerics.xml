@@ -13,7 +13,7 @@
     </author>
 
     <copyright>
-      <year>2012-2018</year>
+      <year>2012-2021</year>
 
       <holder>Robert Ramey</holder>
     </copyright>
@@ -57,9 +57,6 @@
                 xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
     <xi:include href="integer_concept.xml" xpointer="element(/1)"
-                xmlns:xi="http://www.w3.org/2001/XInclude"/>
-
-    <xi:include href="safe_numeric_concept.xml" xpointer="element(/1)"
                 xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
     <xi:include href="promotion_policy_concept.xml" xpointer="element(/1)"
@@ -129,7 +126,7 @@
     <itemizedlist>
       <listitem>
         <para>The library defines "safe" versions of C++ primitive arithmetic
-        types such as int, unsigned int, etc.</para>
+        types such as <code>int</code>, <code>unsigned int</code>, etc.</para>
       </listitem>
 
       <listitem>
@@ -201,6 +198,15 @@
         type <link
         linkend="safenumerics.checked_result"><code>checked_result&lt;R&gt;</code></link>.</para>
       </listitem>
+
+      <listitem>
+        <para>Operations on primitives are implemented via free standing
+        functions described as <link
+        linkend="safe_numerics.checked_arithmetic">checked arithmetic</link>.
+        These operations will return instances of <link
+        linkend="safenumerics.checked_result"><code>checked_result&lt;R&gt;</code></link>
+        .</para>
+      </listitem>
     </itemizedlist>
 
     <para>At run time:</para>
@@ -227,10 +233,11 @@
       </listitem>
 
       <listitem>
-        <para>Otherwise, the operation is performed as another "checked
-        operation". These free functions mirror the normal operators +, -, *,
-        ... except that rather than returning values of type R, they return
-        values of the type <link
+        <para>Otherwise, the operation is performed using "<link
+        linkend="safe_numerics.checked_arithmetic">checked arithmetic</link>".
+        These free functions mirror the normal operators +, -, *, ... except
+        that rather than returning values of type R, they return values of the
+        type <link
         linkend="safenumerics.checked_result"><code>checked_result&lt;R&gt;</code></link>.
         They are defined in files "<ulink
         url="../../include/boost/safe_numerics/checked_default.hpp">checked_default.hpp</ulink>",
@@ -281,10 +288,11 @@
     <filename><ulink
     url="../../test/test_performance.cpp">test_performance.cpp</ulink></filename>.
     This runs a test from the Boost Multiprecision library to count prime
-    numbers and uses on integer arithmetic. We've run the tests with
-    <code>unsigned</code> integers and with <code>safe&lt;unsigned&gt;</code>
-    on two different compilers.. No other change was made to the program. We
-    list the results without further comment.</para>
+    numbers and makes extensive usage of integer arithmetic. We've run the
+    tests with <code>unsigned</code> integers and with
+    <code>safe&lt;unsigned&gt;</code> on two different compilers.. No other
+    change was made to the program. We list the results without further
+    comment.</para>
 
     <screen>g++ (GCC) 6.2.0
 Testing type unsigned:
@@ -314,9 +322,32 @@ count = 1857858
               xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
   <section id="safe_numerics.change_log">
-    <title>Change Log</title>
+    <title>Release Log</title>
 
     <para>This is the third version.</para>
+
+    <para><revhistory>
+        <revision>
+          <revnumber>1.69</revnumber>
+
+          <date>29 September 2018</date>
+
+          <revdescription>
+            <para>First Boost Release</para>
+          </revdescription>
+        </revision>
+
+        <revision>
+          <revnumber>1.70</revnumber>
+
+          <date>9 March 2019</date>
+
+          <revdescription>
+            <para>Fixed Exception Policies for <code>trap</code> and
+            <code>ignore</code>.</para>
+          </revdescription>
+        </revision>
+      </revhistory></para>
   </section>
 
   <xi:include href="bibliography.xml" xpointer="element(/1)"

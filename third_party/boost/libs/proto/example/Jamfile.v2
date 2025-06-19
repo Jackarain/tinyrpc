@@ -77,3 +77,11 @@ exe external_transforms
     :
         external_transforms.cpp
     ;
+
+exe lambda
+    :
+        lambda.cpp
+    :
+        <include>.
+        <toolset>clang:<cxxflags>-Wno-unused-local-typedef
+    ;

@@ -14,7 +14,7 @@
 #include <boost/cstdfloat.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/tools/stats.hpp>
@@ -23,6 +23,8 @@
 #include <iostream>
   using std::cout;
   using std::endl;
+
+#if LDBL_MANT_DIG != 113
 
 template <class T>
 T naive_falling_factorial(T x, unsigned n)
@@ -284,12 +286,15 @@ void test_spots(T)
       i += 10;
    }
 } // template <class T> void test_spots(T)
+#endif
 
 BOOST_AUTO_TEST_CASE( test_main )
 {
    BOOST_MATH_CONTROL_FP;
+#if LDBL_MANT_DIG != 113
    test_spots(0.0Q);
    cout << "max factorial for __float128"  << boost::math::max_factorial<boost::floatmax_t>::value  << endl;
+#endif
 }
 
 

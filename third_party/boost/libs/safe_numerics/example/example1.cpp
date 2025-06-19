@@ -1,7 +1,10 @@
-#include <cassert>
-#include <exception>
+//  Copyright (c) 2018 Robert Ramey
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+
 #include <iostream>
-#include <cstdint>
 
 #include <boost/safe_numerics/safe_integer.hpp>
 
@@ -18,7 +21,7 @@ int main(int, const char *[]){
         std::cout << "error NOT detected!" << std::endl;
         std::cout << (int)z << " != " << (int)x << " + " << (int)y << std::endl;
     }
-    catch(std::exception){
+    catch(const std::exception &){
         std::cout << "error detected!" << std::endl;
     }
     // solution: replace int with safe<int>
@@ -31,7 +34,7 @@ int main(int, const char *[]){
         // rather than producing an invalid result an exception is thrown
         z = x + y;
     }
-    catch(std::exception & e){
+    catch(const std::exception & e){
         // which we can catch here
         std::cout << "error detected:" << e.what() << std::endl;
     }

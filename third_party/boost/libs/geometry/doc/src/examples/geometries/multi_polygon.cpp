@@ -1,7 +1,7 @@
 // Boost.Geometry
 // QuickBook Example
 
-// Copyright (c) 2011-2012 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2011-2024 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2015 Adam Wulkiewicz, Lodz, Poland.
 
 // Use, modification and distribution is subject to the Boost Software License,
@@ -19,20 +19,14 @@ namespace bg = boost::geometry;
 
 int main()
 {
-    typedef bg::model::point<double, 2, bg::cs::cartesian> point_t;
-    typedef bg::model::polygon<point_t> polygon_t; /*< Default parameters, clockwise, closed polygon. >*/
-    typedef bg::model::multi_polygon<polygon_t> mpolygon_t; /*< Clockwise, closed multi_polygon. >*/
+    using point_t = bg::model::point<double, 2, bg::cs::cartesian>;
+    using polygon_t = bg::model::polygon<point_t>; /*< Default parameters, clockwise, closed polygon. >*/
+    using mpolygon_t = bg::model::multi_polygon<polygon_t>; /*< Clockwise, closed multi_polygon. >*/
 
     mpolygon_t mpoly1; /*< Default-construct a multi_polygon. >*/
-
-#if !defined(BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX) \
- && !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
-
     mpolygon_t mpoly2{{{{0.0, 0.0}, {0.0, 5.0}, {5.0, 5.0}, {5.0, 0.0}, {0.0, 0.0}},
                        {{1.0, 1.0}, {4.0, 1.0}, {4.0, 4.0}, {1.0, 4.0}, {1.0, 1.0}}},
                       {{{5.0, 5.0}, {5.0, 6.0}, {6.0, 6.0}, {6.0, 5.0}, {5.0, 5.0}}}}; /*< Construct a multi_polygon containing two polygons, using C++11 unified initialization syntax. >*/
-
-#endif
 
     mpoly1.resize(2); /*< Resize a multi_polygon, store two polygons. >*/
 

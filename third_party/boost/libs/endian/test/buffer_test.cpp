@@ -11,9 +11,7 @@
 
 #include <boost/endian/detail/disable_warnings.hpp>
 
-//#define BOOST_ENDIAN_LOG
 #include <boost/endian/buffers.hpp>
-#include <boost/detail/lightweight_main.hpp>
 #include <boost/core/lightweight_test.hpp>
 #include <boost/cstdint.hpp>
 #include <iostream>
@@ -50,6 +48,9 @@ namespace
     BOOST_TEST_EQ(sizeof(big_uint56_buf_t), 7u);
     BOOST_TEST_EQ(sizeof(big_uint64_buf_t), 8u);
 
+    BOOST_TEST_EQ(sizeof(big_float32_buf_t), 4u);
+    BOOST_TEST_EQ(sizeof(big_float64_buf_t), 8u);
+
     BOOST_TEST_EQ(sizeof(little_int8_buf_t), 1u);
     BOOST_TEST_EQ(sizeof(little_int16_buf_t), 2u);
     BOOST_TEST_EQ(sizeof(little_int24_buf_t), 3u);
@@ -67,6 +68,9 @@ namespace
     BOOST_TEST_EQ(sizeof(little_uint48_buf_t), 6u);
     BOOST_TEST_EQ(sizeof(little_uint56_buf_t), 7u);
     BOOST_TEST_EQ(sizeof(little_uint64_buf_t), 8u);
+
+    BOOST_TEST_EQ(sizeof(little_float32_buf_t), 4u);
+    BOOST_TEST_EQ(sizeof(little_float64_buf_t), 8u);
 
     BOOST_TEST_EQ(sizeof(native_int8_buf_t), 1u);
     BOOST_TEST_EQ(sizeof(native_int16_buf_t), 2u);
@@ -86,6 +90,9 @@ namespace
     BOOST_TEST_EQ(sizeof(native_uint56_buf_t), 7u);
     BOOST_TEST_EQ(sizeof(native_uint64_buf_t), 8u);
 
+    BOOST_TEST_EQ(sizeof(native_float32_buf_t), 4u);
+    BOOST_TEST_EQ(sizeof(native_float64_buf_t), 8u);
+
     BOOST_TEST_EQ(sizeof(big_int8_buf_at), 1u);
     BOOST_TEST_EQ(sizeof(big_int16_buf_at), 2u);
     BOOST_TEST_EQ(sizeof(big_int32_buf_at), 4u);
@@ -96,6 +103,9 @@ namespace
     BOOST_TEST_EQ(sizeof(big_uint32_buf_at), 4u);
     BOOST_TEST_EQ(sizeof(big_uint64_buf_at), 8u);
 
+    BOOST_TEST_EQ(sizeof(big_float32_buf_at), 4u);
+    BOOST_TEST_EQ(sizeof(big_float64_buf_at), 8u);
+
     BOOST_TEST_EQ(sizeof(little_int8_buf_at), 1u);
     BOOST_TEST_EQ(sizeof(little_int16_buf_at), 2u);
     BOOST_TEST_EQ(sizeof(little_int32_buf_at), 4u);
@@ -105,6 +115,10 @@ namespace
     BOOST_TEST_EQ(sizeof(little_uint16_buf_at), 2u);
     BOOST_TEST_EQ(sizeof(little_uint32_buf_at), 4u);
     BOOST_TEST_EQ(sizeof(little_uint64_buf_at), 8u);
+
+    BOOST_TEST_EQ(sizeof(little_float32_buf_at), 4u);
+    BOOST_TEST_EQ(sizeof(little_float64_buf_at), 8u);
+
   } // check_size
 
   //  test_inserter_and_extractor  -----------------------------------------------------//
@@ -178,7 +192,10 @@ namespace
     test_buffer_type< big_uint8_buf_at>( 0x01, 0xFE );
     test_buffer_type<big_uint16_buf_at>( 0x0102, 0xFE02 );
     test_buffer_type<big_uint32_buf_at>( 0x01020304, 0xFE020304 );
-    test_buffer_type<big_uint64_buf_at>( 0x0102030405060708ULL, 0xFE02030405060708LL );
+    test_buffer_type<big_uint64_buf_at>( 0x0102030405060708ULL, 0xFE02030405060708ULL );
+
+    test_buffer_type<big_float32_buf_at>( +1.5f, -3.14f );
+    test_buffer_type<big_float64_buf_at>( +1.5, -3.14 );
 
     test_buffer_type< little_int8_buf_at>( 0x01, -0x01 );
     test_buffer_type<little_int16_buf_at>( 0x0102, -0x0102 );
@@ -188,7 +205,10 @@ namespace
     test_buffer_type< little_uint8_buf_at>( 0x01, 0xFE );
     test_buffer_type<little_uint16_buf_at>( 0x0102, 0xFE02 );
     test_buffer_type<little_uint32_buf_at>( 0x01020304, 0xFE020304 );
-    test_buffer_type<little_uint64_buf_at>( 0x0102030405060708ULL, 0xFE02030405060708LL );
+    test_buffer_type<little_uint64_buf_at>( 0x0102030405060708ULL, 0xFE02030405060708ULL );
+
+    test_buffer_type<little_float32_buf_at>( +1.5f, -3.14f );
+    test_buffer_type<little_float64_buf_at>( +1.5, -3.14 );
 
     test_buffer_type< big_int8_buf_t>( 0x01, -0x01 );
     test_buffer_type<big_int16_buf_t>( 0x0102, -0x0102 );
@@ -199,6 +219,9 @@ namespace
     test_buffer_type<big_int56_buf_t>( 0x01020304050607LL, -0x01020304050607LL );
     test_buffer_type<big_int64_buf_t>( 0x0102030405060708LL, -0x0102030405060708LL );
 
+    test_buffer_type<big_float32_buf_t>( +1.5f, -3.14f );
+    test_buffer_type<big_float64_buf_t>( +1.5, -3.14 );
+
     test_buffer_type< little_uint8_buf_t>( 0x01, 0xFE );
     test_buffer_type<little_uint16_buf_t>( 0x0102, 0xFE02 );
     test_buffer_type<little_uint24_buf_t>( 0x010203, 0xFE0203 );
@@ -206,30 +229,56 @@ namespace
     test_buffer_type<little_uint40_buf_t>( 0x0102030405ULL, 0xFE02030405ULL );
     test_buffer_type<little_uint48_buf_t>( 0x010203040506ULL, 0xFE0203040506ULL );
     test_buffer_type<little_uint56_buf_t>( 0x01020304050607ULL, 0xFE020304050607ULL );
-    test_buffer_type<little_uint64_buf_t>( 0x0102030405060708ULL, 0xFE02030405060708LL );
+    test_buffer_type<little_uint64_buf_t>( 0x0102030405060708ULL, 0xFE02030405060708ULL );
+
+    test_buffer_type<little_float32_buf_t>( +1.5f, -3.14f );
+    test_buffer_type<little_float64_buf_t>( +1.5, -3.14 );
 
     std::cout << "test construction and assignment complete" << std::endl;
   }
 
-  template <typename Int>
+  template <typename T>
   void test_boundary_values_()
   {
-    test_buffer_type< endian_buffer<order::big, Int, sizeof(Int) * CHAR_BIT, align::no> >( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max() );
-    test_buffer_type< endian_buffer<order::big, Int, sizeof(Int) * CHAR_BIT, align::no> >( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max() );
-    test_buffer_type< endian_buffer<order::big, Int, sizeof(Int) * CHAR_BIT, align::yes> >( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max() );
-    test_buffer_type< endian_buffer<order::big, Int, sizeof(Int) * CHAR_BIT, align::yes> >( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max() );
+    test_buffer_type< endian_buffer<order::big,    T, sizeof(T) * CHAR_BIT, align::no > >( std::numeric_limits<T>::min(), std::numeric_limits<T>::max() );
+    test_buffer_type< endian_buffer<order::little, T, sizeof(T) * CHAR_BIT, align::no > >( std::numeric_limits<T>::min(), std::numeric_limits<T>::max() );
+    test_buffer_type< endian_buffer<order::big,    T, sizeof(T) * CHAR_BIT, align::yes> >( std::numeric_limits<T>::min(), std::numeric_limits<T>::max() );
+    test_buffer_type< endian_buffer<order::little, T, sizeof(T) * CHAR_BIT, align::yes> >( std::numeric_limits<T>::min(), std::numeric_limits<T>::max() );
   }
 
   void test_boundary_values()
   {
     std::cout << "test boundary values..." << std::endl;
 
-    test_boundary_values_<signed int>();
-    test_boundary_values_<unsigned int>();
-    test_boundary_values_<signed short>();
-    test_boundary_values_<unsigned short>();
+    // integer types
+
     test_boundary_values_<signed char>();
     test_boundary_values_<unsigned char>();
+    test_boundary_values_<signed short>();
+    test_boundary_values_<unsigned short>();
+    test_boundary_values_<signed int>();
+    test_boundary_values_<unsigned int>();
+    test_boundary_values_<signed long>();
+    test_boundary_values_<unsigned long>();
+    test_boundary_values_<signed long long>();
+    test_boundary_values_<unsigned long long>();
+
+    // character types
+
+    test_boundary_values_<char>();
+
+#if !defined(BOOST_NO_CXX11_CHAR16_T)
+    test_boundary_values_<char16_t>();
+#endif
+
+#if !defined(BOOST_NO_CXX11_CHAR32_T)
+    test_boundary_values_<char32_t>();
+#endif
+
+    // floating-point types
+
+    test_boundary_values_<float>();
+    test_boundary_values_<double>();
 
     std::cout << "test boundary values complete" << std::endl;
   }
@@ -270,6 +319,19 @@ int cpp_main(int, char *[])
   cout << "  done" << endl;
 
   return ::boost::report_errors();
+}
+
+int main( int argc, char* argv[] )
+{
+    try
+    {
+        return cpp_main( argc, argv );
+    }
+    catch( std::exception const & x )
+    {
+        BOOST_ERROR( x.what() );
+        return boost::report_errors();
+    }
 }
 
 #include <boost/endian/detail/disable_warnings_pop.hpp>

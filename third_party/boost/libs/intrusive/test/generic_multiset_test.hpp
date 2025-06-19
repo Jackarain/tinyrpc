@@ -10,16 +10,18 @@
 // See http://www.boost.org/libs/intrusive for documentation.
 //
 /////////////////////////////////////////////////////////////////////////////
-#include <boost/container/vector.hpp>
 #include <boost/intrusive/detail/config_begin.hpp>
+
+#include <boost/container/vector.hpp>
 #include "common_functors.hpp"
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <boost/intrusive/options.hpp>
 #include <boost/intrusive/detail/iterator.hpp>
 #include "test_macros.hpp"
 #include "test_container.hpp"
 #include "generic_assoc_test.hpp"
 #include <typeinfo>
+#include <functional> //std::greater
 
 namespace boost{
 namespace intrusive{
@@ -44,7 +46,7 @@ void test_generic_multiset<ContainerDefiner>::test_all ()
 {
    static const int random_init[6] = { 3, 2, 4, 1, 5, 2 };
    value_cont_type values (6);
-   for (int i = 0; i < 6; ++i)
+   for (std::size_t i = 0u; i < 6u; ++i)
       (&values[i])->value_ = random_init[i];
    typedef typename ContainerDefiner::template container
       <>::type multiset_type;
@@ -75,13 +77,13 @@ template<class ContainerDefiner>
 void test_generic_multiset<ContainerDefiner>::test_impl()
 {
    value_cont_type values (5);
-   for (int i = 0; i < 5; ++i)
-      (&values[i])->value_ = i;
+   for (std::size_t i = 0u; i < 5u; ++i)
+      (&values[i])->value_ = (int)i;
    typedef typename ContainerDefiner::template container
       <>::type multiset_type;
 
    multiset_type testset;
-   for (int i = 0; i < 5; ++i)
+   for (std::size_t i = 0; i < 5u; ++i)
       testset.insert (values[i]);
 
    testset.erase (testset.iterator_to (values[0]));
@@ -232,7 +234,6 @@ void test_generic_multiset<ContainerDefiner>::test_find(value_cont_type& values)
    typedef typename multiset_type::key_of_value key_of_value;
    multiset_type testset (values.begin(), values.end());
    typedef typename multiset_type::iterator        iterator;
-   typedef typename multiset_type::const_iterator  const_iterator;
 
    {
       value_cont_type cmp_val_cont(1);
@@ -254,9 +255,8 @@ void test_generic_multiset<ContainerDefiner>::test_find(value_cont_type& values)
       BOOST_TEST (testset.find (7, any_less()) == testset.end());
    }
    {  //1, 2, 2, 3, 4, 5
-      const multiset_type &const_testset = testset;
+
       std::pair<iterator,iterator> range;
-      std::pair<const_iterator, const_iterator> const_range;
       value_cont_type cmp_val_cont(2);
       typename value_cont_type::reference cmp_val_lower = cmp_val_cont.front();
       typename value_cont_type::reference cmp_val_upper = cmp_val_cont.back();
@@ -270,6 +270,9 @@ void test_generic_multiset<ContainerDefiner>::test_find(value_cont_type& values)
       BOOST_TEST (range.second->value_ == 3);
       BOOST_TEST (boost::intrusive::iterator_distance (range.first, range.second) == 3);
       }
+      const multiset_type &const_testset = testset;
+      typedef typename multiset_type::const_iterator  const_iterator;
+      std::pair<const_iterator, const_iterator> const_range;
       {
       (&cmp_val_lower)->value_ = 1;
       (&cmp_val_upper)->value_ = 2;

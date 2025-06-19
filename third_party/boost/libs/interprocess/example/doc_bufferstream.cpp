@@ -7,7 +7,7 @@
 // See http://www.boost.org/libs/interprocess for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/interprocess/detail/config_begin.hpp>
+
 #include <boost/interprocess/detail/workaround.hpp>
 //[doc_bufferstream
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -26,50 +26,31 @@ int main ()
    //Remove shared memory on construction and destruction
    struct shm_remove
    {
-   //<-
-   #if 1
       shm_remove() { shared_memory_object::remove(test::get_process_id_name()); }
       ~shm_remove(){ shared_memory_object::remove(test::get_process_id_name()); }
-   #else
-   //->
-      shm_remove() { shared_memory_object::remove("MySharedMemory"); }
-      ~shm_remove(){ shared_memory_object::remove("MySharedMemory"); }
-   //<-
-   #endif
-   //->
    } remover;
    //<-
    (void)remover;
    //->
 
    //Create shared memory
-   //<-
-   #if 1
    managed_shared_memory segment(create_only,test::get_process_id_name(), 65536);
-   #else
-   //->
-   managed_shared_memory segment(create_only,
-                                 "MySharedMemory",  //segment name
-                                 65536);
-   //<-
-   #endif
-   //->
 
    //Fill data
    std::vector<int> data;
    data.reserve(100);
-   for(int i = 0; i < 100; ++i){
-      data.push_back(i);
+   for(std::size_t i = 0; i < 100; ++i){
+      data.push_back((int)i);
    }
    const std::size_t BufferSize = 100*5;
 
    //Allocate a buffer in shared memory to write data
    char *my_cstring =
-      segment.construct<char>("MyCString")[BufferSize](0);
+      segment.construct<char>("MyCString")[BufferSize]('\0');
    bufferstream mybufstream(my_cstring, BufferSize);
 
    //Now write data to the buffer
-   for(int i = 0; i < 100; ++i){
+   for(std::size_t i = 0; i < 100; ++i){
       mybufstream << data[i] << std::endl;
    }
 
@@ -95,8 +76,8 @@ int main ()
    mybufstream.seekp(0, std::ios::beg);
 
    //Now write again the data trying to do a buffer overflow
-   for(int i = 0, m = data.size()*5; i < m; ++i){
-      mybufstream << data[i%5] << std::endl;
+   for(std::size_t i = 0, m = data.size()*5; i < m; ++i){
+      mybufstream << data[i%5u] << std::endl;
    }
 
    //Now make sure badbit is active
@@ -107,4 +88,4 @@ int main ()
    return 0;
 }
 //]
-#include <boost/interprocess/detail/config_end.hpp>
+

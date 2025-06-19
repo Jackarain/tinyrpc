@@ -8,16 +8,22 @@
 
 # See library home page at http://www.boost.org/libs/chrono
 
-project boost/chrono
+import-search /boost/config/checks ;
+import config : requires ;
+
+local cxx11-requirements = [ requires cxx11_hdr_ratio cxx11_template_aliases cxx11_decltype cxx11_char16_t cxx11_char32_t ] ;
+
+project
     : source-location ../src
+    : common-requirements
+        <include>../include
+        <library>$(boost_dependencies)
     : requirements
         <target-os>freebsd:<linkflags>"-lrt"
         <target-os>linux:<linkflags>"-lrt -lpthread"
         <toolset>pgi:<linkflags>"-lrt"
         #<threading>single:<define>BOOST_CHRONO_THREAD_DISABLED
-        <library>/boost/system//boost_system
         #<define>BOOST_ERROR_CODE_HEADER_ONLY
-        #<define>BOOST_SYSTEM_INLINED
         #<define>BOOST_COMMON_TYPE_USES_STATIC_ASSERT
         #<define>BOOST_RATIO_USES_STATIC_ASSERT
         #<define>BOOST_CHRONO_USES_STATIC_ASSERT
@@ -33,15 +39,13 @@ project boost/chrono
         #<toolset>gcc-mingw-4.4.0:<linkflags>--enable-auto-import
         #<toolset>gcc-mingw-4.5.0:<linkflags>--enable-auto-import
         <warnings>all
-        <toolset>gcc:<cxxflags>-Wextra
-        #<toolset>gcc:<cxxflags>-pedantic
-        <toolset>clang:<warnings>on
+        <toolset>gcc:<warnings>extra
+        #<toolset>gcc:<warnings>pedantic
         <toolset>gcc:<cxxflags>-Wno-long-long
         #<toolset>gcc:<cxxflags>-Wno-variadic-macros
         <toolset>gcc-4:<cxxflags>-Wno-variadic-macros
         <toolset>gcc-5:<cxxflags>-Wno-variadic-macros
-        <toolset>darwin:<cxxflags>-Wextra
-        <toolset>darwin:<cxxflags>-pedantic
+        <toolset>darwin:<warnings>pedantic
         <toolset>darwin:<cxxflags>-Wno-long-long
         #<toolset>darwin:<cxxflags>-Wno-variadic-macros
         <toolset>darwin-4:<cxxflags>-Wno-variadic-macros
@@ -49,16 +53,15 @@ project boost/chrono
         #<toolset>pathscale:<cxxflags>-Wextra
         <toolset>pathscale:<cxxflags>-Wno-long-long
         <toolset>pathscale:<cxxflags>-pedantic
-        <toolset>clang:<cxxflags>-Wextra
-        <toolset>clang:<cxxflags>-pedantic
+        <toolset>clang:<warnings>pedantic
         <toolset>clang:<cxxflags>-Wno-long-long
         <toolset>clang:<cxxflags>-Wno-variadic-macros
-        <toolset>gcc-4.4.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
- 	<toolset>gcc-4.5.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
- 	<toolset>gcc-4.6.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
- 	<toolset>gcc-4.6.3,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
- 	<toolset>gcc-4.7.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
- 	<toolset>gcc-4.8.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option 
+        <toolset>gcc-4.4.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option
+        <toolset>gcc-4.5.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option
+        <toolset>gcc-4.6.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option
+        <toolset>gcc-4.6.3,<target-os>windows:<cxxflags>-fdiagnostics-show-option
+        <toolset>gcc-4.7.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option
+        <toolset>gcc-4.8.0,<target-os>windows:<cxxflags>-fdiagnostics-show-option
         <toolset>msvc:<cxxflags>/wd4512
 
 # Note: Some of the remarks from the Intel compiler are disabled
@@ -74,15 +77,13 @@ project boost/chrono
         <toolset>intel:<cxxflags>-wd193,304,383,444
         <toolset>intel:<cxxflags>-wd593,981
         <toolset>intel:<cxxflags>-wd1418
-	  <toolset>intel:<cxxflags>-wd2415
+        <toolset>intel:<cxxflags>-wd2415
 
 
 
     : usage-requirements  # pass these requirement to dependents (i.e. users)
         <threading>single:<define>BOOST_CHRONO_THREAD_DISABLED
-        <library>/boost/system//boost_system
         #<define>BOOST_ERROR_CODE_HEADER_ONLY
-        #<define>BOOST_SYSTEM_INLINED
         #<define>BOOST_COMMON_TYPE_USES_STATIC_ASSERT
         #<define>BOOST_RATIO_USES_STATIC_ASSERT
         #<define>BOOST_CHRONO_USES_STATIC_ASSERT
@@ -98,10 +99,11 @@ project boost/chrono
 
         <link>shared:<define>BOOST_CHRONO_DYN_LINK=1
         <link>static:<define>BOOST_CHRONO_STATIC_LINK=1
+        <define>BOOST_CHRONO_NO_LIB=1
         <toolset>gcc-3.4.4:<linkflags>--enable-auto-import
         <toolset>gcc-4.3.4:<linkflags>--enable-auto-import
-        <toolset>gcc-4.4.0,<target-os>windows:<linkflags>--enable-auto-import 
- 	<toolset>gcc-4.5.0,<target-os>windows:<linkflags>--enable-auto-import 
+        <toolset>gcc-4.4.0,<target-os>windows:<linkflags>--enable-auto-import
+        <toolset>gcc-4.5.0,<target-os>windows:<linkflags>--enable-auto-import
     ;
 
 SOURCES = chrono thread_clock process_cpu_clocks ;
@@ -110,7 +112,7 @@ SOURCES = chrono thread_clock process_cpu_clocks ;
 lib boost_chrono
     : $(SOURCES).cpp
     :
-    <link>shared:<define>BOOST_ALL_DYN_LINK=1 # tell source we're building dll's
-    <link>static:<define>BOOST_All_STATIC_LINK=1 # tell source we're building static lib's
+    $(cxx11-requirements)
+    <link>shared:<define>BOOST_CHRONO_DYN_LINK=1 # tell source we're building dll's
+    <link>static:<define>BOOST_CHRONO_STATIC_LINK=1 # tell source we're building static lib's
     ;
-

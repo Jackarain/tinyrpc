@@ -8,11 +8,12 @@
 
 #include <boost/math/concepts/real_concept.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
+#include "../include_private/boost/math/tools/test.hpp"
 #include <boost/math/tools/stats.hpp>
-#include <boost/math/tools/test.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
 #include <boost/array.hpp>
@@ -214,8 +215,8 @@ void test_spots(T)
    }
    if(std::numeric_limits<T>::max_exponent >= 1024)
    {
-      BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(170), static_cast<T>(165)), static_cast<T>(2.737338337642022829223832094019477918166996032112404370e304L), tolerance);
-      BOOST_CHECK_CLOSE(::boost::math::tgamma_lower(static_cast<T>(170), static_cast<T>(165)), static_cast<T>(1.531729671362682445715419794880088619901822603944331733e304L), tolerance);
+      BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(170), static_cast<T>(165)), static_cast<T>(2.737338337642022829223832094019477918166996032112404370e304L), (std::numeric_limits<T>::digits > 100 ? 10 : 3) * tolerance);
+      BOOST_CHECK_CLOSE(::boost::math::tgamma_lower(static_cast<T>(170), static_cast<T>(165)), static_cast<T>(1.531729671362682445715419794880088619901822603944331733e304L), 3 * tolerance);
       BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(170), static_cast<T>(170)), static_cast<T>(2.090991698081449410761040647015858316167077909285580375e304L), 10 * tolerance);
       BOOST_CHECK_CLOSE(::boost::math::tgamma_lower(static_cast<T>(170), static_cast<T>(170)), static_cast<T>(2.178076310923255864178211241883708221901740726771155728e304L), 10 * tolerance);
       BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(170), static_cast<T>(190)), static_cast<T>(2.8359275512790301602903689596273175148895758522893941392e303L), 10 * tolerance);
@@ -229,5 +230,30 @@ void test_spots(T)
       BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(50.5), ldexp(static_cast<T>(1), -17)), static_cast<T>(4.2904629123519598109157551960589377e63L), tolerance * 10);
       BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(164.5), static_cast<T>(0.125)), static_cast<T>(2.5649307433687542701168405519538910e292L), tolerance * 10);
    }
+   //
+   // Check very large parameters, see: https://github.com/boostorg/math/issues/168
+   //
+   T max_val = boost::math::tools::max_value<T>();
+   T large_val = max_val * 0.99f;
+   BOOST_CHECK_EQUAL(::boost::math::tgamma(static_cast<T>(22.25), max_val), 0);
+   BOOST_CHECK_EQUAL(::boost::math::tgamma(static_cast<T>(22.25), large_val), 0);
+   BOOST_CHECK_EQUAL(::boost::math::tgamma_lower(static_cast<T>(22.25), max_val), boost::math::tgamma(static_cast<T>(22.25)));
+   BOOST_CHECK_EQUAL(::boost::math::tgamma_lower(static_cast<T>(22.25), large_val), boost::math::tgamma(static_cast<T>(22.25)));
+   BOOST_CHECK_EQUAL(::boost::math::gamma_q(static_cast<T>(22.25), max_val), 0);
+   BOOST_CHECK_EQUAL(::boost::math::gamma_q(static_cast<T>(22.25), large_val), 0);
+   BOOST_CHECK_EQUAL(::boost::math::gamma_p(static_cast<T>(22.25), max_val), 1);
+   BOOST_CHECK_EQUAL(::boost::math::gamma_p(static_cast<T>(22.25), large_val), 1);
+   if (std::numeric_limits<T>::has_infinity)
+   {
+      BOOST_CHECK_EQUAL(::boost::math::tgamma(static_cast<T>(22.25), std::numeric_limits<T>::infinity()), 0);
+      BOOST_CHECK_EQUAL(::boost::math::tgamma_lower(static_cast<T>(22.25), std::numeric_limits<T>::infinity()), boost::math::tgamma(static_cast<T>(22.25)));
+      BOOST_CHECK_EQUAL(::boost::math::gamma_q(static_cast<T>(22.25), std::numeric_limits<T>::infinity()), 0);
+      BOOST_CHECK_EQUAL(::boost::math::gamma_p(static_cast<T>(22.25), std::numeric_limits<T>::infinity()), 1);
+   }
+   //
+   // Large arguments and small parameters, see https://github.com/boostorg/math/issues/451:
+   //
+   BOOST_CHECK_EQUAL(::boost::math::gamma_q(static_cast<T>(1770), static_cast<T>(1e-12)), 1);
+   BOOST_CHECK_EQUAL(::boost::math::gamma_p(static_cast<T>(1770), static_cast<T>(1e-12)), 0);
 }
 

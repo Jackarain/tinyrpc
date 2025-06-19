@@ -50,7 +50,7 @@ void expected_results()
    largest_type = "(long\\s+)?double";
 #endif
    //
-   // Linux special cases, error rates seem to be much higer here
+   // Linux special cases, error rates seem to be much higher here
    // even though the implementation contains nothing but basic
    // arithmetic?
    //
@@ -78,6 +78,20 @@ void expected_results()
       ".*",                          // compiler
       ".*",                          // stdlib
       "linux.*|Mac OS|Sun.*",        // platform
+      "real_concept",                // test type(s)
+      ".*",                          // test data group
+      ".*", 40000, 1000);            // test function
+   add_expected_result(
+      "GNU.*",                       // compiler
+      ".*",                          // stdlib
+      "Cygwin*",                     // platform
+      largest_type,                  // test type(s)
+      ".*",                          // test data group
+      ".*", 40000, 1000);            // test function
+   add_expected_result(
+      "GNU.*",                       // compiler
+      ".*",                          // stdlib
+      "Cygwin*",                     // platform
       "real_concept",                // test type(s)
       ".*",                          // test data group
       ".*", 40000, 1000);            // test function
@@ -146,7 +160,9 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_spots(0.0, "double");
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_spots(0.0L, "long double");
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
    test_spots(boost::math::concepts::real_concept(0.1), "real_concept");
+#endif
 #endif
 
    expected_results();

@@ -1,10 +1,10 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 //
 // Copyright (c) 2007-2015 Barend Gehrels, Amsterdam, the Netherlands.
-// Copyright (c) 2017 Adam Wulkiewicz, Lodz, Poland.
+// Copyright (c) 2017-2023 Adam Wulkiewicz, Lodz, Poland.
 //
-// This file was modified by Oracle on 2017.
-// Modifications copyright (c) 2017 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2017-2021.
+// Modifications copyright (c) 2017-2021 Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 //
 // Use, modification and distribution is subject to the Boost Software License,
@@ -15,24 +15,24 @@
 
 #include <algorithms/test_overlay.hpp>
 
+#include <boost/geometry/algorithms/area.hpp>
+#include <boost/geometry/algorithms/detail/partition.hpp>
+#include <boost/geometry/algorithms/equals.hpp>
+#include <boost/geometry/algorithms/intersection.hpp>
+#include <boost/geometry/algorithms/intersects.hpp>
 
-#include <boost/geometry/geometry.hpp>
 #include <boost/geometry/geometries/multi_point.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
 
-#include <boost/geometry/algorithms/detail/partition.hpp>
-
-#include <boost/geometry/io/wkt/wkt.hpp>
-
 #if defined(TEST_WITH_SVG)
 # include <boost/geometry/io/svg/svg_mapper.hpp>
 #endif
+#include <boost/geometry/io/wkt/wkt.hpp>
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <random>
 
 
 template <typename Box>
@@ -51,7 +51,7 @@ struct box_item
 };
 
 
-struct get_box
+struct expand_for_box
 {
     template <typename Box, typename InputItem>
     static inline void apply(Box& total, InputItem const& item)
@@ -60,12 +60,17 @@ struct get_box
     }
 };
 
-struct ovelaps_box
+struct overlaps_box
 {
     template <typename Box, typename InputItem>
     static inline bool apply(Box const& box, InputItem const& item)
     {
-        return ! bg::detail::disjoint::disjoint_box_box(box, item.box);
+        typename bg::strategy::disjoint::services::default_strategy
+            <
+                Box, Box
+            >::type strategy;
+
+        return ! bg::detail::disjoint::disjoint_box_box(box, item.box, strategy);
     }
 };
 
@@ -146,7 +151,7 @@ void test_boxes(std::string const& wkt_box_list, double expected_area, int expec
     std::vector<sample> boxes;
 
     int index = 1;
-    BOOST_FOREACH(std::string const& wkt, wkt_boxes)
+    for (std::string const& wkt : wkt_boxes)
     {
         boxes.push_back(sample(index++, wkt));
     }
@@ -155,7 +160,7 @@ void test_boxes(std::string const& wkt_box_list, double expected_area, int expec
     bg::partition
         <
             Box
-        >::apply(boxes, visitor, get_box(), ovelaps_box(), 1);
+        >::apply(boxes, visitor, expand_for_box(), overlaps_box(), 1);
 
     BOOST_CHECK_CLOSE(visitor.area, expected_area, 0.001);
     BOOST_CHECK_EQUAL(visitor.count, expected_count);
@@ -177,7 +182,7 @@ struct point_item
 BOOST_GEOMETRY_REGISTER_POINT_2D(point_item, double, cs::cartesian, x, y)
 
 
-struct get_point
+struct expand_for_point
 {
     template <typename Box, typename InputItem>
     static inline void apply(Box& total, InputItem const& item)
@@ -186,7 +191,7 @@ struct get_point
     }
 };
 
-struct ovelaps_point
+struct overlaps_point
 {
     template <typename Box, typename InputItem>
     static inline bool apply(Box const& box, InputItem const& item)
@@ -224,18 +229,18 @@ void test_points(std::string const& wkt1, std::string const& wkt2, int expected_
     bg::read_wkt(wkt2, mp2);
 
     int id = 1;
-    BOOST_FOREACH(point_item& p, mp1)
+    for (point_item& p : mp1)
     { p.id = id++; }
     id = 1;
-    BOOST_FOREACH(point_item& p, mp2)
+    for (point_item& p : mp2)
     { p.id = id++; }
 
     point_visitor visitor;
     bg::partition
         <
             bg::model::box<point_item>
-        >::apply(mp1, mp2, visitor, get_point(), ovelaps_point(),
-                 get_point(), ovelaps_point(), 1);
+        >::apply(mp1, mp2, visitor, expand_for_point(), overlaps_point(),
+                 expand_for_point(), overlaps_point(), 1);
 
     BOOST_CHECK_EQUAL(visitor.count, expected_count);
 }
@@ -310,21 +315,17 @@ struct svg_visitor
 template <typename Collection>
 void fill_points(Collection& collection, int seed, int size, int count)
 {
-    typedef boost::minstd_rand base_generator_type;
-
-    base_generator_type generator(seed);
-
-    boost::uniform_int<> random_coordinate(0, size - 1);
-    boost::variate_generator<base_generator_type&, boost::uniform_int<> >
-        coordinate_generator(generator, random_coordinate);
+    std::uniform_int_distribution<int> distribution(0, size - 1);
+    std::seed_seq ssq{seed};
+    std::default_random_engine re(ssq);
 
     std::set<std::pair<int, int> > included;
 
     int n = 0;
     for (int i = 0; n < count && i < count*count; i++)
     {
-        int x = coordinate_generator();
-        int y = coordinate_generator();
+        int x = distribution(re);
+        int y = distribution(re);
         std::pair<int, int> pair = std::make_pair(x, y);
         if (included.find(pair) == included.end())
         {
@@ -347,9 +348,9 @@ void test_many_points(int seed, int size, int count)
 
     // Test equality in quadratic loop
     int expected_count = 0;
-    BOOST_FOREACH(point_item const& item1, mp1)
+    for (point_item const& item1 : mp1)
     {
-        BOOST_FOREACH(point_item const& item2, mp2)
+        for (point_item const& item2 : mp2)
         {
             if (bg::equals(item1, item2))
             {
@@ -384,17 +385,17 @@ void test_many_points(int seed, int size, int count)
             bg::model::box<point_item>,
             bg::detail::partition::include_all_policy,
             bg::detail::partition::include_all_policy
-        >::apply(mp1, mp2, visitor, get_point(), ovelaps_point(),
-                 get_point(), ovelaps_point(), 2, box_visitor);
+        >::apply(mp1, mp2, visitor, expand_for_point(), overlaps_point(),
+                 expand_for_point(), overlaps_point(), 2, box_visitor);
 
     BOOST_CHECK_EQUAL(visitor.count, expected_count);
 
 #if defined(TEST_WITH_SVG)
-    BOOST_FOREACH(point_item const& item, mp1)
+    for (point_item const& item : mp1)
     {
         mapper.map(item, "fill:rgb(255,128,0);stroke:rgb(0,0,100);stroke-width:1", 8);
     }
-    BOOST_FOREACH(point_item const& item, mp2)
+    for (point_item const& item : mp2)
     {
         mapper.map(item, "fill:rgb(0,128,255);stroke:rgb(0,0,100);stroke-width:1", 4);
     }
@@ -404,23 +405,19 @@ void test_many_points(int seed, int size, int count)
 template <typename Collection>
 void fill_boxes(Collection& collection, int seed, int size, int count)
 {
-    typedef boost::minstd_rand base_generator_type;
-
-    base_generator_type generator(seed);
-
-    boost::uniform_int<> random_coordinate(0, size * 10 - 1);
-    boost::variate_generator<base_generator_type&, boost::uniform_int<> >
-        coordinate_generator(generator, random_coordinate);
+    std::uniform_int_distribution<int> distribution(0, size * 10 - 1);
+    std::seed_seq ssq{seed};
+    std::default_random_engine re(ssq);
 
     int n = 0;
     for (int i = 0; n < count && i < count*count; i++)
     {
-        int w = coordinate_generator() % 30;
-        int h = coordinate_generator() % 30;
+        int w = distribution(re) % 30;
+        int h = distribution(re) % 30;
         if (w > 0 && h > 0)
         {
-            int x = coordinate_generator();
-            int y = coordinate_generator();
+            int x = distribution(re);
+            int y = distribution(re);
             if (x + w < size * 10 && y + h < size * 10)
             {
                 typename boost::range_value<Collection>::type item(n+1);
@@ -442,9 +439,9 @@ void test_many_boxes(int seed, int size, int count)
     // Test equality in quadratic loop
     int expected_count = 0;
     double expected_area = 0.0;
-    BOOST_FOREACH(box_item<box_type> const& item1, boxes)
+    for (box_item<box_type> const& item1 : boxes)
     {
-        BOOST_FOREACH(box_item<box_type> const& item2, boxes)
+        for (box_item<box_type> const& item2 : boxes)
         {
             if (item1.id < item2.id)
             {
@@ -473,7 +470,7 @@ void test_many_boxes(int seed, int size, int count)
         p.x = size + 1; p.y = size + 1; mapper.add(p);
     }
 
-    BOOST_FOREACH(box_item<box_type> const& item, boxes)
+    for (box_item<box_type> const& item : boxes)
     {
         mapper.map(item.box, "opacity:0.6;fill:rgb(50,50,210);stroke:rgb(0,0,0);stroke-width:1");
     }
@@ -492,7 +489,7 @@ void test_many_boxes(int seed, int size, int count)
             box_type,
             bg::detail::partition::include_all_policy,
             bg::detail::partition::include_all_policy
-        >::apply(boxes, visitor, get_box(), ovelaps_box(),
+        >::apply(boxes, visitor, expand_for_box(), overlaps_box(),
                  2, partition_box_visitor);
 
     BOOST_CHECK_EQUAL(visitor.count, expected_count);
@@ -510,9 +507,9 @@ void test_two_collections(int seed1, int seed2, int size, int count)
     // Get expectations in quadratic loop
     int expected_count = 0;
     double expected_area = 0.0;
-    BOOST_FOREACH(box_item<box_type> const& item1, boxes1)
+    for (box_item<box_type> const& item1 : boxes1)
     {
-        BOOST_FOREACH(box_item<box_type> const& item2, boxes2)
+        for (box_item<box_type> const& item2 : boxes2)
         {
             if (bg::intersects(item1.box, item2.box))
             {
@@ -538,11 +535,11 @@ void test_two_collections(int seed1, int seed2, int size, int count)
         p.x = size + 1; p.y = size + 1; mapper.add(p);
     }
 
-    BOOST_FOREACH(box_item<box_type> const& item, boxes1)
+    for (box_item<box_type> const& item : boxes1)
     {
         mapper.map(item.box, "opacity:0.6;fill:rgb(50,50,210);stroke:rgb(0,0,0);stroke-width:1");
     }
-    BOOST_FOREACH(box_item<box_type> const& item, boxes2)
+    for (box_item<box_type> const& item : boxes2)
     {
         mapper.map(item.box, "opacity:0.6;fill:rgb(0,255,0);stroke:rgb(0,0,0);stroke-width:1");
     }
@@ -560,8 +557,8 @@ void test_two_collections(int seed1, int seed2, int size, int count)
             box_type,
             bg::detail::partition::include_all_policy,
             bg::detail::partition::include_all_policy
-        >::apply(boxes1, boxes2, visitor, get_box(), ovelaps_box(),
-                 get_box(), ovelaps_box(), 2, partition_box_visitor);
+        >::apply(boxes1, boxes2, visitor, expand_for_box(), overlaps_box(),
+                 expand_for_box(), overlaps_box(), 2, partition_box_visitor);
 
     BOOST_CHECK_EQUAL(visitor.count, expected_count);
     BOOST_CHECK_CLOSE(visitor.area, expected_area, 0.001);
@@ -579,9 +576,9 @@ void test_heterogenuous_collections(int seed1, int seed2, int size, int count)
 
     // Get expectations in quadratic loop
     int expected_count = 0;
-    BOOST_FOREACH(point_item const& point, points)
+    for (point_item const& point : points)
     {
-        BOOST_FOREACH(box_item<box_type> const& box_item, boxes)
+        for (box_item<box_type> const& box_item : boxes)
         {
             if (bg::within(point, box_item.box))
             {
@@ -604,11 +601,11 @@ void test_heterogenuous_collections(int seed1, int seed2, int size, int count)
         p.x = size + 1; p.y = size + 1; mapper.add(p);
     }
 
-    BOOST_FOREACH(point_item const& point, points)
+    for (point_item const& point : points)
     {
         mapper.map(point, "fill:rgb(255,128,0);stroke:rgb(0,0,100);stroke-width:1", 8);
     }
-    BOOST_FOREACH(box_item<box_type> const& item, boxes)
+    for (box_item<box_type> const& item : boxes)
     {
         mapper.map(item.box, "opacity:0.6;fill:rgb(0,255,0);stroke:rgb(0,0,0);stroke-width:1");
     }
@@ -626,8 +623,8 @@ void test_heterogenuous_collections(int seed1, int seed2, int size, int count)
             box_type,
             bg::detail::partition::include_all_policy,
             bg::detail::partition::include_all_policy
-        >::apply(points, boxes, visitor1, get_point(), ovelaps_point(),
-                 get_box(), ovelaps_box(), 2, partition_box_visitor);
+        >::apply(points, boxes, visitor1, expand_for_point(), overlaps_point(),
+                 expand_for_box(), overlaps_box(), 2, partition_box_visitor);
 
     reversed_point_in_box_visitor visitor2;
     bg::partition
@@ -635,8 +632,8 @@ void test_heterogenuous_collections(int seed1, int seed2, int size, int count)
             box_type,
             bg::detail::partition::include_all_policy,
             bg::detail::partition::include_all_policy
-        >::apply(boxes, points, visitor2, get_box(), ovelaps_box(),
-                 get_point(), ovelaps_point(), 2, partition_box_visitor);
+        >::apply(boxes, points, visitor2, expand_for_box(), overlaps_box(),
+                 expand_for_point(), overlaps_point(), 2, partition_box_visitor);
 
     BOOST_CHECK_EQUAL(visitor1.count, expected_count);
     BOOST_CHECK_EQUAL(visitor2.count, expected_count);

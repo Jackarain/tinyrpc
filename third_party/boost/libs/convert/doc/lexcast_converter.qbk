@@ -1,5 +1,5 @@
 [/
-  Copyright (c) Vladimir Batov 2009-2016
+  Copyright (c) Vladimir Batov 2009-2022
   Distributed under the Boost Software License, Version 1.0.
   See copy at http://www.boost.org/LICENSE_1_0.txt.
 ]
@@ -22,8 +22,8 @@ See the [classref boost::cnv::lexical_cast `boost::cnv::lexical_cast` implementa
 
 In order for a user-defined type to be integrated into the `boost::lexical_cast` framework and, consequently, deployed with the `boost::cnv::lexical_cast` converter:
 
-* ['TypeOut] needs to be [@http://en.cppreference.com/w/cpp/concept/CopyConstructible ['Copy Constructible]];
-* ['TypeOut] needs to be [@http://en.cppreference.com/w/cpp/concept/DefaultConstructible ['Default Constructible]];
+* ['TypeOut] needs to be [@http://en.cppreference.com/w/cpp/named_req/CopyConstructible ['Copy Constructible]];
+* ['TypeOut] needs to be [@http://en.cppreference.com/w/cpp/named_req/DefaultConstructible ['Default Constructible]];
 * ['TypeOut] needs to be ['Input Streamable];
 * ['TypeIn] needs to be ['Output Streamable].
 

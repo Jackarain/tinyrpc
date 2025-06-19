@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 //
 // Copyright (c) 2003 Eric Friedman, Itay Maman
-// Copyright (c) 2013 Antony Polukhin
+// Copyright (c) 2013-2025 Antony Polukhin
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -18,27 +18,8 @@
 // 2) variant_noexcept_test that tests Boost.Variant ability to compile 
 // and work with disabled exceptions
 
-#ifdef BOOST_NO_EXCEPTIONS
-// `boost/test/minimal.hpp` cannot work with exceptions disabled,
-// so we need the following workarounds for that case:
-namespace boost {
-    int exit_success = 0;
-}
 
-int test_main(int , char* []);
-
-int main( int argc, char* argv[] )
-{
-    return test_main(argc, argv);
-}
-
-#include <stdlib.h>
-#define BOOST_CHECK(exp) if (!(exp)) exit(EXIT_FAILURE)
-
-#else // BOOST_NO_EXCEPTIONS
-#   include "boost/test/minimal.hpp"
-#endif // BOOST_NO_EXCEPTIONS
-
+#include "boost/core/lightweight_test.hpp"
 
 #include "boost/variant.hpp"
 #include "boost/mpl/vector.hpp"
@@ -48,9 +29,9 @@ int main( int argc, char* argv[] )
 #include <sstream>
 #include <vector>
 #include <map>
-#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
 #include <tuple>
-#endif // !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
+
+struct Nil {};
 
 struct printer
     : boost::static_visitor<std::string>
@@ -78,7 +59,6 @@ struct printer
         return ost.str();
     }
 
-#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
     template <int...> struct indices {};
     template <typename... Ts, int... Is>
     std::string operator()(const std::tuple<Ts...>& tup, indices<Is...>) const
@@ -100,7 +80,6 @@ struct printer
     {
         return printer()(tup, make_indices<sizeof...(Ts)>());
     }
-#endif // !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
 
     template <typename T>
     std::string operator()(const T& operand) const
@@ -128,7 +107,7 @@ void test_recursive_variant()
     std::string result1( printer()(var1) );
 
     std::cout << "result1: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 ) 7 ) ");
 
     std::vector<var1_t> vec1_copy = vec1;
     vec1_copy.erase(vec1_copy.begin() + 2);
@@ -136,7 +115,7 @@ void test_recursive_variant()
     var1 = vec1_copy;
     result1 = printer()(var1);
     std::cout << "result1+: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
 
     // Uses move construction on compilers with rvalue references support
     result1 = printer()(
@@ -145,7 +124,7 @@ void test_recursive_variant()
         )
     );
     std::cout << "result1++: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
 
 
     var1_t vec1_another_copy(vec1_copy);
@@ -154,18 +133,18 @@ void test_recursive_variant()
         var1_t(vec1_copy)
     );
     std::cout << "result1+++1: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
 
     result1 = printer()(vec1_another_copy);
     std::cout << "result1++2: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 7 ) ");
 
     vec1_copy[2].swap(vec1_copy[2]);
     result1 = printer()(
         var1_t(vec1_copy)
     );
     std::cout << "result1.2: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
 
     typedef boost::make_recursive_variant<
           boost::variant<int, double>
@@ -182,7 +161,7 @@ void test_recursive_variant()
     std::string result2( printer()(var2) );
 
     std::cout << "result2: " << result2 << '\n';
-    BOOST_CHECK(result2 == "( 3 3.5 ( 3 3.5 ) 7 ) ");
+    BOOST_TEST(result2 == "( 3 3.5 ( 3 3.5 ) 7 ) ");
     
     typedef boost::make_recursive_variant<
           int
@@ -209,7 +188,7 @@ void test_recursive_variant()
     std::string result3( printer()(var4) );
 
     std::cout << "result2: " << result3 << '\n';
-    BOOST_CHECK(result3 == "( 3 5 ( 3.5 ( 3 5 ) ) 7 ) ");
+    BOOST_TEST(result3 == "( 3 5 ( 3.5 ( 3 5 ) ) 7 ) ");
 
     typedef boost::make_recursive_variant<
           double,
@@ -224,7 +203,7 @@ void test_recursive_variant()
     std::string result5( printer()(vec5) );
 
     std::cout << "result5: " << result5 << '\n';
-    BOOST_CHECK(result5 == "( 3.5 ( 3 5 ( 3 5 ) 7 ) 17.25 ) ");
+    BOOST_TEST(result5 == "( 3.5 ( 3 5 ( 3 5 ) 7 ) 17.25 ) ");
 
     typedef boost::make_recursive_variant<
           int,
@@ -232,7 +211,6 @@ void test_recursive_variant()
         >::type var6_t;
     var6_t var6;
 
-#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
     typedef boost::make_recursive_variant<
           int,
           std::tuple<int, boost::recursive_variant_>
@@ -244,8 +222,7 @@ void test_recursive_variant()
     std::string result7( printer()(var7) );
 
     std::cout << "result7: " << result7 << '\n';
-    BOOST_CHECK(result7 == "( 2 ( 1 0 ) ) ");
-#endif // !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
+    BOOST_TEST(result7 == "( 2 ( 1 0 ) ) ");
 }
 
 void test_recursive_variant_over()
@@ -267,7 +244,7 @@ void test_recursive_variant_over()
     std::string result1( printer()(var1) );
 
     std::cout << "result1: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 ) 7 ) ");
 
     std::vector<var1_t> vec1_copy = vec1;
     vec1_copy.erase(vec1_copy.begin() + 2);
@@ -275,7 +252,7 @@ void test_recursive_variant_over()
     var1 = vec1_copy;
     result1 = printer()(var1);
     std::cout << "result1+: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
 
     // Uses move construction on compilers with rvalue references support
     result1 = printer()(
@@ -284,7 +261,7 @@ void test_recursive_variant_over()
         )
     );
     std::cout << "result1++: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 7 ) 7 ) ");
 
 
     var1_t vec1_another_copy(vec1_copy);
@@ -293,11 +270,11 @@ void test_recursive_variant_over()
         var1_t(vec1_copy)
     );
     std::cout << "result1+++1: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 ( 3 5 ( 3 5 7 ) 7 ) 7 ) ");
 
     result1 = printer()(vec1_another_copy);
     std::cout << "result1++2: " << result1 << '\n';
-    BOOST_CHECK(result1 == "( 3 5 7 ) ");
+    BOOST_TEST(result1 == "( 3 5 7 ) ");
 
     typedef boost::make_recursive_variant_over<
           boost::mpl::vector<
@@ -316,7 +293,7 @@ void test_recursive_variant_over()
     std::string result2( printer()(var2) );
 
     std::cout << "result2: " << result2 << '\n';
-    BOOST_CHECK(result2 == "( 3 3.5 ( 3 3.5 ) 7 ) ");
+    BOOST_TEST(result2 == "( 3 3.5 ( 3 3.5 ) 7 ) ");
     
     typedef boost::make_recursive_variant_over<
           boost::mpl::vector<
@@ -354,7 +331,7 @@ void test_recursive_variant_over()
     std::string result3( printer()(var3) );
 
     std::cout << "result2: " << result3 << '\n';
-    BOOST_CHECK(result3 == "( 3 5 ( 3.5 ( 3 5 ) ) 7 ) ");
+    BOOST_TEST(result3 == "( 3 5 ( 3.5 ( 3 5 ) ) 7 ) ");
     
     typedef boost::make_recursive_variant_over<
           boost::mpl::vector<
@@ -371,13 +348,24 @@ void test_recursive_variant_over()
     std::string result5( printer()(vec5) );
 
     std::cout << "result5: " << result5 << '\n';
-    BOOST_CHECK(result5 == "( 3.5 ( 3 5 ( 3 5 ) 7 ) 17.25 ) ");
+    BOOST_TEST(result5 == "( 3.5 ( 3 5 ( 3 5 ) 7 ) 17.25 ) ");
 }
 
-int test_main(int , char* [])
+void test_recursive_variant_from_variant()
+{
+    // See https://github.com/boostorg/variant/issues/100
+    typedef boost::variant<Nil, double> Atom;
+    typedef boost::variant<Nil, boost::recursive_wrapper<Atom> > Variant;
+
+    BOOST_STATIC_ASSERT(!boost::is_constructible<Variant, Atom>::value);
+    BOOST_STATIC_ASSERT(boost::is_constructible<boost::variant<Nil, Atom>, Atom>::value);
+}
+
+int main()
 {
     test_recursive_variant();
     test_recursive_variant_over();
+    test_recursive_variant_from_variant();
 
-    return boost::exit_success;
+    return boost::report_errors();
 }

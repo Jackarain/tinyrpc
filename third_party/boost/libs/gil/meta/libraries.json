@@ -3,9 +3,10 @@
     "name": "GIL",
     "authors": [
         "Lubomir Bourdev",
-        "Hailin Jin"
+        "Hailin Jin",
+        "Christian Henning"
     ],
-    "description": "Generic Image Library",
+    "description": "(C++14) Generic Image Library",
     "category": [
         "Algorithms",
         "Containers",
@@ -14,6 +15,9 @@
         "Iterators"
     ],
     "maintainers": [
-	"Stefan Seefeld <stefan -at- seefeld.name>"
-    ]
+        "Stefan Seefeld <stefan -at- seefeld.name>",
+        "Mateusz Loskot <mateusz -at- loskot.net>",
+        "Pranam Lashkari <plashkari628 -at- gmail.com>"
+    ],
+    "cxxstd": "14"
 }

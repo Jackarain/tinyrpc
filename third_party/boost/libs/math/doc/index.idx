@@ -1,6 +1,11 @@
 # Boost.Math Indexing terms file.
 # Copyright John Maddock 2009 - 2012
-# Copyright Paul A. Bristow 2009 - 2012
+# Copyright Paul A. Bristow 2009 - 2019
+
+FAQ \<FAQ\w*\>
+
+cpp_bin_float \<cpp_bin_\w*\> 
+cpp_dec_float \<cpp_dec_\w*\>
 
 "Lanczos approximation" lanczos
 
@@ -9,6 +14,18 @@ closed form \<closed\w*\>
 expression \<express\w*\>
 
 constants  \<constant\w*\>
+
+multiprecision  \<\w*\multiprecision\w*\>
+
+quadrature
+
+differentiation
+autodiff
+
+integration
+interpolation \<interpol\w*\>
+
+zeta  \<\w*\closed\w*\>
 
 !scan-path boost/math .*\.hpp true
 
@@ -40,6 +57,18 @@ Rmath
 Cephes
 
 DCDFLIB
+
+feedback
+
+bug \<bug\w*\>
+
+GIT \<GIT\w*\>
+
+pow "" "math_toolkit\.powers\.ct_pow" function_name
+
+Trac
+directory
+file structure
 
 
 !rewrite-name "(?i)(?:A|The)\s+(.*)" "\1"

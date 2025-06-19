@@ -16,9 +16,9 @@
 //
 //
 #include "generative_tests.hpp"
-#include "boost/array.hpp"
-#include "boost/multi_array.hpp"
-#include "boost/cstdlib.hpp"
+#include <boost/array.hpp>
+#include <boost/multi_array.hpp>
+#include <boost/cstdlib.hpp>
 #include <algorithm>
 #include <iostream>
 
@@ -50,11 +50,11 @@ template <typename Array>
 void access(Array& A, const const_array_tag&) {
   typedef boost::multi_array<int,3> array3;
   array3 acopy(A);
-  BOOST_CHECK(::equal(acopy,A));
+  BOOST_TEST(::equal(acopy,A));
   ++tests_run;
 }
 
 
-int test_main(int,char*[]) {
+int main() {
   return run_generative_tests();
 }

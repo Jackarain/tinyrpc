@@ -33,13 +33,14 @@
 #include <boost/container/detail/type_traits.hpp>
 #include <boost/move/adl_move_swap.hpp> //adl_move_swap
 
+#include <boost/move/detail/launder.hpp> //
+#include <boost/move/detail/force_ptr.hpp>
+
 
 #include "varray_util.hpp"
 
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
-
-#include <boost/static_assert.hpp>
 
 #ifndef BOOST_NO_EXCEPTIONS
 #include <stdexcept>
@@ -1071,10 +1072,10 @@ public:
 
             typename aligned_storage
                <sizeof(value_type), alignment_of<value_type>::value>::type temp_storage;
-            value_type * val_p = static_cast<value_type*>(static_cast<void*>(&temp_storage));
+            value_type * val_p = move_detail::force_ptr<value_type*>(&temp_storage);
             sv::construct(dti(), val_p, ::boost::forward<Args>(args)...);                  // may throw
             sv::scoped_destructor<value_type> d(val_p);
-            sv::assign(position, ::boost::move(*val_p));                            // may throw
+            sv::assign(position, ::boost::move(*move_detail::launder(val_p)));                            // may throw
         }
 
         return position;
@@ -1114,10 +1115,10 @@ public:
          sv::move_backward(position, this->end() - 2, this->end() - 1);/*may throw*/\
          typename aligned_storage\
             <sizeof(value_type), alignment_of<value_type>::value>::type temp_storage;\
-         value_type * val_p = static_cast<value_type*>(static_cast<void*>(&temp_storage));\
+         value_type * val_p = move_detail::force_ptr<value_type*>(&temp_storage);\
          sv::construct(dti(), val_p BOOST_MOVE_I##N BOOST_MOVE_FWD##N ); /*may throw*/\
          sv::scoped_destructor<value_type> d(val_p);\
-         sv::assign(position, ::boost::move(*val_p));/*may throw*/\
+         sv::assign(position, ::boost::move(*move_detail::launder(val_p)));/*may throw*/\
       }\
       return position;\
    }\
@@ -1582,7 +1583,7 @@ private:
         storage_type;
 
         storage_type temp_storage;
-        value_type * temp_ptr = static_cast<value_type*>(static_cast<void*>(&temp_storage));
+        value_type * temp_ptr = move_detail::force_ptr<value_type*>(&temp_storage);
 
         ::memcpy(temp_ptr, this->data(), sizeof(Value) * this->size());
         ::memcpy(this->data(), other.data(), sizeof(Value) * other.size());
@@ -1617,7 +1618,7 @@ private:
     //   Linear O(N).
     void swap_dispatch_impl(iterator first_sm, iterator last_sm, iterator first_la, iterator last_la, true_type const& /*use_memop*/)
     {
-        //BOOST_ASSERT_MSG(boost::container::iterator_distance(first_sm, last_sm) <= boost::container::iterator_distance(first_la, last_la));
+        //BOOST_ASSERT_MSG(boost::container::iterator_udistance(first_sm, last_sm) <= boost::container::iterator_udistance(first_la, last_la));
 
         namespace sv = varray_detail;
         for (; first_sm != last_sm ; ++first_sm, ++first_la)
@@ -1626,13 +1627,13 @@ private:
                 sizeof(value_type),
                 alignment_of<value_type>::value
             >::type temp_storage;
-            value_type * temp_ptr = static_cast<value_type*>(static_cast<void*>(&temp_storage));
+            value_type * temp_ptr = move_detail::force_ptr<value_type*>(&temp_storage);
             ::memcpy(temp_ptr, (addressof)(*first_sm), sizeof(value_type));
             ::memcpy((addressof)(*first_sm), (addressof)(*first_la), sizeof(value_type));
             ::memcpy((addressof)(*first_la), temp_ptr, sizeof(value_type));
         }
 
-        ::memcpy(first_sm, first_la, sizeof(value_type) * boost::container::iterator_distance(first_la, last_la));
+        ::memcpy(first_sm, first_la, sizeof(value_type) * boost::container::iterator_udistance(first_la, last_la));
     }
 
     // @par Throws
@@ -1641,7 +1642,7 @@ private:
     //   Linear O(N).
     void swap_dispatch_impl(iterator first_sm, iterator last_sm, iterator first_la, iterator last_la, false_type const& /*use_memop*/)
     {
-        //BOOST_ASSERT_MSG(boost::container::iterator_distance(first_sm, last_sm) <= boost::container::iterator_distance(first_la, last_la));
+        //BOOST_ASSERT_MSG(boost::container::iterator_udistance(first_sm, last_sm) <= boost::container::iterator_udistance(first_la, last_la));
 
         namespace sv = varray_detail;
         for (; first_sm != last_sm ; ++first_sm, ++first_la)
@@ -1704,7 +1705,7 @@ private:
     {
         errh::check_iterator_end_eq(*this, position);
 
-        size_type count = boost::container::iterator_distance(first, last);
+        size_type count = boost::container::iterator_udistance(first, last);
 
         errh::check_capacity(*this, m_size + count);                                             // may throw
 
@@ -1736,16 +1737,16 @@ private:
         {
             namespace sv = varray_detail;
 
-            std::ptrdiff_t d = boost::container::iterator_distance(position, this->begin() + Capacity);
+            std::size_t d = boost::container::iterator_udistance(position, this->begin() + Capacity);
             std::size_t count = sv::uninitialized_copy_s(first, last, position, d);                     // may throw
 
-            errh::check_capacity(*this, count <= static_cast<std::size_t>(d) ? m_size + count : Capacity + 1);  // may throw
+            errh::check_capacity(*this, count <= d ? m_size + count : Capacity + 1);  // may throw
 
             m_size += count;
         }
         else
         {
-            size_type count = boost::container::iterator_distance(first, last);
+            size_type count = boost::container::iterator_udistance(first, last);
 
             errh::check_capacity(*this, m_size + count);                                                // may throw
 
@@ -1799,7 +1800,7 @@ private:
     {
         namespace sv = varray_detail;
 
-        size_type s = boost::container::iterator_distance(first, last);
+        size_type s = boost::container::iterator_udistance(first, last);
 
         errh::check_capacity(*this, s);                                     // may throw
 
@@ -1835,11 +1836,11 @@ private:
 
         sv::destroy(it, this->end());
 
-        std::ptrdiff_t d = boost::container::iterator_distance(it, this->begin() + Capacity);
+        std::size_t d = boost::container::iterator_udistance(it, this->begin() + Capacity);
         std::size_t count = sv::uninitialized_copy_s(first, last, it, d);                                   // may throw
         s += count;
 
-        errh::check_capacity(*this, count <= static_cast<std::size_t>(d) ? s : Capacity + 1);               // may throw
+        errh::check_capacity(*this, count <= d ? s : Capacity + 1);               // may throw
 
         m_size = s; // update end
     }
@@ -2105,12 +2106,12 @@ private:
 
     pointer ptr()
     {
-        return pointer(reinterpret_cast<Value*>(this));
+        return pointer(move_detail::force_ptr<Value*>(this));
     }
 
     const_pointer ptr() const
     {
-        return const_pointer(reinterpret_cast<const Value*>(this));
+        return const_pointer(move_detail::force_ptr<const Value*>(this));
     }
 };
 

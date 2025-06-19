@@ -87,14 +87,7 @@ understanding of what's happening.
 Here in the header file, instead of `BOOST_SPIRIT_DEFINE`, we use
 `BOOST_SPIRIT_DECLARE` for the *top* rule. Behind the scenes, what's actually
 happening is that we are declaring a `parse_rule` function in the client
-namespace. For example, given a rule named `my_rule`,
-`BOOST_SPIRIT_DECLARE(my_rule)` expands to this code:
-
-    template <typename Iterator, typename Context, typename Attribute>
-    bool parse_rule(
-        decltype(my_rule)
-      , Iterator& first, Iterator const& last
-      , Context const& context, Attribute& attr);
+namespace.
 
 If you went back and reviewed [link __tutorial_spirit_define__
 BOOST_SPIRIT_DEFINE], you'll see why it is exactly what we need to use for
@@ -174,7 +167,7 @@ freedom to instantiate the parser with different iterator types.
 [#tutorial_configuration]
 [heading Configuration]
 
-Here, we declare some types for instatntaiting our X3 parser with. Rememeber
+Here, we declare some types for instantiating our X3 parser with. Remember
 that Spirit parsers can work with any __fwditer__. We'll also need to provide
 the initial context type. This is the context that X3 will use to initiate a
 parse. For calling `phrase_parse`, you will need the `phrase_parse_context`
@@ -225,7 +218,7 @@ declared and defined via `BOOST_SPIRIT_DECLARE` and `BOOST_SPIRIT_DEFINE`
 respectively, using `BOOST_SPIRIT_INSTANTIATE`. For our particular example,
 `BOOST_SPIRIT_INSTANTIATE` expands to this code:
 
-    template bool parse_rule<iterator_type, context_type, employee_type::attribute_type>(
+    template bool parse_rule<iterator_type, context_type>(
         employee_type rule_
       , iterator_type& first, iterator_type const& last
       , context_type const& context, employee_type::attribute_type& attr);

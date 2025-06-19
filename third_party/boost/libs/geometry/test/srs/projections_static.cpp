@@ -35,7 +35,11 @@ void test_forward(GeoPoint const& geo_point1, GeoPoint const& geo_point2,
     typedef typename bg::coordinate_type<GeoPoint>::type coordinate_type;
     typedef bg::model::d2::point_xy<coordinate_type> cartesian_point_type;
     typedef bg::projections::parameters<double> parameters_type;
-    typedef Projection<coordinate_type, parameters_type> projection_type;
+    typedef bg::projections::detail::static_wrapper_f
+        <
+            Projection<coordinate_type, parameters_type>,
+            parameters_type
+        > projection_type;
 
     try
     {
@@ -240,6 +244,7 @@ void test_all()
     test_forward<bg::projections::wag5_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m");
     test_forward<bg::projections::wag6_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m");
     test_forward<bg::projections::wag7_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m", 2);
+    test_forward<bg::projections::webmerc_spheroid>(amsterdam, utrecht, "+ellps=WGS84 +units=m", 22);
     test_forward<bg::projections::weren_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m", 4);
     test_forward<bg::projections::wink1_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m", 3);
     test_forward<bg::projections::wink2_spheroid>(amsterdam, utrecht, "+ellps=sphere +units=m", 4);

@@ -1,10 +1,9 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+#ifndef BOOST_QVM_TEST_GOLD_HPP_INCLUDED
+#define BOOST_QVM_TEST_GOLD_HPP_INCLUDED
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef UUID_907229FCB3A711DE83C152F855D89593
-#define UUID_907229FCB3A711DE83C152F855D89593
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <limits>
 #include <math.h>
@@ -433,7 +432,7 @@ test_qvm
         matrix_perspective_lh(r,fov_y,aspect_ratio,zn,zf);
         r[2][2]=-r[2][2];
         r[3][2]=-r[3][2];
-        }
-    }
+
+} }
 
 #endif

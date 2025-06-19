@@ -11,8 +11,9 @@
   ],
   "description":
     "Compile time rational arithmetic. C++11.",
-  "std": [ "proposal" ],    
+  "std": [ "proposal" ],
   "category": [
     "Math"
-  ]
+  ],
+  "cxxstd": "11"
 }

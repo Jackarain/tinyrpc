@@ -1,6 +1,6 @@
 /* Boost.MultiIndex test for standard set operations.
  *
- * Copyright 2003-2014 Joaquin M Lopez Munoz.
+ * Copyright 2003-2022 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -72,8 +72,13 @@ void test_set_ops()
   BOOST_TEST(i4.find(5601)->name=="Robert");
 
   BOOST_TEST(i1.count("John")==2);
+  BOOST_TEST(i2.count(20)==1);
   BOOST_TEST(es.count(employee(10,"",-1,0))==0);
   BOOST_TEST(i4.count(7881)==0);
+
+  BOOST_TEST(i1.contains("John"));
+  BOOST_TEST(!es.contains(employee(10,"",-1,0)));
+  BOOST_TEST(!i4.contains(7881));
 
   BOOST_TEST(
     std::distance(
@@ -104,12 +109,14 @@ void test_set_ops()
 
   BOOST_TEST(c.find(type2())==c.begin());
   BOOST_TEST(c.count(type2())==1);
+  BOOST_TEST(c.contains(type2()));
   BOOST_TEST(c.lower_bound(type2())==c.begin());
   BOOST_TEST(c.upper_bound(type2())==c.end());
   BOOST_TEST(c.equal_range(type2())==std::make_pair(c.begin(),c.end()));
 
   BOOST_TEST(c.get<1>().find(type2())==c.get<1>().begin());
   BOOST_TEST(c.get<1>().count(type2())==1);
+  BOOST_TEST(c.get<1>().contains(type2()));
   BOOST_TEST(c.get<1>().equal_range(type2())==
              std::make_pair(c.get<1>().begin(),c.get<1>().end()));
 

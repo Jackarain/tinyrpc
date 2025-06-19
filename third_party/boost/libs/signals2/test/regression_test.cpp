@@ -10,8 +10,10 @@
 
 // For more information, see http://www.boost.org
 
-#include <boost/test/minimal.hpp>
 #include <boost/signals2.hpp>
+#define BOOST_TEST_MODULE regression_test
+#include <boost/test/included/unit_test.hpp>
+#include <memory>
 
 typedef boost::signals2::signal<void ()> sig0_type;
 
@@ -100,11 +102,32 @@ void reference_return_test()
   BOOST_CHECK(ref_returner::i == 1);
 }
 
-int test_main(int, char*[])
+
+// disconnecting a function pointer by passing the function without an explicit 
+// address-of operator fails to compile in boost 1.83 due to 
+// commit 7a16fc1405f01e13463b6ce7723f30f40ba41fa4
+
+void foo() { }
+
+void disconnect_by_function_test()
+{
+  boost::signals2::signal<void ()> sig;
+  sig.connect(foo);
+  sig.disconnect(foo);  // compile failure in boost 1.83
+}
+
+// returning a move-only type from optional_last_value produced compile error
+void return_move_only_test()
+{
+  boost::signals2::signal<std::unique_ptr<int>()> sig;
+  sig(); //  error: overload resolution selected deleted operator '='
+}
+
+BOOST_AUTO_TEST_CASE(test_main)
 {
   slot_connect_test();
   scoped_connection_test();
-	reference_return_test();
-	
-  return 0;
+  reference_return_test();
+  disconnect_by_function_test();
+  return_move_only_test();
 }

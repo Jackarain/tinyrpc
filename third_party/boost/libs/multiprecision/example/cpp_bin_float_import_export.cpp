@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 //  Copyright 2015 John Maddock. Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_
+//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <iostream>
@@ -9,10 +9,12 @@
 #include <vector>
 #include <iterator>
 
+// Contains Quickbook snippets in comments.
+
 //[IE2
 
 /*`
-Importing or exporting cpp_bin_float is similar, but we must procede via an intermediate integer:
+Importing or exporting cpp_bin_float is similar, but we must proceed via an intermediate integer:
 */
 /*=
 #include <boost/multiprecision/cpp_bin_float.hpp>
@@ -34,13 +36,13 @@ int main()
    export_bits(cpp_int(f.backend().bits()), std::back_inserter(v), 8);
    // Grab the exponent as well:
    int e = f.backend().exponent();
-   // Import back again, and check for equality, we have to procede via
+   // Import back again, and check for equality, we have to proceed via
    // an intermediate integer:
    cpp_int i;
    import_bits(i, v.begin(), v.end());
    cpp_bin_float_100 g(i);
    g.backend().exponent() = e;
-   assert(f == g);
+   BOOST_MP_ASSERT(f == g);
 }
 
 //]

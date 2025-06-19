@@ -16,14 +16,14 @@ inline void make_square_polygon(Polygon& polygon, Generator& generator, Settings
 {
     using namespace boost::geometry;
 
-    typedef typename point_type<Polygon>::type point_type;
-    typedef typename coordinate_type<Polygon>::type coordinate_type;
+    using point_type = point_type_t<Polygon>;
+    using coordinate_type = coordinate_type_t<Polygon>;
 
     coordinate_type x, y;
     x = generator();
     y = generator();
 
-    typename ring_type<Polygon>::type& ring = exterior_ring(polygon);
+    auto& ring = exterior_ring(polygon);
 
     point_type p;
     set<0>(p, x); set<1>(p, y);         append(ring, p);

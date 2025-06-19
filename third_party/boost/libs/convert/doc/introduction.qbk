@@ -1,5 +1,5 @@
 [/
-  Copyright (c) Vladimir Batov 2009-2016
+  Copyright (c) Vladimir Batov 2009-2022
   Distributed under the Boost Software License, Version 1.0.
   See copy at http://www.boost.org/LICENSE_1_0.txt.
 ]
@@ -15,7 +15,7 @@
 
 ['Boost.Convert] provides new and familiar conversion\/transformation-related functionality such as:
 
-* means to deploy types that do not meet the [@http://en.cppreference.com/w/cpp/concept/DefaultConstructible ['Default Constructibility]] requirement;
+* means to deploy types that do not meet the [@http://en.cppreference.com/w/cpp/named_req/DefaultConstructible ['Default Constructibility]] requirement;
 * four types of the conversion-failure ['detection]:
     * as part of the same process flow -- basic and generic;
     * as a branched process flow -- exception-based and function-based;

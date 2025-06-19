@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Macros</title>
 <link rel="stylesheet" href="../../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 <link rel="home" href="../../index.html" title="Chapter&#160;1.&#160;Boost.FunctionTypes 2.5">
 <link rel="up" href="../reference.html" title="Reference">
 <link rel="prev" href="tag_types.html" title="Tag Types">
@@ -26,7 +26,7 @@
 <div class="titlepage"><div><div><h3 class="title">
 <a name="boost_functiontypes.reference.macros"></a><a class="link" href="macros.html" title="Macros">Macros</a>
 </h3></div></div></div>
-<div class="toc"><dl class="toc">
+<div class="toc"><dl>
 <dt><span class="section"><a href="macros.html#boost_functiontypes.reference.macros.BOOST_FT_MAX_ARITY">BOOST_FT_MAX_ARITY</a></span></dt>
 <dt><span class="section"><a href="macros.html#boost_functiontypes.reference.macros.BOOST_FT_CC_NAMES">BOOST_FT_CC_NAMES</a></span></dt>
 <dt><span class="section"><a href="macros.html#boost_functiontypes.reference.macros.BOOST_FT_CC">BOOST_FT_CC_*</a></span></dt>
@@ -87,10 +87,10 @@
   <span class="special">((</span> <span class="identifier">FASTCALL</span>           <span class="special">,</span> <span class="identifier">fastcall_cc</span> <span class="special">,</span> <span class="identifier">BOOST_PP_IDENTITY</span><span class="special">(</span><span class="identifier">__fastcall</span><span class="special">)</span> <span class="special">))\</span>
   <span class="special">((</span> <span class="identifier">CLRCALL</span>            <span class="special">,</span> <span class="identifier">clrcall_cc</span>  <span class="special">,</span> <span class="identifier">BOOST_PP_IDENTITY</span><span class="special">(</span><span class="identifier">__clrcall</span> <span class="special">)</span> <span class="special">))\</span>
   <span class="special">((</span> <span class="identifier">THISCALL</span>           <span class="special">,</span> <span class="identifier">thiscall_cc</span> <span class="special">,</span> <span class="identifier">BOOST_PP_IDENTITY</span><span class="special">(</span><span class="identifier">__thiscall</span><span class="special">)</span> <span class="special">))\</span>
-  <span class="special">((</span> <span class="identifier">IMPLICIT_THISCALL</span>  <span class="special">,</span> <span class="identifier">thiscall_cc</span> <span class="special">,</span> <span class="identifier">BOOST_PP_EMPTY</span>                <span class="special">))</span>
-<span class="comment">// Don't get confused by the last line, here (thiscall can't be specified</span>
-<span class="comment">// explicitly prior to MSVC 8).</span>
-</pre>
+  <span class="special">((</span> <span class="identifier">IMPLICIT_THISCALL</span>  <span class="special">,</span> <span class="identifier">thiscall_cc</span> <span class="special">,</span> <span class="identifier">BOOST_PP_EMPTY</span>                <span class="special">))</span> 
+<span class="comment">// Don't get confused by the last line, here (thiscall can't be specified
+</span><span class="comment">// explicitly prior to MSVC 8).
+</span></pre>
 </div>
 <div class="section">
 <div class="titlepage"><div><div><h4 class="title">
@@ -105,7 +105,7 @@
           The macro expands to a list of restrictions, separated by the <code class="literal">|</code>
           character. Possible items are:
         </p>
-<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<div class="itemizedlist"><ul class="itemizedlist" type="disc">
 <li class="listitem">
               callable_builtin
             </li>
@@ -127,9 +127,9 @@
           disabled. Example:
         </p>
 <pre class="programlisting"><span class="preprocessor">#define</span> <span class="identifier">BOOST_FT_CC_STDCALL</span> <span class="identifier">non_variadic</span><span class="special">|</span><span class="identifier">callable_builtin</span>
-<span class="comment">// enables stdcall calling convention for all non-variadic, </span>
-<span class="comment">// callable, builtin types</span>
-</pre>
+<span class="comment">// enables stdcall calling convention for all non-variadic, 
+</span><span class="comment">// callable, builtin types
+</span></pre>
 </div>
 <div class="section">
 <div class="titlepage"><div><div><h4 class="title">

@@ -81,28 +81,20 @@ int test_main(int, char* [])
     typedef bg::model::point<int, 3, bg::cs::cartesian> P3ic;
     typedef bg::model::point<float, 3, bg::cs::cartesian> P3fc;
     typedef bg::model::point<double, 3, bg::cs::cartesian> P3dc;
-    
+
     test(P2ic(0, 0), true);
     test(P2fc(0, 0), true);
     test(P2dc(0, 0), true);
     test(P3ic(0, 0, 0), true);
     test(P3fc(0, 0, 0), true);
     test(P3dc(0, 0, 0), true);
-    
+
     test_box<bg::model::box<P2ic> >("POLYGON((0 1,2 4))", true);
     test_box<bg::model::box<P2fc> >("POLYGON((0 1,2 4))", true);
     test_box<bg::model::box<P2dc> >("POLYGON((0 1,2 4))", true);
     test_box<bg::model::box<P3ic> >("POLYGON((0 1 2,2 4 6))", true);
     test_box<bg::model::box<P3fc> >("POLYGON((0 1 2,2 4 6))", true);
     test_box<bg::model::box<P3dc> >("POLYGON((0 1 2,2 4 6))", true);
-    
-#ifdef HAVE_TTMATH
-    typedef bg::model::point<ttmath_big, 2, bg::cs::cartesian> P2ttmc;
-    typedef bg::model::point<ttmath_big, 3, bg::cs::cartesian> P3ttmc;
-
-    test_geometry<bg::model::box<P2ttmc> >("POLYGON((0 1,2 4))", true);
-    test_geometry<bg::model::box<P3ttmc> >("POLYGON((0 1 2,2 4 6))", true);
-#endif
 
     test_large_integers();
 

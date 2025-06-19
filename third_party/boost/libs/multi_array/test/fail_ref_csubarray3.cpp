@@ -15,14 +15,14 @@
 //   Testing constness of subarray operations.
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/array.hpp"
+#include <boost/array.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   const int ndims=3;
   typedef boost::multi_array_ref<int,ndims> array_ref;
@@ -48,5 +48,5 @@ test_main(int,char*[])
       for (array_ref::index k = 0; k != 4; ++k)
         sba[j][k] = num++; // FAIL! can't assign to const_subarray.
 
-  return boost::exit_success;
+  return boost::report_errors();
 }

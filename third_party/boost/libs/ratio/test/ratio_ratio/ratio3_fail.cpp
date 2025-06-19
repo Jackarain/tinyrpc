@@ -15,10 +15,10 @@
 //               must be representable by type intmax_t.
 
 #include <boost/ratio/ratio.hpp>
-#include <boost/cstdint.hpp>
+#include <cstdint>
 
 void test()
 {
-    const boost::intmax_t t1 = boost::ratio<1, 0x8000000000000000ULL>::num;
+    const std::intmax_t t1 = boost::ratio<1, 0x8000000000000000ULL>::num;
     (void)t1;
 }

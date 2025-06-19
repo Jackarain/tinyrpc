@@ -1,25 +1,22 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
-// Unit Test
+// Robustness Test
 
-// Copyright (c) 2009-2012 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2009-2021 Barend Gehrels, Amsterdam, the Netherlands.
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#define BOOST_GEOMETRY_REPORT_OVERLAY_ERROR
 #define BOOST_GEOMETRY_NO_BOOST_TEST
 
+#ifndef BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE
+#define BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE
+#endif
 
 #include <test_overlay_p_q.hpp>
+#include <common/make_random_generator.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/timer.hpp>
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
-
 
 struct star_params
 {
@@ -96,58 +93,19 @@ void test_star_ellipse(int seed, int index, star_params const& par_p,
     make_star(q, par_q);
 
     std::ostringstream out;
-    out << "rse_" << seed << "_" << index;
+    out << "star_ellipse_" << seed << "_" << index;
     test_overlay_p_q<polygon, T>(out.str(), p, q, settings);
 }
 
 template <typename T, bool Clockwise, bool Closed>
 void test_type(int seed, int count, p_q_settings const& settings)
 {
-    boost::timer t;
+    auto const t0 = std::chrono::high_resolution_clock::now();
 
-    typedef boost::minstd_rand base_generator_type;
-
-    //boost::uniform_real<> random_factor(0.5, 1.2);
-    //boost::uniform_real<> random_location(-10.0, 10.0);
-    //boost::uniform_int<> random_points(5, 20);
-
-    // This set (next 4 lines) are now solved for the most part
-    // 2009-12-03, 3 or 4 errors in 1000000 calls
-    // 2009-12-07,     no errors in 1000000 calls
-    //boost::uniform_real<> random_factor(1.0 - 1e-3, 1.0 + 1e-3);
-    //boost::uniform_real<> random_location(-1e-3, 1e-3);
-    //boost::uniform_real<> random_rotation(-1e-3, 1e-3);
-    //boost::uniform_int<> random_points(3, 3);
-
-    // 2009-12-08, still errors, see notes
-    // 2009-12-09, (probably) solved by order on side
-    // 2010-01-16: solved (no errors in 1000000 calls)
-    //boost::uniform_real<> random_factor(1.0 - 1e-3, 1.0 + 1e-3);
-    //boost::uniform_real<> random_location(-1e-3, -1e-3);
-    //boost::uniform_real<> random_rotation(-1e-3, 1e-3);
-    //boost::uniform_int<> random_points(3, 4);
-
-    // This set (next 4 lines) are now solved ("distance-zero"/"merge iiii" problem)
-    // 2009-12-03: 5,50 -> 2:1 000 000 wrong (2009-12-03)
-    // 2010-01-16: solved (no errors in 10000000 calls)
-    boost::uniform_real<> random_factor(0.3, 1.2);
-    boost::uniform_real<> random_location(-20.0, +20.0); // -25.0, +25.0
-    boost::uniform_real<> random_rotation(0, 0.5);
-    boost::uniform_int<> random_points(5, 15);
-
-    base_generator_type generator(seed);
-
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> >
-        factor_generator(generator, random_factor);
-
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> >
-        location_generator(generator, random_location);
-
-    boost::variate_generator<base_generator_type&, boost::uniform_real<> >
-        rotation_generator(generator, random_rotation);
-
-    boost::variate_generator<base_generator_type&, boost::uniform_int<> >
-        int_generator(generator, random_points);
+    auto factor_generator = make_real_generator(seed, 0.3, 1.2);
+    auto location_generator = make_real_generator(seed, -20.0, +20.0); // -25.0, +25.0
+    auto rotation_generator = make_real_generator(seed, 0, 0.5);
+    auto int_generator = make_real_generator(seed, 5, 15);
 
     for(int i = 0; i < count; i++)
     {
@@ -160,41 +118,40 @@ void test_type(int seed, int count, p_q_settings const& settings)
                     location_generator(), location_generator(), rotation_generator()),
             settings);
     }
-    std::cout
+    auto const t = std::chrono::high_resolution_clock::now();
+    auto const elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
+    std::cout << std::endl
         << "type: " << string_from_type<T>::name()
-        << " time: " << t.elapsed()  << std::endl;
+        << " time: " << elapsed_ms / 1000.0 << std::endl;
 }
 
 template <bool Clockwise, bool Closed>
 void test_all(std::string const& type, int seed, int count, p_q_settings settings)
 {
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE)
     if (type == "float")
     {
         test_type<float, Clockwise, Closed>(seed, count, settings);
     }
     else if (type == "double")
+#endif
     {
         test_type<double, Clockwise, Closed>(seed, count, settings);
     }
-#if defined(HAVE_TTMATH)
-    else if (type == "ttmath")
-    {
-        test_type<ttmath_big, Clockwise, Closed>(seed, count, settings);
-    }
-#endif
 }
 
 
 int main(int argc, char** argv)
 {
+    BoostGeometryWriteTestConfiguration();
     try
     {
         namespace po = boost::program_options;
         po::options_description description("=== random_ellipses_stars ===\nAllowed options");
 
         int count = 1;
-        int seed = static_cast<unsigned int>(std::time(0));
-        std::string type = "float";
+        int seed = -1;
+        std::string type = "double";
         bool ccw = false;
         bool open = false;
         p_q_settings settings;
@@ -204,9 +161,12 @@ int main(int argc, char** argv)
             ("seed", po::value<int>(&seed), "Initialization seed for random generator")
             ("count", po::value<int>(&count)->default_value(1), "Number of tests")
             ("diff", po::value<bool>(&settings.also_difference)->default_value(false), "Include testing on difference")
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE)
             ("ccw", po::value<bool>(&ccw)->default_value(false), "Counter clockwise polygons")
             ("open", po::value<bool>(&open)->default_value(false), "Open polygons")
-            ("type", po::value<std::string>(&type)->default_value("float"), "Type (float,double)")
+            ("type", po::value<std::string>(&type)->default_value("double"), "Type (float,double)")
+#endif
+            ("verbose", po::value<bool>(&settings.verbose), "Verbose")
             ("wkt", po::value<bool>(&settings.wkt)->default_value(false), "Create a WKT of the inputs, for all tests")
             ("svg", po::value<bool>(&settings.svg)->default_value(false), "Create a SVG for all tests")
         ;
@@ -221,6 +181,7 @@ int main(int argc, char** argv)
             return 1;
         }
 
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE)
         if (ccw && open)
         {
             test_all<false, false>(type, seed, count, settings);
@@ -234,6 +195,7 @@ int main(int argc, char** argv)
             test_all<true, false>(type, seed, count, settings);
         }
         else
+#endif
         {
             test_all<true, true>(type, seed, count, settings);
         }

@@ -18,8 +18,8 @@ struct foo
     operator long() const { return 0; }
 };
 
-typedef type<long> long_type;
-typedef type<foo> foo_type;
+using long_type = type<long>;
+using foo_type = type<foo>;
 
 int main()
 {
@@ -33,6 +33,10 @@ int main()
     (void)x;
     (void)f;
     (void)z;
+
+
+    constexpr long value = boost::implicit_cast<long>(42);
+    BOOST_TEST(value == 42L);
 
     return boost::report_errors();
 }

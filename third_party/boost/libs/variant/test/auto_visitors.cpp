@@ -3,7 +3,7 @@
 // See http://www.boost.org for updates, documentation, and revision history.
 //-----------------------------------------------------------------------------
 //
-// Copyright (c) 2014-2015 Antony Polukhin
+// Copyright (c) 2014-2025 Antony Polukhin
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -11,7 +11,7 @@
 
 #include "boost/config.hpp"
 
-#include "boost/test/minimal.hpp"
+#include "boost/core/lightweight_test.hpp"
 #include "boost/variant.hpp"
 #include "boost/variant/multivisitors.hpp"
 #include "boost/lexical_cast.hpp"
@@ -50,24 +50,24 @@ void test_has_result_type_triat() {
     using namespace has_result_type_tests;
     using boost::detail::variant::has_result_type;
 
-    BOOST_CHECK(has_result_type<s1>::value);
-    BOOST_CHECK(has_result_type<s2>::value);
-    BOOST_CHECK(has_result_type<s3>::value);
-    BOOST_CHECK(!has_result_type<s4>::value);
-    BOOST_CHECK(has_result_type<s5>::value);
-    BOOST_CHECK(has_result_type<s6>::value);
-    BOOST_CHECK(has_result_type<s7>::value);
-    BOOST_CHECK(has_result_type<s8>::value);
-    BOOST_CHECK(has_result_type<s9>::value);
+    BOOST_TEST(has_result_type<s1>::value);
+    BOOST_TEST(has_result_type<s2>::value);
+    BOOST_TEST(has_result_type<s3>::value);
+    BOOST_TEST(!has_result_type<s4>::value);
+    BOOST_TEST(has_result_type<s5>::value);
+    BOOST_TEST(has_result_type<s6>::value);
+    BOOST_TEST(has_result_type<s7>::value);
+    BOOST_TEST(has_result_type<s8>::value);
+    BOOST_TEST(has_result_type<s9>::value);
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
-    BOOST_CHECK(has_result_type<s10>::value);
+    BOOST_TEST(has_result_type<s10>::value);
 #endif
-    BOOST_CHECK(has_result_type<s11>::value);
-    BOOST_CHECK(has_result_type<s12>::value);
-    BOOST_CHECK(has_result_type<s13>::value);
-    BOOST_CHECK(has_result_type<s14>::value);
-    BOOST_CHECK(has_result_type<s15>::value);
-    BOOST_CHECK(has_result_type<s16>::value);
+    BOOST_TEST(has_result_type<s11>::value);
+    BOOST_TEST(has_result_type<s12>::value);
+    BOOST_TEST(has_result_type<s13>::value);
+    BOOST_TEST(has_result_type<s14>::value);
+    BOOST_TEST(has_result_type<s15>::value);
+    BOOST_TEST(has_result_type<s16>::value);
 }
 
 struct lex_streamer_explicit: boost::static_visitor<std::string> {
@@ -91,8 +91,8 @@ void run_explicit()
     lex_streamer_explicit visitor_ref;
 
     // Must return instance of std::string
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v2).c_str() == std::string("10"));
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v2, v1).c_str() == std::string("100"));
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v2).c_str() == std::string("10"));
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v2, v1).c_str() == std::string("100"));
 }
 
 
@@ -102,18 +102,18 @@ void run_explicit()
 
 void run()
 {
-    BOOST_CHECK(true);
+    BOOST_TEST(true);
 }
 
 void run2()
 {
-    BOOST_CHECK(true);
+    BOOST_TEST(true);
 }
 
 
 void run3()
 {
-    BOOST_CHECK(true);
+    BOOST_TEST(true);
 }
 
 #else
@@ -188,48 +188,42 @@ struct lex_streamer2 {
     }
 };
 
-#ifndef BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
-#   define BOOST_CHECK_IF_HAS_VARIADIC(x) BOOST_CHECK(x)
-#else
-#   define BOOST_CHECK_IF_HAS_VARIADIC(x) /**/
-#endif
-
 void run()
 {
     typedef boost::variant<int, std::string, double> variant_type;
     variant_type v1(1), v2("10"), v3(100.0);
     lex_streamer lex_streamer_visitor;
 
-    BOOST_CHECK(boost::apply_visitor(lex_streamer(), v1) == "1");
-    BOOST_CHECK_IF_HAS_VARIADIC(boost::apply_visitor(lex_streamer_visitor)(v1) == "1");
-    BOOST_CHECK(boost::apply_visitor(lex_streamer(), v2) == "10");
-    BOOST_CHECK_IF_HAS_VARIADIC(boost::apply_visitor(lex_streamer_visitor)(v2) == "10");
+    BOOST_TEST(boost::apply_visitor(lex_streamer(), v1) == "1");
+    BOOST_TEST(boost::apply_visitor(lex_streamer_visitor)(v1) == "1");
+    BOOST_TEST(boost::apply_visitor(lex_streamer(), v2) == "10");
+    BOOST_TEST(boost::apply_visitor(lex_streamer_visitor)(v2) == "10");
 
     #ifndef BOOST_NO_CXX14_GENERIC_LAMBDAS
-        BOOST_CHECK(boost::apply_visitor([](auto v) { return boost::lexical_cast<std::string>(v); }, v1) == "1");
-        BOOST_CHECK(boost::apply_visitor([](auto v) { return boost::lexical_cast<std::string>(v); }, v2) == "10");
+        BOOST_TEST(boost::apply_visitor([](auto v) { return boost::lexical_cast<std::string>(v); }, v1) == "1");
+        BOOST_TEST(boost::apply_visitor([](auto v) { return boost::lexical_cast<std::string>(v); }, v2) == "10");
 
         // Retun type must be the same in all instances, so this code does not compile
         //boost::variant<int, short, unsigned> v_diff_types(1);
-        //BOOST_CHECK(boost::apply_visitor([](auto v) { return v; }, v_diff_types) == 1);
+        //BOOST_TEST(boost::apply_visitor([](auto v) { return v; }, v_diff_types) == 1);
 
         boost::apply_visitor([](auto v) { std::cout << v << std::endl; }, v1);
         boost::apply_visitor([](auto v) { std::cout << v << std::endl; }, v2);
     #endif
 
     lex_streamer2 visitor_ref;
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v1) == "1");
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v2) == "10");
-#ifndef BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v1) == "1");
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v2) == "10");
+
     std::string& ref_to_string = boost::apply_visitor(visitor_ref, v1);
-    BOOST_CHECK(ref_to_string == "1");
-#endif
+    BOOST_TEST(ref_to_string == "1");
+
     lex_streamer_void lex_streamer_void_visitor;
     boost::apply_visitor(lex_streamer_void(), v1);
     boost::apply_visitor(lex_streamer_void(), v2);
-#ifndef BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
+
     boost::apply_visitor(lex_streamer_void_visitor)(v2);
-#endif
+
 
     boost::ignore_unused(lex_streamer_visitor, visitor_ref, lex_streamer_void_visitor);
 }
@@ -256,13 +250,13 @@ void run2()
     variant_type v1(1), v2("10"), v3(100.0);
     lex_combine lex_combine_visitor;
 
-    BOOST_CHECK(boost::apply_visitor(lex_combine(), v1, v2) == "1+10");
-    BOOST_CHECK(boost::apply_visitor(lex_combine(), v2, v1) == "10+1");
-    BOOST_CHECK_IF_HAS_VARIADIC(boost::apply_visitor(lex_combine_visitor)(v2, v1) == "10+1");
+    BOOST_TEST(boost::apply_visitor(lex_combine(), v1, v2) == "1+10");
+    BOOST_TEST(boost::apply_visitor(lex_combine(), v2, v1) == "10+1");
+    BOOST_TEST(boost::apply_visitor(lex_combine_visitor)(v2, v1) == "10+1");
 
 
     #ifndef BOOST_NO_CXX14_GENERIC_LAMBDAS
-        BOOST_CHECK(
+        BOOST_TEST(
             boost::apply_visitor(
                 [](auto v1, auto v2) {
                     return boost::lexical_cast<std::string>(v1) + "+"
@@ -272,7 +266,7 @@ void run2()
                 , v2
             ) == "1+10"
         );
-        BOOST_CHECK(
+        BOOST_TEST(
             boost::apply_visitor(
                 [](auto v1, auto v2) {
                     return boost::lexical_cast<std::string>(v1) + "+"
@@ -289,12 +283,11 @@ void run2()
 
 
     lex_streamer2 visitor_ref;
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v1, v2) == "1+10");
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v2, v1) == "10+1");
-#ifndef BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v1, v2) == "1+10");
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v2, v1) == "10+1");
+
     std::string& ref_to_string = boost::apply_visitor(visitor_ref)(v1, v2);
-    BOOST_CHECK(ref_to_string == "1+10");
-#endif
+    BOOST_TEST(ref_to_string == "1+10");
 
     boost::apply_visitor(lex_streamer_void(), v1, v2);
     boost::apply_visitor(lex_streamer_void(), v2, v1);
@@ -302,22 +295,19 @@ void run2()
     boost::ignore_unused(lex_combine_visitor, visitor_ref);
 }
 
-#undef BOOST_CHECK_IF_HAS_VARIADIC
-
 void run3()
 {
-#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
     typedef boost::variant<int, std::string, double> variant_type;
     variant_type v1(1), v2("10"), v3(100);
     lex_combine lex_combine_visitor;
 
-    BOOST_CHECK(boost::apply_visitor(lex_combine(), v1, v2, v3) == "1+10+100");
-    BOOST_CHECK(boost::apply_visitor(lex_combine(), v2, v1, v3) == "10+1+100");
-    BOOST_CHECK(boost::apply_visitor(lex_combine_visitor)(v2, v1, v3) == "10+1+100");
+    BOOST_TEST(boost::apply_visitor(lex_combine(), v1, v2, v3) == "1+10+100");
+    BOOST_TEST(boost::apply_visitor(lex_combine(), v2, v1, v3) == "10+1+100");
+    BOOST_TEST(boost::apply_visitor(lex_combine_visitor)(v2, v1, v3) == "10+1+100");
 
 
     #ifndef BOOST_NO_CXX14_GENERIC_LAMBDAS
-        BOOST_CHECK(
+        BOOST_TEST(
             boost::apply_visitor(
                 [](auto v1, auto v2, auto v3) {
                     return boost::lexical_cast<std::string>(v1) + "+"
@@ -329,7 +319,7 @@ void run3()
                 , v3
             ) == "1+10+100"
         );
-        BOOST_CHECK(
+        BOOST_TEST(
             boost::apply_visitor(
                 [](auto v1, auto v2, auto v3) {
                     return boost::lexical_cast<std::string>(v1) + "+"
@@ -354,21 +344,21 @@ void run3()
 
 
     lex_streamer2 visitor_ref;
-    BOOST_CHECK(boost::apply_visitor(visitor_ref, v1, v2) == "1+10");
-    BOOST_CHECK(boost::apply_visitor(visitor_ref)(v2, v1) == "10+1");
+    BOOST_TEST(boost::apply_visitor(visitor_ref, v1, v2) == "1+10");
+    BOOST_TEST(boost::apply_visitor(visitor_ref)(v2, v1) == "10+1");
     std::string& ref_to_string = boost::apply_visitor(visitor_ref, v1, v2);
-    BOOST_CHECK(ref_to_string == "1+10");
+    BOOST_TEST(ref_to_string == "1+10");
 
     lex_streamer_void lex_streamer_void_visitor;
     boost::apply_visitor(lex_streamer_void(), v1, v2, v1);
     boost::apply_visitor(lex_streamer_void(), v2, v1, v1);
     boost::apply_visitor(lex_streamer_void_visitor)(v2, v1, v1);
-#endif // !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_HDR_TUPLE)
+
 }
 #endif
 
 
-int test_main(int , char* [])
+int main()
 {
     run_explicit();
     run();
@@ -376,5 +366,5 @@ int test_main(int , char* [])
     run3();
     test_has_result_type_triat();
 
-    return 0;
+    return boost::report_errors();
 }

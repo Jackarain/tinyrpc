@@ -46,7 +46,7 @@ endif()
 add_definitions(-DBOOST_COMPUTE_DEBUG_KERNEL_COMPILATION)
 
 # enable code coverage generation (only with GCC for now)
-if(${BOOST_COMPUTE_ENABLE_COVERAGE} AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if(${BOOST_COMPUTE_ENABLE_COVERAGE} AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   add_definitions(-fprofile-arcs -ftest-coverage)
 endif()
 
@@ -62,7 +62,7 @@ function(add_compute_test TEST_NAME TEST_SOURCE)
   )
 
   # link with coverage library
-  if(${BOOST_COMPUTE_ENABLE_COVERAGE} AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if(${BOOST_COMPUTE_ENABLE_COVERAGE} AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     target_link_libraries(${TEST_TARGET} -fprofile-arcs -ftest-coverage)
   endif()
 
@@ -83,6 +83,8 @@ add_compute_test("core.program" test_program.cpp)
 add_compute_test("core.system" test_system.cpp)
 add_compute_test("core.type_traits" test_type_traits.cpp)
 add_compute_test("core.user_event" test_user_event.cpp)
+add_compute_test("core.attach_user_queue_error" test_attach_user_queue_error.cpp)
+add_compute_test("core.attach_user_queue_thread_safety" test_attach_user_queue_thread_safety.cpp)
 
 add_compute_test("utility.extents" test_extents.cpp)
 add_compute_test("utility.invoke" test_invoke.cpp)

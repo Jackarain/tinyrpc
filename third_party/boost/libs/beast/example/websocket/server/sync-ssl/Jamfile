@@ -7,10 +7,11 @@
 # Official repository: https://github.com/boostorg/beast
 #
 
+import ac ;
+
 project
     : requirements
-    <library>ssl
-    <library>crypto
+        [ ac.check-library /boost/beast/test//lib-asio-ssl : <library>/boost/beast/test//lib-asio-ssl/<link>static : <build>no ]
     ;
 
 exe websocket-server-sync-ssl :

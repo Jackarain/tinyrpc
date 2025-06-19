@@ -1,4 +1,5 @@
 #include <boost/config.hpp>
+#include <boost/config/pragma_message.hpp>
 
 //
 //  bind_function_ap_test.cpp - regression test
@@ -10,11 +11,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt
 //
 
-#if defined( BOOST_NO_AUTO_PTR )
+#if defined(BOOST_NO_AUTO_PTR)
 
-int main()
-{
-}
+BOOST_PRAGMA_MESSAGE( "Skipping test because BOOST_NO_AUTO_PTR is defined" )
+int main() {}
+
+#elif !defined(BOOST_NO_CXX11_RVALUE_REFERENCES) && ( defined(BOOST_GCC) && BOOST_GCC < 40600 )
+
+BOOST_PRAGMA_MESSAGE( "Skipping test for GCC 4.4 -std=c++0x" )
+int main() {}
 
 #else
 
@@ -26,10 +31,12 @@ int main()
 # endif
 #endif
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <memory>
+
+using namespace boost::placeholders;
 
 //
 
@@ -231,4 +238,4 @@ int main()
     return boost::report_errors();
 }
 
-#endif // #if defined( BOOST_NO_AUTO_PTR )
+#endif

@@ -12,10 +12,10 @@
       typedef RealType value_type;
       typedef Policy   policy_type;
 
-      inverse_gamma_distribution(RealType shape, RealType scale = 1)
+      BOOST_MATH_GPU_ENABLED inverse_gamma_distribution(RealType shape, RealType scale = 1)
 
-      RealType shape()const;
-      RealType scale()const;
+      BOOST_MATH_GPU_ENABLED RealType shape()const;
+      BOOST_MATH_GPU_ENABLED RealType scale()const;
    };
    
    }} // namespaces
@@ -33,7 +33,6 @@ See [@http://en.wikipedia.org/wiki/Inverse-gamma_distribution inverse gamma dist
 
 See also __gamma_distrib.
 
-
 [note
 In spite of potential confusion with the inverse gamma function, this
 distribution *does* provide the typedef:
@@ -49,11 +48,11 @@ or you can write `inverse_gamma my_ig(2, 3);`]
 For shape parameter [alpha] and scale parameter [beta], it is defined 
 by the probability density function (PDF):
 
-__spaces f(x;[alpha], [beta]) = [beta][super [alpha]] * (1/x) [super [alpha]+1] exp(-[beta]/x) / [Gamma]([alpha])
+[expression f(x;[alpha], [beta]) = [beta][super [alpha]] * (1/x) [super [alpha]+1] exp(-[beta]/x) / [Gamma]([alpha])]
 
 and cumulative density function (CDF)
 
-__spaces F(x;[alpha], [beta]) = [Gamma]([alpha], [beta]/x) / [Gamma]([alpha])
+[expression F(x;[alpha], [beta]) = [Gamma]([alpha], [beta]/x) / [Gamma]([alpha])]
 
 The following graphs illustrate how the PDF and CDF of the inverse gamma distribution
 varies as the parameters vary:
@@ -64,18 +63,18 @@ varies as the parameters vary:
 
 [h4 Member Functions]
 
-   inverse_gamma_distribution(RealType shape = 1, RealType scale = 1);
+   BOOST_MATH_GPU_ENABLED inverse_gamma_distribution(RealType shape = 1, RealType scale = 1);
    
 Constructs an inverse gamma distribution with shape [alpha] and scale [beta].
 
 Requires that the shape and scale parameters are greater than zero, otherwise calls
 __domain_error.
 
-   RealType shape()const;
+   BOOST_MATH_GPU_ENABLED RealType shape()const;
    
 Returns the [alpha] shape parameter of this inverse gamma distribution.
    
-   RealType scale()const;
+   BOOST_MATH_GPU_ENABLED RealType scale()const;
       
 Returns the [beta] scale parameter of this inverse gamma distribution.
 
@@ -83,10 +82,15 @@ Returns the [beta] scale parameter of this inverse gamma distribution.
 
 All the [link math_toolkit.dist_ref.nmp usual non-member accessor functions] that are generic to all
 distributions are supported: __usual_accessors.
+For this distribution all non-member accessor functions are marked with `BOOST_MATH_GPU_ENABLED` and can
+be run on both host and device.
 
 The domain of the random variate is \[0,+[infin]\].
 [note Unlike some definitions, this implementation supports a random variate 
 equal to zero as a special case, returning zero for pdf and cdf.]
+
+In this distribution the implementation of `logpdf` is specialized
+to improve numerical accuracy.
 
 [h4 Accuracy]
 
@@ -100,16 +104,17 @@ But in general, inverse_gamma results are accurate to a few epsilon,
 [h4 Implementation]
 
 In the following table [alpha] is the shape parameter of the distribution, 
-[alpha][space] is its scale parameter, /x/ is the random variate, /p/ is the probability
+[beta] is its scale parameter, /x/ is the random variate, /p/ is the probability
 and /q = 1-p/.
 
 [table
 [[Function][Implementation Notes]]
 [[pdf][Using the relation: pdf = __gamma_p_derivative([alpha], [beta]/ x, [beta]) / x * x ]]
+[[logpdf][log(pdf) = [alpha] * log([beta]) + (-[alpha]-1)*log(x) - lgamma([alpha]) - ([beta]/x) ]]
 [[cdf][Using the relation: p = __gamma_q([alpha], [beta] / x) ]]
 [[cdf complement][Using the relation: q = __gamma_p([alpha], [beta] / x) ]]
-[[quantile][Using the relation: x = [beta][space]/ __gamma_q_inv([alpha], p) ]]
-[[quantile from the complement][Using the relation: x = [alpha][space]/ __gamma_p_inv([alpha], q) ]]
+[[quantile][Using the relation: x = [beta]/ __gamma_q_inv([alpha], p) ]]
+[[quantile from the complement][Using the relation: x = [alpha]/ __gamma_p_inv([alpha], q) ]]
 [[mode][[beta] / ([alpha] + 1) ]]
 [[median][no analytic equation is known, but is evaluated as quantile(0.5)]]
 [[mean][[beta] / ([alpha] - 1) for [alpha] > 1, else a __domain_error]]
@@ -118,7 +123,7 @@ and /q = 1-p/.
 [[kurtosis_excess][(30 * [alpha] - 66) / (([alpha]-3)*([alpha] - 4)) for [alpha] >4, else a __domain_error]]
 ] [/table]
 
-[endsect][/section:inverse_gamma_dist Inverse Gamma Distribution]
+[endsect] [/section:inverse_gamma_dist Inverse Gamma Distribution]
 
 [/ 
   Copyright 2010 John Maddock and Paul A. Bristow.

@@ -1,9 +1,9 @@
-# Copyright Louis Dionne 2013-2017
+# Copyright Louis Dionne 2013-2022
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
 add_custom_target(tests COMMENT "Build all the unit tests.")
-add_dependencies(check tests)
+add_dependencies(hana_check tests)
 
 
 ##############################################################################
@@ -26,28 +26,6 @@ file(GLOB_RECURSE PUBLIC_HEADERS_REQUIRING_BOOST
 if (NOT Boost_FOUND)
     list(APPEND EXCLUDED_UNIT_TESTS ${TESTS_REQUIRING_BOOST})
     list(APPEND EXCLUDED_PUBLIC_HEADERS ${PUBLIC_HEADERS_REQUIRING_BOOST})
-endif()
-
-# The experimental::type_name test is only supported on Clang >= 3.6 and
-# AppleClang >= 7.0
-if (NOT ((${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND
-          NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 3.6)
-        OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang" AND
-            NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 7)))
-    list(APPEND EXCLUDED_PUBLIC_HEADERS
-        "boost/hana/experimental/type_name.hpp")
-    list(APPEND EXCLUDED_UNIT_TESTS "experimental/type_name.cpp")
-endif()
-
-# On Windows, Clang-cl emulates a MSVC bug that causes EBO not to be applied
-# properly. We disable the tests that check for EBO.
-if (MSVC AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    list(APPEND EXCLUDED_UNIT_TESTS
-        "detail/ebo.cpp"
-        "issues/github_202.cpp"
-        "pair/empty_storage.cpp"
-        "tuple/empty_member.cpp"
-    )
 endif()
 
 
@@ -142,4 +120,4 @@ add_custom_target(test.deploy
   COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/deploy/build"
   USES_TERMINAL
 )
-add_dependencies(check test.deploy)
+add_dependencies(hana_check test.deploy)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,6 @@
 // Test that header file is self-contained.
 #include <boost/beast/http/write.hpp>
 
-#include <boost/beast/http/buffer_body.hpp>
 #include <boost/beast/http/empty_body.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/http/message.hpp>
@@ -19,14 +18,23 @@
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
+#include <boost/beast/core/static_string.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
 #include <boost/beast/test/yield_to.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
+#include <boost/asio/bind_cancellation_slot.hpp>
 #include <boost/asio/error.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/connect_pipe.hpp>
+#include <boost/asio/readable_pipe.hpp>
+#include <boost/asio/writable_pipe.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/strand.hpp>
 #include <sstream>
 #include <string>
+#if BOOST_ASIO_HAS_CO_AWAIT
+#include <boost/asio/use_awaitable.hpp>
+#endif
 
 namespace boost {
 namespace beast {
@@ -47,7 +55,7 @@ public:
 
         public:
             using const_buffers_type =
-                boost::asio::const_buffer;
+                net::const_buffer;
 
             template<bool isRequest, class Fields>
             writer(
@@ -60,13 +68,13 @@ public:
             void
             init(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
             }
 
             boost::optional<std::pair<const_buffers_type, bool>>
             get(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
                 return {{const_buffers_type{
                     body_.data(), body_.size()}, false}};
             }
@@ -92,7 +100,7 @@ public:
 
         public:
             using const_buffers_type =
-                boost::asio::const_buffer;
+                net::const_buffer;
 
             template<bool isRequest, class Fields>
             writer(
@@ -105,13 +113,13 @@ public:
             void
             init(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
             }
 
             boost::optional<std::pair<const_buffers_type, bool>>
             get(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
                 body_.read = true;
                 return get(
                     std::integral_constant<bool, isSplit>{},
@@ -124,10 +132,10 @@ public:
                 std::false_type,    // isSplit
                 std::false_type)    // isFinalEmpty
             {
-                using boost::asio::buffer;
                 if(body_.s.empty())
                     return boost::none;
-                return {{buffer(body_.s.data(), body_.s.size()), false}};
+                return {{net::buffer(
+                    body_.s.data(), body_.s.size()), false}};
             }
 
             boost::optional<std::pair<const_buffers_type, bool>>
@@ -135,14 +143,13 @@ public:
                 std::false_type,    // isSplit
                 std::true_type)     // isFinalEmpty
             {
-                using boost::asio::buffer;
                 if(body_.s.empty())
                     return boost::none;
                 switch(step_)
                 {
                 case 0:
                     step_ = 1;
-                    return {{buffer(
+                    return {{net::buffer(
                         body_.s.data(), body_.s.size()), true}};
                 default:
                     return boost::none;
@@ -154,7 +161,6 @@ public:
                 std::true_type,     // isSplit
                 std::false_type)    // isFinalEmpty
             {
-                using boost::asio::buffer;
                 auto const n = (body_.s.size() + 1) / 2;
                 switch(step_)
                 {
@@ -162,10 +168,10 @@ public:
                     if(n == 0)
                         return boost::none;
                     step_ = 1;
-                    return {{buffer(body_.s.data(), n),
+                    return {{net::buffer(body_.s.data(), n),
                         body_.s.size() > 1}};
                 default:
-                    return {{buffer(body_.s.data() + n,
+                    return {{net::buffer(body_.s.data() + n,
                         body_.s.size() - n), false}};
                 }
             }
@@ -175,7 +181,6 @@ public:
                 std::true_type,     // isSplit
                 std::true_type)     // isFinalEmpty
             {
-                using boost::asio::buffer;
                 auto const n = (body_.s.size() + 1) / 2;
                 switch(step_)
                 {
@@ -183,11 +188,11 @@ public:
                     if(n == 0)
                         return boost::none;
                     step_ = body_.s.size() > 1 ? 1 : 2;
-                    return {{buffer(body_.s.data(), n), true}};
+                    return {{net::buffer(body_.s.data(), n), true}};
                 case 1:
                     BOOST_ASSERT(body_.s.size() > 1);
                     step_ = 2;
-                    return {{buffer(body_.s.data() + n,
+                    return {{net::buffer(body_.s.data() + n,
                         body_.s.size() - n), true}};
                 default:
                     return boost::none;
@@ -229,7 +234,7 @@ public:
 
         public:
             using const_buffers_type =
-                boost::asio::const_buffer;
+                net::const_buffer;
 
             template<bool isRequest, class Fields>
             explicit
@@ -298,7 +303,7 @@ public:
         write(ts, m, ec);
         if(ec && ec != error::end_of_stream)
             BOOST_THROW_EXCEPTION(system_error{ec});
-        return tr.str().to_string();
+        return std::string(tr.str());
     }
 
     void
@@ -636,14 +641,14 @@ public:
         {
             // Make sure handlers are not destroyed
             // after calling io_context::stop
-            boost::asio::io_context ioc;
+            net::io_context ioc;
             test::stream ts{ioc};
             BEAST_EXPECT(handler::count() == 0);
             request<string_body> m;
             m.method(verb::get);
             m.version(11);
             m.target("/");
-            m.set("Content-Length", 5);
+            m.set("Content-Length", "5");
             m.body() = "*****";
             async_write(ts, m, handler{});
             BEAST_EXPECT(handler::count() > 0);
@@ -658,7 +663,7 @@ public:
             // Make sure uninvoked handlers are
             // destroyed when calling ~io_context
             {
-                boost::asio::io_context ioc;
+                net::io_context ioc;
                 test::stream ts{ioc}, tr{ioc};
                 ts.connect(tr);
                 BEAST_EXPECT(handler::count() == 0);
@@ -666,7 +671,7 @@ public:
                 m.method(verb::get);
                 m.version(11);
                 m.target("/");
-                m.set("Content-Length", 5);
+                m.set("Content-Length", "5");
                 m.body() = "*****";
                 async_write(ts, m, handler{});
                 BEAST_EXPECT(handler::count() > 0);
@@ -718,7 +723,7 @@ public:
 
     template<class Body>
     void
-    testWriteStream(boost::asio::yield_context yield)
+    testWriteStream(net::yield_context yield)
     {
         test::stream ts{ioc_}, tr{ioc_};
         ts.connect(tr);
@@ -832,7 +837,7 @@ public:
     void
     testIssue655()
     {
-        boost::asio::io_context ioc;
+        net::io_context ioc;
         test::stream ts{ioc}, tr{ioc};
         ts.connect(tr);
         response<empty_body> res;
@@ -857,34 +862,43 @@ public:
     void
     testAsioHandlerInvoke()
     {
+        using strand = net::strand<
+            net::io_context::executor_type>;
+
         // make sure things compile, also can set a
         // breakpoint in asio_handler_invoke to make sure
         // it is instantiated.
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request<empty_body> m;
             request_serializer<empty_body, fields> sr{m};
-            async_write_some(ts, sr, s.wrap(copyable_handler{}));
+            async_write_some(ts, sr,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request<empty_body> m;
             request_serializer<empty_body, fields> sr{m};
-            async_write(ts, sr, s.wrap(copyable_handler{}));
+            async_write(ts, sr,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request<empty_body> m;
-            async_write(ts, m, s.wrap(copyable_handler{}));
+            async_write(ts, m,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
     }
 
@@ -895,7 +909,7 @@ public:
         struct writer
         {
             using const_buffers_type =
-                boost::asio::const_buffer;
+                net::const_buffer;
 
             template<bool isRequest, class Fields>
             writer(
@@ -907,13 +921,13 @@ public:
             void
             init(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
             }
 
             boost::optional<std::pair<const_buffers_type, bool>>
             get(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
                 return {{const_buffers_type{"", 0}, false}};
             }
         };
@@ -926,7 +940,7 @@ public:
         struct writer
         {
             using const_buffers_type =
-                boost::asio::const_buffer;
+                net::const_buffer;
 
             template<bool isRequest, class Fields>
             writer(
@@ -938,13 +952,13 @@ public:
             void
             init(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
             }
 
             boost::optional<std::pair<const_buffers_type, bool>>
             get(error_code& ec)
             {
-                ec.assign(0, ec.category());
+                ec = {};
                 return {{const_buffers_type{"", 0}, false}};
             }
         };
@@ -989,6 +1003,122 @@ public:
         }
     }
 
+#if BOOST_ASIO_HAS_CO_AWAIT
+    void testAwaitableCompiles(
+        test::stream& stream,
+        serializer<true, string_body>& request_serializer,
+        request<string_body>& req,
+        request<string_body> const& creq,
+        serializer<false, string_body>& response_serializer,
+        response<string_body>& resp,
+        response<string_body> const& cresp)
+    {
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, request_serializer, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, response_serializer, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, req, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, creq, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, resp, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write(stream, cresp, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write_some(stream, request_serializer, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write_some(stream, response_serializer, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write_header(stream, request_serializer, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_write_header(stream, response_serializer, net::use_awaitable))>);
+    }
+#endif
+
+    void
+    testCancellation(yield_context do_yield)
+    {
+        // this is tested on a pipe
+        // because the test::stream doesn't implement cancellation 
+        {
+            response<string_body> m;
+            m.version(10);
+            m.result(status::ok);
+            m.set(field::server, "test");
+            m.set(field::content_length, "5");
+            // make the content big enough so it overflows the buffer 
+            // that'll make the op never complete if we don't cancel
+            m.body().assign(10000000, '*');
+            error_code ec;
+            net::writable_pipe ts{ioc_};
+            net::readable_pipe tr{ioc_};
+            net::connect_pipe(tr, ts);
+            net::cancellation_signal cl;
+            net::post(ioc_, [&]{cl.emit(net::cancellation_type::all);});
+            net::steady_timer timeout(ioc_, std::chrono::seconds(5));
+            timeout.async_wait(
+                [&](error_code ec)
+                {
+                    BEAST_EXPECT(ec == net::error::operation_aborted);
+                    if (!ec) // this means the cancel failed!
+                        ts.close();
+                });
+
+            async_write(ts, m, net::bind_cancellation_slot(cl.slot(), do_yield[ec]));
+            timeout.cancel();
+            net::post(ioc_, do_yield); // wait for the timeout to finish
+            BEAST_EXPECT(ec == net::error::operation_aborted);
+        }
+        {
+            response<string_body> m;
+            m.version(11);
+            m.result(status::ok);
+            m.set(field::server, "test");
+            m.set(field::transfer_encoding, "chunked");
+            m.body().assign(10000000, '*');
+            error_code ec;
+            net::writable_pipe ts{ioc_};
+            net::readable_pipe tr{ioc_};
+            net::connect_pipe(tr, ts);
+            net::cancellation_signal cl;
+            net::post(ioc_, [&]{cl.emit(net::cancellation_type::all);});
+            net::steady_timer timeout(ioc_, std::chrono::seconds(5));
+            timeout.async_wait(
+                [&](error_code ec)
+                {
+                    BEAST_EXPECT(ec == net::error::operation_aborted);
+                    if (!ec) // this means the cancel failed!
+                        ts.close();
+                });
+            async_write(ts, m, net::bind_cancellation_slot(cl.slot(), do_yield[ec]));
+            timeout.cancel();
+            net::post(ioc_, do_yield); // wait for the timeout to finish
+            BEAST_EXPECT(ec == net::error::operation_aborted);
+        }
+        // the timer handler may be invoked after the test suite is complete if we don't post.
+        asio::post(ioc_, do_yield);
+    }
+
     void
     run() override
     {
@@ -1012,6 +1142,14 @@ public:
             });
         testAsioHandlerInvoke();
         testBodyWriters();
+#if BOOST_ASIO_HAS_CO_AWAIT
+        boost::ignore_unused(&write_test::testAwaitableCompiles);
+#endif
+        yield_to(
+            [&](yield_context yield)
+            {
+                testCancellation(yield);
+            });
     }
 };
 

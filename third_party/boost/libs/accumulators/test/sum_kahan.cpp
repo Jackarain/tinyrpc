@@ -8,6 +8,9 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/sum_kahan.hpp>
 #include <boost/accumulators/statistics/variates/covariate.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
@@ -67,6 +70,41 @@ void test_sum_of_variates_kahan()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    std::stringstream ss;
+    {
+        accumulator_set<
+            float, 
+            stats<tag::sum_of_variates_kahan<float, tag::covariate1> >,
+            float
+        >
+        acc;
+
+        BOOST_CHECK_EQUAL(0.0f, sum_of_variates_kahan(acc));
+
+        for (size_t i = 0; i < 1e6; ++i) {
+            acc(0, covariate1 = 1e-6f);
+        }
+
+        BOOST_CHECK_EQUAL(1.0f, sum_of_variates_kahan(acc));
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_set<
+        float, 
+        stats<tag::sum_of_variates_kahan<float, tag::covariate1> >,
+        float
+    >
+    acc;
+    boost::archive::text_iarchive ia(ss);
+    acc.serialize(ia, 0);
+    BOOST_CHECK_EQUAL(1.0f, sum_of_variates_kahan(acc));
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -76,6 +114,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test->add(BOOST_TEST_CASE(&test_sum_kahan));
     test->add(BOOST_TEST_CASE(&test_sum_of_weights_kahan));
     test->add(BOOST_TEST_CASE(&test_sum_of_variates_kahan));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

@@ -13,7 +13,7 @@
 #include <boost/container/vector.hpp>
 #include <boost/intrusive/detail/config_begin.hpp>
 #include "common_functors.hpp"
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <boost/intrusive/options.hpp>
 #include <boost/intrusive/detail/iterator.hpp>
 #include <boost/intrusive/detail/mpl.hpp>
@@ -21,6 +21,7 @@
 #include "test_container.hpp"
 #include "generic_assoc_test.hpp"
 #include <typeinfo>
+#include <functional> //std::greater
 #include <boost/intrusive/priority_compare.hpp>
 
 namespace boost{
@@ -52,7 +53,7 @@ void test_generic_set<ContainerDefiner>::test_all()
    {
       static const int random_init[6] = { 3, 2, 4, 1, 5, 2 };
       value_cont_type values(6);
-      for (int i = 0; i < 6; ++i)
+      for (std::size_t i = 0; i < 6u; ++i)
          (&values[i])->value_ = random_init[i];
 
       {
@@ -80,8 +81,8 @@ void test_generic_set<ContainerDefiner>::test_all()
    }
    {
       value_cont_type values(6);
-      for (int i = 0; i < 6; ++i)
-         (&values[i])->value_ = i+1;
+      for (std::size_t i = 0; i < 6u; ++i)
+         (&values[i])->value_ = (int)i+1;
       set_type testset(values.begin(), values.end());
       test::test_iterator_bidirectional(testset);
    }
@@ -92,13 +93,13 @@ template<class ContainerDefiner>
 void test_generic_set<ContainerDefiner>::test_impl()
 {
    value_cont_type values (5);
-   for (int i = 0; i < 5; ++i)
-      (&values[i])->value_ = i;
+   for (std::size_t i = 0; i < 5u; ++i)
+      (&values[i])->value_ = (int)i;
 
    typedef typename ContainerDefiner::template container
       <>::type set_type;
    set_type testset;
-   for (int i = 0; i < 5; ++i)
+   for (std::size_t i = 0; i < 5u; ++i)
       testset.insert (values[i]);
 
    testset.erase (testset.iterator_to (values[0]));
@@ -197,18 +198,19 @@ void test_generic_set<ContainerDefiner>::test_insert_advanced
    typedef typename ContainerDefiner::template container
       <>::type set_type;
    typedef typename set_type::key_of_value key_of_value;
+   typedef typename set_type::priority_of_value priority_of_value;
    typedef typename set_type::value_type  value_type;
    typedef priority_compare<> prio_comp_t;
    {
       set_type testset;
-      testset.insert(values.begin(), values.begin() + values.size());
+      testset.insert(values.begin(), values.end());
       testset.check();
       value_type v(1);
       typename set_type::insert_commit_data data;
-      BOOST_TEST ((!testset.insert_check(1, any_less(), prio_comp_t(), data).second));
-      BOOST_TEST ((!testset.insert_check(testset.begin(), 1, any_less(), prio_comp_t(), data).second));
-      BOOST_TEST ((!testset.insert_check(key_of_value()(v), data).second));
-      BOOST_TEST ((!testset.insert_check(testset.begin(), key_of_value()(v), data).second));
+      BOOST_TEST ((!testset.insert_check(1, any_less(), 1, prio_comp_t(), data).second));
+      BOOST_TEST ((!testset.insert_check(testset.begin(), 1, any_less(), 1, prio_comp_t(), data).second));
+      BOOST_TEST ((!testset.insert_check(key_of_value()(v), priority_of_value()(v), data).second));
+      BOOST_TEST ((!testset.insert_check(testset.begin(), key_of_value()(v), priority_of_value()(v), data).second));
    }
 }
 
@@ -223,7 +225,7 @@ void test_generic_set<ContainerDefiner>::test_insert_advanced
    typedef typename set_type::value_type     value_type;
    {
       set_type testset;
-      testset.insert(values.begin(), values.begin() + values.size());
+      testset.insert(values.begin(), values.end());
       testset.check();
       value_type v(1);
       typename set_type::insert_commit_data data;

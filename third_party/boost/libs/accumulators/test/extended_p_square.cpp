@@ -8,24 +8,28 @@
 #include <iostream>
 #include <boost/random.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/accumulators/numeric/functional/vector.hpp>
 #include <boost/accumulators/numeric/functional/complex.hpp>
 #include <boost/accumulators/numeric/functional/valarray.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/extended_p_square.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
 using namespace boost::accumulators;
+
+typedef accumulator_set<double, stats<tag::extended_p_square> > accumulator_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 // test_stat
 //
 void test_stat()
 {
-    typedef accumulator_set<double, stats<tag::extended_p_square> > accumulator_t;
 
     // tolerance
     double epsilon = 3;
@@ -62,6 +66,36 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    // "persistent" storage
+    std::stringstream ss;
+    // tolerance
+    double epsilon = 3.;
+    std::vector<double> probs;
+    probs.push_back(0.75);
+    {
+        accumulator_t acc(extended_p_square_probabilities = probs);
+        // a random number generator
+        boost::lagged_fibonacci607 rng;
+
+        for (int i=0; i<10000; ++i)
+            acc(rng());
+
+        BOOST_CHECK_CLOSE(extended_p_square(acc)[0], probs[0], epsilon);
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_t acc(extended_p_square_probabilities = probs);
+    boost::archive::text_iarchive ia(ss);
+    acc.serialize(ia, 0);
+    BOOST_CHECK_CLOSE(extended_p_square(acc)[0], probs[0], epsilon);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -69,6 +103,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("extended_p_square test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

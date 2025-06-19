@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Migrating fibers between threads</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="prev" href="fls.html" title="Fiber local storage">
@@ -29,12 +29,12 @@
 </h2></div></div></div>
 <h4>
 <a name="fiber.migration.h0"></a>
-      <span class="phrase"><a name="fiber.migration.overview"></a></span><a class="link" href="migration.html#fiber.migration.overview">Overview</a>
+      <span><a name="fiber.migration.overview"></a></span><a class="link" href="migration.html#fiber.migration.overview">Overview</a>
     </h4>
 <p>
       Each fiber owns a stack and manages its execution state, including all registers
       and CPU flags, the instruction pointer and the stack pointer. That means, in
-      general, a fiber is not bound to a specific thread.<a href="#ftn.fiber.migration.f0" class="footnote" name="fiber.migration.f0"><sup class="footnote">[3]</sup></a><sup>,</sup><a href="#ftn.fiber.migration.f1" class="footnote" name="fiber.migration.f1"><sup class="footnote">[4]</sup></a>
+      general, a fiber is not bound to a specific thread.<sup>[<a name="fiber.migration.f0" href="#ftn.fiber.migration.f0" class="footnote">3</a>]</sup><sup>,</sup><sup>[<a name="fiber.migration.f1" href="#ftn.fiber.migration.f1" class="footnote">4</a>]</sup>
     </p>
 <p>
       Migrating a fiber from a logical CPU with heavy workload to another logical
@@ -81,7 +81,7 @@
     </p>
 <h4>
 <a name="fiber.migration.h1"></a>
-      <span class="phrase"><a name="fiber.migration.example_of_work_sharing"></a></span><a class="link" href="migration.html#fiber.migration.example_of_work_sharing">Example
+      <span><a name="fiber.migration.example_of_work_sharing"></a></span><a class="link" href="migration.html#fiber.migration.example_of_work_sharing">Example
       of work sharing</a>
     </h4>
 <p>
@@ -102,7 +102,7 @@
     </p>
 <h4>
 <a name="fiber.migration.h2"></a>
-      <span class="phrase"><a name="fiber.migration.setup_of_threads_and_fibers"></a></span><a class="link" href="migration.html#fiber.migration.setup_of_threads_and_fibers">Setup
+      <span><a name="fiber.migration.setup_of_threads_and_fibers"></a></span><a class="link" href="migration.html#fiber.migration.setup_of_threads_and_fibers">Setup
       of threads and fibers</a>
     </h4>
 <p>
@@ -325,7 +325,7 @@
 </table></div>
 <h4>
 <a name="fiber.migration.h3"></a>
-      <span class="phrase"><a name="fiber.migration.scheduling_fibers"></a></span><a class="link" href="migration.html#fiber.migration.scheduling_fibers">Scheduling
+      <span><a name="fiber.migration.scheduling_fibers"></a></span><a class="link" href="migration.html#fiber.migration.scheduling_fibers">Scheduling
       fibers</a>
     </h4>
 <p>
@@ -361,13 +361,13 @@ before
       The source code above is found in <a href="../../../examples/work_sharing.cpp" target="_top">work_sharing.cpp</a>.
     </p>
 <div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.migration.f0" class="footnote"><p><a href="#fiber.migration.f0" class="para"><sup class="para">[3] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.migration.f0" href="#fiber.migration.f0" class="para">3</a>] </sup>
         The <span class="quote">&#8220;<span class="quote">main</span>&#8221;</span> fiber on each thread, that is, the fiber on which
         the thread is launched, cannot migrate to any other thread. Also <span class="bold"><strong>Boost.Fiber</strong></span> implicitly creates a dispatcher fiber
         for each thread &#8212; this cannot migrate either.
       </p></div>
-<div id="ftn.fiber.migration.f1" class="footnote"><p><a href="#fiber.migration.f1" class="para"><sup class="para">[4] </sup></a>
+<div class="footnote"><p><sup>[<a name="ftn.fiber.migration.f1" href="#fiber.migration.f1" class="para">4</a>] </sup>
         Of course it would be problematic to migrate a fiber that relies on <a class="link" href="overview.html#thread_local_storage">thread-local storage</a>.
       </p></div>
 </div>

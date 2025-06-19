@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,10 +18,9 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
-#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/coroutine.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
 #include <algorithm>
 #include <cstdlib>
@@ -32,15 +31,18 @@
 #include <thread>
 #include <vector>
 
-using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
-namespace ssl = boost::asio::ssl;               // from <boost/asio/ssl.hpp>
-namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
+namespace ssl = boost::asio::ssl;       // from <boost/asio/ssl.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 //------------------------------------------------------------------------------
 
 // Report a failure
 void
-fail(boost::system::error_code ec, char const* what)
+fail(beast::error_code ec, char const* what)
 {
     std::cerr << what << ": " << ec.message() << "\n";
 }
@@ -50,18 +52,13 @@ class session
     : public boost::asio::coroutine
     , public std::enable_shared_from_this<session>
 {
-    tcp::socket socket_;
-    websocket::stream<ssl::stream<tcp::socket&>> ws_;
-    boost::asio::strand<
-        boost::asio::io_context::executor_type> strand_;
-    boost::beast::multi_buffer buffer_;
+    websocket::stream<ssl::stream<beast::tcp_stream>> ws_;
+    beast::flat_buffer buffer_;
 
 public:
     // Take ownership of the socket
-    session(tcp::socket socket, ssl::context& ctx)
-        : socket_(std::move(socket))
-        , ws_(socket_, ctx)
-        , strand_(ws_.get_executor())
+    session(tcp::socket&& socket, ssl::context& ctx)
+        : ws_(std::move(socket), ctx)
     {
     }
 
@@ -69,41 +66,67 @@ public:
     void
     run()
     {
-        loop({}, 0);
+        // We need to be executing within a strand to perform async operations
+        // on the I/O objects in this session. Although not strictly necessary
+        // for single-threaded contexts, this example code is written to be
+        // thread-safe by default.
+        net::dispatch(ws_.get_executor(),
+                      beast::bind_front_handler(&session::loop,
+                                                shared_from_this(),
+                                                beast::error_code{},
+                                                0));
     }
 
-#include <boost/asio/yield.hpp>
+    #include <boost/asio/yield.hpp>
+
     void
     loop(
-        boost::system::error_code ec,
+        beast::error_code ec,
         std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
         reenter(*this)
         {
+            // Set the timeout.
+            beast::get_lowest_layer(ws_).expires_after(std::chrono::seconds(30));
+
             // Perform the SSL handshake
             yield ws_.next_layer().async_handshake(
                 ssl::stream_base::server,
-                boost::asio::bind_executor(
-                    strand_,
-                    std::bind(
-                        &session::loop,
-                        shared_from_this(),
-                        std::placeholders::_1,
-                        0)));
+                std::bind(
+                    &session::loop,
+                    shared_from_this(),
+                    std::placeholders::_1,
+                    0));
             if(ec)
                 return fail(ec, "handshake");
 
+            // Turn off the timeout on the tcp_stream, because
+            // the websocket stream has its own timeout system.
+            beast::get_lowest_layer(ws_).expires_never();
+
+            // Set suggested timeout settings for the websocket
+            ws_.set_option(
+                websocket::stream_base::timeout::suggested(
+                    beast::role_type::server));
+
+            // Set a decorator to change the Server of the handshake
+            ws_.set_option(websocket::stream_base::decorator(
+                [](websocket::response_type& res)
+                {
+                    res.set(http::field::server,
+                        std::string(BOOST_BEAST_VERSION_STRING) +
+                            " websocket-server-stackless-ssl");
+                }));
+
             // Accept the websocket handshake
             yield ws_.async_accept(
-                boost::asio::bind_executor(
-                    strand_,
-                    std::bind(
-                        &session::loop,
-                        shared_from_this(),
-                        std::placeholders::_1,
-                        0)));
+                std::bind(
+                    &session::loop,
+                    shared_from_this(),
+                    std::placeholders::_1,
+                    0));
             if(ec)
                 return fail(ec, "accept");
 
@@ -112,13 +135,11 @@ public:
                 // Read a message into our buffer
                 yield ws_.async_read(
                     buffer_,
-                    boost::asio::bind_executor(
-                        strand_,
-                        std::bind(
-                            &session::loop,
-                            shared_from_this(),
-                            std::placeholders::_1,
-                            std::placeholders::_2)));
+                    std::bind(
+                        &session::loop,
+                        shared_from_this(),
+                        std::placeholders::_1,
+                        std::placeholders::_2));
                 if(ec == websocket::error::closed)
                 {
                     // This indicates that the session was closed
@@ -131,13 +152,11 @@ public:
                 ws_.text(ws_.got_text());
                 yield ws_.async_write(
                     buffer_.data(),
-                    boost::asio::bind_executor(
-                        strand_,
-                        std::bind(
-                            &session::loop,
-                            shared_from_this(),
-                            std::placeholders::_1,
-                            std::placeholders::_2)));
+                    std::bind(
+                        &session::loop,
+                        shared_from_this(),
+                        std::placeholders::_1,
+                        std::placeholders::_2));
                 if(ec)
                     return fail(ec, "write");
 
@@ -146,7 +165,8 @@ public:
             }
         }
     }
-#include <boost/asio/unyield.hpp>
+
+    #include <boost/asio/unyield.hpp>
 };
 
 //------------------------------------------------------------------------------
@@ -156,20 +176,22 @@ class listener
     : public boost::asio::coroutine
     , public std::enable_shared_from_this<listener>
 {
+    net::io_context& ioc_;
     ssl::context& ctx_;
     tcp::acceptor acceptor_;
     tcp::socket socket_;
 
 public:
     listener(
-        boost::asio::io_context& ioc,
+        net::io_context& ioc,
         ssl::context& ctx,
         tcp::endpoint endpoint)
-        : ctx_(ctx)
+        : ioc_(ioc)
+        , ctx_(ctx)
         , acceptor_(ioc)
         , socket_(ioc)
     {
-        boost::system::error_code ec;
+        beast::error_code ec;
 
         // Open the acceptor
         acceptor_.open(endpoint.protocol(), ec);
@@ -180,7 +202,7 @@ public:
         }
 
         // Allow address reuse
-        acceptor_.set_option(boost::asio::socket_base::reuse_address(true), ec);
+        acceptor_.set_option(net::socket_base::reuse_address(true), ec);
         if(ec)
         {
             fail(ec, "set_option");
@@ -197,7 +219,7 @@ public:
 
         // Start listening for connections
         acceptor_.listen(
-            boost::asio::socket_base::max_listen_connections, ec);
+            net::socket_base::max_listen_connections, ec);
         if(ec)
         {
             fail(ec, "listen");
@@ -209,14 +231,15 @@ public:
     void
     run()
     {
-        if(! acceptor_.is_open())
-            return;
         loop();
     }
 
-#include <boost/asio/yield.hpp>
+private:
+
+    #include <boost/asio/yield.hpp>
+
     void
-    loop(boost::system::error_code ec = {})
+    loop(beast::error_code ec = {})
     {
         reenter(*this)
         {
@@ -237,10 +260,14 @@ public:
                     // Create the session and run it
                     std::make_shared<session>(std::move(socket_), ctx_)->run();
                 }
+
+                // Make sure each session gets its own strand
+                socket_ = tcp::socket(net::make_strand(ioc_));
             }
         }
     }
-#include <boost/asio/unyield.hpp>
+
+    #include <boost/asio/unyield.hpp>
 };
 
 //------------------------------------------------------------------------------
@@ -256,15 +283,15 @@ int main(int argc, char* argv[])
             "    websocket-server-async-ssl 0.0.0.0 8080 1\n";
         return EXIT_FAILURE;
     }
-    auto const address = boost::asio::ip::make_address(argv[1]);
+    auto const address = net::ip::make_address(argv[1]);
     auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
     auto const threads = std::max<int>(1, std::atoi(argv[3]));
 
     // The io_context is required for all I/O
-    boost::asio::io_context ioc{threads};
-    
+    net::io_context ioc{threads};
+
     // The SSL context is required, and holds certificates
-    ssl::context ctx{ssl::context::sslv23};
+    ssl::context ctx{ssl::context::tlsv12};
 
     // This holds the self-signed certificate used by the server
     load_server_certificate(ctx);

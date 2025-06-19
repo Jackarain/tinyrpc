@@ -1,13 +1,17 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 // Unit Test
 
-// Copyright (c) 2012-2015 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2012-2019 Barend Gehrels, Amsterdam, the Netherlands.
+
+// This file was modified by Oracle on 2020-2022.
+// Modifications copyright (c) 2020-2022 Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#include <test_buffer.hpp>
+#include "test_buffer.hpp"
 
 static std::string const simplex = "MULTIPOINT((5 5),(7 7))";
 static std::string const three = "MULTIPOINT((5 8),(9 8),(7 11))";
@@ -40,20 +44,21 @@ void test_all()
     > distance_strategy;
     bg::strategy::buffer::side_straight side_strategy;
 
-    double const pi = boost::geometry::math::pi<double>();
+    double const expectation = boost::geometry::math::pi<double>() *  0.99915;
 
-    test_one<multi_point_type, polygon>("simplex1", simplex, join, end_flat, 2.0 * pi, 1.0);
-    test_one<multi_point_type, polygon>("simplex2", simplex, join, end_flat, 22.8372, 2.0);
-    test_one<multi_point_type, polygon>("simplex3", simplex, join, end_flat, 44.5692, 3.0);
+    test_one<multi_point_type, polygon>("simplex1", simplex, join, end_flat, 2.0 * expectation, 1.0);
+    test_one<multi_point_type, polygon>("simplex2", simplex, join, end_flat, 22.8335, 2.0);
+    test_one<multi_point_type, polygon>("simplex3", simplex, join, end_flat, 44.5619, 3.0);
 
-    test_one<multi_point_type, polygon>("three1", three, join, end_flat, 3.0 * pi, 1.0);
-#if !defined(BOOST_GEOMETRY_NO_ROBUSTNESS)
-    // For no-rescaling, fails in CCW mode
-    test_one<multi_point_type, polygon>("three2", three, join, end_flat, 36.7592, 2.0);
-#endif
-    test_one<multi_point_type, polygon>("three19", three, join, end_flat, 33.6914, 1.9);
-    test_one<multi_point_type, polygon>("three21", three, join, end_flat, 39.6394, 2.1);
-    test_one<multi_point_type, polygon>("three3", three, join, end_flat, 65.533, 3.0);
+    test_one<multi_point_type, polygon>("three1", three, join, end_flat, 3.0 * expectation, 1.0);
+    {
+        // Is reported as invalid for in CCW mode: test validity only for clockwise
+        ut_settings const settings(ut_settings::default_tolerance, Clockwise);
+        test_one<multi_point_type, polygon>("three2", three, join, end_flat, 36.7528, 2.0, settings);
+    }
+    test_one<multi_point_type, polygon>("three19", three, join, end_flat, 33.6857, 1.9);
+    test_one<multi_point_type, polygon>("three21", three, join, end_flat, 39.6337, 2.1);
+    test_one<multi_point_type, polygon>("three3", three, join, end_flat, 65.5243, 3.0);
 
     test_one<multi_point_type, polygon>("multipoint_a", multipoint_a, join, end_flat, 2049.98, 14.0);
     test_one<multi_point_type, polygon>("multipoint_b", multipoint_b, join, end_flat, 7109.88, 15.0);
@@ -68,12 +73,9 @@ void test_all()
                 grid_a, join, end_flat,
                 distance_strategy(0.5), side_strategy, point_strategy, 7.0);
 
-#if defined(BOOST_GEOMETRY_BUFFER_USE_SIDE_OF_INTERSECTION)
         test_with_custom_strategies<multi_point_type, polygon>("grid_a54",
                 grid_a, join, end_flat,
                 distance_strategy(0.54), side_strategy, point_strategy, 7.819);
-#endif
-
     }
 
     test_with_custom_strategies<multi_point_type, polygon>("mysql_report_2015_02_25_1_800",
@@ -83,14 +85,21 @@ void test_all()
             115057490003226.125, ut_settings(1.0));
 
     {
+        typename bg::strategies::buffer::services::default_strategy
+            <
+                multi_point_type
+            >::type strategy;
+
         multi_point_type g;
         bg::read_wkt(mysql_report_3, g);
-        test_buffer<polygon>("mysql_report_3", g,
+        bg::model::multi_polygon<polygon> buffered;
+        test_buffer<polygon>("mysql_report_3", buffered, g,
             bg::strategy::buffer::join_round(36),
             bg::strategy::buffer::end_round(36),
             distance_strategy(1),
             side_strategy,
             bg::strategy::buffer::point_circle(36),
+            strategy,
             1, 0, 3.12566719800474635, ut_settings(1.0));
     }
 }
@@ -118,11 +127,7 @@ void test_many_points_per_circle()
 
     using bg::strategy::buffer::point_circle;
 
-#if defined(BOOST_GEOMETRY_NO_ROBUSTNESS)
     double const tolerance = 1000.0;
-#else
-    double const tolerance = 1.0;
-#endif
 
     // Area should be somewhat larger (~>) than pi*distance^2
     // 6051788: area ~> 115058122875258
@@ -202,8 +207,13 @@ void test_many_points_per_circle()
 
 int test_main(int, char* [])
 {
-    test_all<true, bg::model::point<double, 2, bg::cs::cartesian> >();
-    test_all<false, bg::model::point<double, 2, bg::cs::cartesian> >();
+    BoostGeometryWriteTestConfiguration();
+
+    test_all<true, bg::model::point<default_test_type, 2, bg::cs::cartesian> >();
+
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_ORDER)
+    test_all<false, bg::model::point<default_test_type, 2, bg::cs::cartesian> >();
+#endif
 
 #if defined(BOOST_GEOMETRY_COMPILER_MODE_RELEASE) && ! defined(BOOST_GEOMETRY_COMPILER_MODE_DEBUG)
     test_many_points_per_circle<bg::model::point<double, 2, bg::cs::cartesian> >();

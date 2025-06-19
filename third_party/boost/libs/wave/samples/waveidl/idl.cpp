@@ -15,6 +15,7 @@
 #include <boost/assert.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/wave/util/filesystem_compatibility.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Include Wave itself
@@ -32,6 +33,8 @@
 #include "idllexer/idl_re2c_lexer.hpp"
 #endif 
 
+#include <iostream>
+
 ///////////////////////////////////////////////////////////////////////////////
 //  include the grammar definitions, if these shouldn't be compiled separately
 //  (ATTENTION: _very_ large compilation times!)
@@ -43,6 +46,7 @@
 #include <boost/wave/grammars/cpp_expression_grammar.hpp>
 #include <boost/wave/grammars/cpp_predef_macros_grammar.hpp>
 #include <boost/wave/grammars/cpp_defined_grammar.hpp>
+#include <boost/wave/grammars/cpp_has_include_grammar.hpp>
 #endif 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -208,15 +212,14 @@ namespace cmd_line_util {
 //  switching the semantics of an -I option.
 //
 ///////////////////////////////////////////////////////////////////////////////
-namespace boost { namespace program_options {
+namespace cmd_line_util {
 
-  void validate(boost::any &v, std::vector<std::string> const &s,
-      cmd_line_util::include_paths *, int) 
-  {
-      cmd_line_util::include_paths::validate(v, s);
-  }
+void validate(boost::any &v, std::vector<std::string> const &s,
+              cmd_line_util::include_paths *, int) {
+  cmd_line_util::include_paths::validate(v, s);
+}
 
-}}  // namespace boost::program_options
+} // namespace cmd_line_util
 
 ///////////////////////////////////////////////////////////////////////////////
 //  do the actual preprocessing
@@ -471,9 +474,9 @@ main (int argc, char *argv[])
         
     // Try to find a waveidl.cfg in the same directory as the executable was 
     // started from. If this exists, treat it as a wave config file
-    fs::path filename(argv[0], fs::native);
+    fs::path filename = boost::wave::util::create_path(argv[0]);
 
-        filename = filename.branch_path() / "waveidl.cfg";
+        filename = boost::wave::util::branch_path(filename) / "waveidl.cfg";
         cmd_line_util::read_config_file_options(filename.string(), 
             desc_overall_cfgfile, vm, true);
 

@@ -106,7 +106,7 @@ Boost Getting Started</a> instructions, that's already done for you.</p>
 
 <p>The simplest and most common use is to add the two lines highlighted below 
 to a scope you want to time. See <code>
-<a href="../example/auto_cpu_example.cpp">auto_cpu_timer_example.cpp</a></code> 
+<a href="../example/auto_cpu_timer_example.cpp">auto_cpu_timer_example.cpp</a></code>
 for the source code. </p>
 <blockquote>
   <pre><span style="background-color: #D7EEFF">#include &lt;boost/timer/</span><span style="background-color: #D7EEFF">timer.hpp</span><span style="background-color: #D7EEFF">&gt;</span>
@@ -396,7 +396,7 @@ source of these elapsed times.</p>
 <h3><a name="Namespace-scope-functions">Namespace scope functions</a></h3>
 
 <pre><span style="background-color: #D7EEFF">std::string </span><a name="format"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(const </span><a href="#cpu_times"><span style="background-color: #D7EEFF">cpu_times</span></a><span style="background-color: #D7EEFF">&amp; times, short places, const std::string&amp; format);
-std::string </span><a name="format"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(const </span><a href="#cpu_times"><span style="background-color: #D7EEFF">cpu_times</span></a><span style="background-color: #D7EEFF">&amp; times, short places = default_places);</span></pre>
+std::string </span><a name="format-2"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(const </span><a href="#cpu_times"><span style="background-color: #D7EEFF">cpu_times</span></a><span style="background-color: #D7EEFF">&amp; times, short places = default_places);</span></pre>
 <blockquote>
 
 <p><i>Overview: </i>Converts <code>times</code>'s values to strings representing 
@@ -523,8 +523,8 @@ observers</a></h3>
   time values</a>.</p>
 
 </blockquote>
-<pre><span style="background-color: #D7EEFF">std::string       </span><a href="#cpu_timer-format"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(int</span><span style="background-color: #D7EEFF"> places, const std::string&amp; format) const;
-std::string       </span><a href="#cpu_timer-format"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(int</span><span style="background-color: #D7EEFF"> places = </span><span style="background-color: #D7EEFF">default_places</span><span style="background-color: #D7EEFF">) const;</span></pre>
+<pre><span style="background-color: #D7EEFF">std::string       </span><a name="cpu_timer-format"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(int</span><span style="background-color: #D7EEFF"> places, const std::string&amp; format) const;
+std::string       </span><a name="cpu_timer-format-2"><span style="background-color: #D7EEFF">format</span></a><span style="background-color: #D7EEFF">(int</span><span style="background-color: #D7EEFF"> places = </span><span style="background-color: #D7EEFF">default_places</span><span style="background-color: #D7EEFF">) const;</span></pre>
 <blockquote>
   <p><i>Overview:</i> Returns a string for the current elapsed time as formatted 
   by the <a href="#format">format non-member function</a>.</p>

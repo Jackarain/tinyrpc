@@ -1,7 +1,7 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // test_non_default_ctor.cpp
 
-// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com . 
+// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -19,11 +19,12 @@
 #include <boost/config.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/limits.hpp>
+#if BOOST_CXX_VERSION > 199711L // only include floating point if C++ version >= C++11
 #include <boost/math/special_functions/next.hpp>
-
+#endif
 #if defined(BOOST_NO_STDC_NAMESPACE)
 namespace std{
-    using ::rand; 
+    using ::rand;
     using ::remove;
     #if BOOST_WORKAROUND(BOOST_MSVC, >= 1400) && !defined(UNDER_CE)
         using ::numeric_limits;
@@ -36,7 +37,7 @@ namespace std{
 
 ///////////////////////////////////////////////////////
 // simple class test - using non-intrusive syntax
-// illustrates the usage of the non-intrusve syntax
+// illustrates the usage of the non-intrusive syntax
 class A
 {
     friend class boost::serialization::access;
@@ -76,7 +77,7 @@ public:
 
 int A::count = 0;
 
-A::A(int i_) : 
+A::A(int i_) :
     i(i_),
     s(static_cast<signed char>(0xff & std::rand())),
     t(static_cast<signed char>(0xff & std::rand())),
@@ -95,39 +96,43 @@ A::~A(){
 bool A::operator==(const A &rhs) const
 {
     return
-        s == rhs.s 
-        && t == rhs.t 
-        && u == rhs.u 
-        && v == rhs.v 
-        && std::abs( boost::math::float_distance(w, rhs.w)) < 2
-        && std::abs( boost::math::float_distance(x, rhs.x)) < 2
-    ;
+        s == rhs.s
+        && t == rhs.t
+        && u == rhs.u
+        && v == rhs.v
+        #if BOOST_CXX_VERSION > 199711L // only include floating point if C++ version >= C++11
+            && std::abs( boost::math::float_distance(w, rhs.w)) < 2
+            && std::abs( boost::math::float_distance(x, rhs.x)) < 2
+        #endif
+        ;
 }
 
-bool A::operator<(const A &rhs) const
+  bool A::operator<(const A &rhs) const
 {
     if(! (s == rhs.s) )
         return s < rhs.s;
     if(! (t == rhs.t) )
         return t < rhs.t;
     if(! (u == rhs.u) )
-        return t < rhs.u; 
+        return t < rhs.u;
     if(! (v == rhs.v) )
         return t < rhs.v;
-    if(std::abs( boost::math::float_distance(w, rhs.w)) > 1)
-        return false;
-    if(std::abs( boost::math::float_distance(x, rhs.x)) > 1)
-        return false;
+    #if BOOST_CXX_VERSION > 199711L // only include floating point if C++ version >= C++11
+        if(std::abs( boost::math::float_distance(w, rhs.w)) > 1)
+            return false;
+        if(std::abs( boost::math::float_distance(x, rhs.x)) > 1)
+            return false;
+    #endif
     return false;
 }
 
-namespace boost { 
+namespace boost {
 namespace serialization {
 
 template<class Archive>
 inline void save_construct_data(
-    Archive & ar, 
-    const A * a, 
+    Archive & ar,
+    const A * a,
     const unsigned int /* file_version */
 ){
     // variable used for construction
@@ -136,8 +141,8 @@ inline void save_construct_data(
 
 template<class Archive>
 inline void load_construct_data(
-    Archive & ar, 
-    A * a, 
+    Archive & ar,
+    A * a,
     const unsigned int /* file_version */
 ){
     int i;
@@ -154,7 +159,7 @@ void save(const char * testfile){
     A a(2);
 
     oa << BOOST_SERIALIZATION_NVP(a);
-    
+
     // save a copy pointer to this item
     A *pa1 = &a;
     oa << BOOST_SERIALIZATION_NVP(pa1);

@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -35,6 +35,24 @@ int main() {
 
         auto from_object = hana::is_valid([](auto&& t) -> decltype(
             t.member
+        ) { });
+        BOOST_HANA_CONSTANT_CHECK(from_object(yes{}));
+        BOOST_HANA_CONSTANT_CHECK(hana::not_(from_object(no{})));
+    }
+
+    // Check for a non-static member function
+    {
+        struct yes { int member() const; };
+        struct no { };
+
+        auto from_type = hana::is_valid([](auto t) -> decltype(
+            hana::traits::declval(t).member()
+        ) { });
+        BOOST_HANA_CONSTANT_CHECK(from_type(hana::type_c<yes>));
+        BOOST_HANA_CONSTANT_CHECK(hana::not_(from_type(hana::type_c<no>)));
+
+        auto from_object = hana::is_valid([](auto&& t) -> decltype(
+            t.member()
         ) { });
         BOOST_HANA_CONSTANT_CHECK(from_object(yes{}));
         BOOST_HANA_CONSTANT_CHECK(hana::not_(from_object(no{})));

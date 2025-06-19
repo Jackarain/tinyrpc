@@ -28,10 +28,10 @@ class node_iterator
 
     void increment()
     { m_node = m_node->next(); }
-    
+
     bool equal(node_iterator const& other) const
     { return this->m_node == other.m_node; }
-    
+
     node_base& dereference() const
     { return *m_node; }
 

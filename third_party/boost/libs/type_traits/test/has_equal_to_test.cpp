@@ -17,7 +17,7 @@
 
 #include "has_binary_operators.hpp"
 
-void specific() {
+BOOST_TT_PROC void specific() {
    BOOST_CHECK_INTEGRAL_CONSTANT((::boost::BOOST_TT_TRAIT_NAME< bool const, void, void >::value), 0);
    BOOST_CHECK_INTEGRAL_CONSTANT((::boost::BOOST_TT_TRAIT_NAME< bool &, void >::value), 0);
    BOOST_CHECK_INTEGRAL_CONSTANT((::boost::BOOST_TT_TRAIT_NAME< bool const &, void, void >::value), 0);
@@ -223,7 +223,7 @@ void specific() {
    // There are some things that pass that wouldn't otherwise do so:
    auto f = []() {};
    auto f2 = [](double)->int { return 2; };
-#ifndef BOOST_MSVC
+#if !defined(BOOST_MSVC) || (_MSC_FULL_VER >= 192829333)
    TEST_TR(decltype(f), bool, true);
    TEST_TR(decltype(f2), bool, true);
 #else

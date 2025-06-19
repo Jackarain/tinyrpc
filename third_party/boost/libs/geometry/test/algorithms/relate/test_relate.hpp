@@ -2,8 +2,8 @@
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2013, 2014, 2015, 2017.
-// Modifications copyright (c) 2013-2017 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2013-2022.
+// Modifications copyright (c) 2013-2022 Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
@@ -17,18 +17,11 @@
 
 #include <boost/variant.hpp>
 
-#include <boost/geometry/core/ring_type.hpp>
 #include <boost/geometry/algorithms/relate.hpp>
 #include <boost/geometry/algorithms/relation.hpp>
-#include <boost/geometry/strategies/strategies.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-
 #include <boost/geometry/io/wkt/read.hpp>
-
-#include <boost/geometry/strategies/cartesian/point_in_box.hpp>
-#include <boost/geometry/strategies/cartesian/box_in_box.hpp>
-#include <boost/geometry/strategies/agnostic/point_in_box_by_side.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 
 namespace bgdr = bg::detail::relate;
 
@@ -127,10 +120,10 @@ void check_geometry(Geometry1 const& geometry1,
             << " -> Expected: " << matrix_format(expected1, expected2)
             << " detected: " << res_str);
 
-        typedef typename bg::strategy::relate::services::default_strategy
+        using strategy_type = typename bg::strategies::relate::services::default_strategy
             <
                 Geometry1, Geometry2
-            >::type strategy_type;
+            >::type;
         std::string res_str0 = bg::relation(geometry1, geometry2, strategy_type()).str();
         BOOST_CHECK(res_str == res_str0);
 
@@ -168,10 +161,10 @@ void check_geometry(Geometry1 const& geometry1,
                 << " and " << wkt2
                 << " -> Expected: " << expected1);
 
-            typedef typename bg::strategy::relate::services::default_strategy
+            using strategy_type = typename bg::strategies::relate::services::default_strategy
                 <
                     Geometry1, Geometry2
-                >::type strategy_type;
+                >::type;
             bool result0 = bg::relate(geometry1, geometry2, bg::de9im::mask(expected1), strategy_type());
             BOOST_CHECK(result == result0);
 
@@ -190,7 +183,7 @@ void check_geometry(Geometry1 const& geometry1,
             // brake the expected output
             std::string expected_interrupt = expected1;
             bool changed = false;
-            BOOST_FOREACH(char & c, expected_interrupt)
+            for (char & c : expected_interrupt)
             {
                 if ( c >= '0' && c <= '9' )
                 {

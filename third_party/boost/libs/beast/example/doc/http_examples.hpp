@@ -137,7 +137,7 @@ receive_expect_100_continue(
         return;
 
     // Check for the Expect field value
-    if(parser.get()[field::expect] == "100-continue")
+    if(beast::iequals(parser.get()[field::expect], "100-continue"))
     {
         // send 100 response
         response<empty_body> res;
@@ -151,11 +151,7 @@ receive_expect_100_continue(
 
     // Read the rest of the message.
     //
-    // We use parser.base() to return a basic_parser&, to avoid an
-    // ambiguous function error (from boost::asio::read). Another
-    // solution is to qualify the call, e.g. `beast::http::read`
-    //
-    read(stream, buffer, parser.base(), ec);
+    read(stream, buffer, parser, ec);
 }
 
 //]
@@ -320,7 +316,7 @@ void do_server_head(
         // set of headers that would be sent for a GET request,
         // including the Content-Length, except for the body.
         res.result(status::ok);
-        res.set(field::content_length, payload.size());
+        res.content_length(payload.size());
 
         // For GET requests, we include the body
         if(req.method() == verb::get)
@@ -339,7 +335,7 @@ void do_server_head(
         // we do not recognize the request method.
         res.result(status::bad_request);
         res.set(field::content_type, "text/plain");
-        res.body() = "Invalid request-method '" + req.method_string().to_string() + "'";
+        res.body() = "Invalid request-method '" + std::string(req.method_string()) + "'";
         res.prepare_payload();
         break;
     }
@@ -864,203 +860,6 @@ do_form_request(
 
 //]
 
-
-
-//------------------------------------------------------------------------------
-//
-// Example: Custom Parser
-//
-//------------------------------------------------------------------------------
-
-//[example_http_custom_parser
-
-template<bool isRequest>
-class custom_parser
-    : public basic_parser<isRequest, custom_parser<isRequest>>
-{
-private:
-    // The friend declaration is needed,
-    // otherwise the callbacks must be made public.
-    friend class basic_parser<isRequest, custom_parser>;
-
-    /// Called after receiving the request-line (isRequest == true).
-    void
-    on_request_impl(
-        verb method,                // The method verb, verb::unknown if no match
-        string_view method_str,     // The method as a string
-        string_view target,         // The request-target
-        int version,                // The HTTP-version
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called after receiving the start-line (isRequest == false).
-    void
-    on_response_impl(
-        int code,                   // The status-code
-        string_view reason,         // The obsolete reason-phrase
-        int version,                // The HTTP-version
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called after receiving a header field.
-    void
-    on_field_impl(
-        field f,                    // The known-field enumeration constant
-        string_view name,           // The field name string.
-        string_view value,          // The field value
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called after the complete header is received.
-    void
-    on_header_impl(
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called just before processing the body, if a body exists.
-    void
-    on_body_init_impl(
-        boost::optional<
-            std::uint64_t> const&
-                content_length,     // Content length if known, else `boost::none`
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called for each piece of the body, if a body exists.
-    //!
-    //! This is used when there is no chunked transfer coding.
-    //!
-    //! The function returns the number of bytes consumed from the
-    //! input buffer. Any input octets not consumed will be will be
-    //! presented on subsequent calls.
-    //!
-    std::size_t
-    on_body_impl(
-        string_view s,              // A portion of the body
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called for each chunk header.
-    void
-    on_chunk_header_impl(
-        std::uint64_t size,         // The size of the upcoming chunk,
-                                    // or zero for the last chunk
-        string_view extension,      // The chunk extensions (may be empty)
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called to deliver the chunk body.
-    //!
-    //! This is used when there is a chunked transfer coding. The
-    //! implementation will automatically remove the encoding before
-    //! calling this function.
-    //!
-    //! The function returns the number of bytes consumed from the
-    //! input buffer. Any input octets not consumed will be will be
-    //! presented on subsequent calls.
-    //!
-    std::size_t
-    on_chunk_body_impl(
-        std::uint64_t remain,       // The number of bytes remaining in the chunk,
-                                    // including what is being passed here.
-                                    // or zero for the last chunk
-        string_view body,           // The next piece of the chunk body
-        error_code& ec);            // The error returned to the caller, if any
-
-    /// Called when the complete message is parsed.
-    void
-    on_finish_impl(error_code& ec);
-
-public:
-    custom_parser() = default;
-};
-
-//]
-
-// Definitions are not part of the docs but necessary to link
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_request_impl(verb method, string_view method_str,
-    string_view path, int version, error_code& ec)
-{
-    boost::ignore_unused(method, method_str, path, version);
-    ec = {};
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_response_impl(
-    int status,
-    string_view reason,
-    int version,
-    error_code& ec)
-{
-    boost::ignore_unused(status, reason, version);
-    ec = {};
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_field_impl(
-    field f,
-    string_view name,
-    string_view value,
-    error_code& ec)
-{
-    boost::ignore_unused(f, name, value);
-    ec = {};
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_header_impl(error_code& ec)
-{
-    ec = {};
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_body_init_impl(
-    boost::optional<std::uint64_t> const& content_length,
-    error_code& ec)
-{
-    boost::ignore_unused(content_length);
-    ec = {};
-}
-
-template<bool isRequest>
-std::size_t custom_parser<isRequest>::
-on_body_impl(string_view body, error_code& ec)
-{
-    boost::ignore_unused(body);
-    ec = {};
-    return body.size();
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_chunk_header_impl(
-    std::uint64_t size,
-    string_view extension,
-    error_code& ec)
-{
-    boost::ignore_unused(size, extension);
-    ec = {};
-}
-
-template<bool isRequest>
-std::size_t custom_parser<isRequest>::
-on_chunk_body_impl(
-    std::uint64_t remain,
-    string_view body,
-    error_code& ec)
-{
-    boost::ignore_unused(remain);
-    ec = {};
-    return body.size();
-}
-
-template<bool isRequest>
-void custom_parser<isRequest>::
-on_finish_impl(error_code& ec)
-{
-    ec = {};
-}
-
 //------------------------------------------------------------------------------
 //
 // Example: Incremental Read
@@ -1094,7 +893,7 @@ read_and_print_body(
         p.get().body().size = sizeof(buf);
         read(stream, buffer, p, ec);
         if(ec == error::need_buffer)
-            ec.assign(0, ec.category());
+            ec = {};
         if(ec)
             return;
         os.write(buf, sizeof(buf) - p.get().body().size);
@@ -1103,6 +902,42 @@ read_and_print_body(
 
 //]
 
+//------------------------------------------------------------------------------
+//
+// Example: Read large response body 
+//
+//------------------------------------------------------------------------------
+
+//[example_read_large_response_body
+
+/*  This function uses custom size limit of the resposne body.
+    The key method is 'body_limit' of the parser.
+    body_limit is expressed in bytes.
+*/
+template<
+    class SyncReadStream,
+    class DynamicBuffer,
+    bool isRequest, class Body, class Allocator>
+std::size_t
+read_large_response_body(
+    SyncReadStream& stream,
+    DynamicBuffer& buffer,
+    message<isRequest, Body, basic_fields<Allocator>>& msg,
+    std::size_t body_limit,
+    error_code& ec)
+{
+    parser<isRequest, Body, Allocator> p(std::move(msg));
+    p.eager(true);
+    p.body_limit(body_limit);
+    auto const bytes_transferred =
+        http::read(stream, buffer, p, ec);
+    if(ec)
+        return bytes_transferred;
+    msg = p.release();
+    return bytes_transferred;
+}
+
+//]
 
 //------------------------------------------------------------------------------
 //
@@ -1201,7 +1036,7 @@ print_chunked_body(
         else if(ec != error::end_of_chunk)
             return;
         else
-            ec.assign(0, ec.category());
+            ec = {};
 
         // We got a whole chunk, print the extensions:
         for(auto const& extension : ce)

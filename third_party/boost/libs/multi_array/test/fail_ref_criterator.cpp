@@ -15,12 +15,12 @@
 //   const_reverse_iterator/reverse_iterator conversion  test
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
 
-int test_main(int,char*[]) {
+int main() {
     typedef boost::multi_array_ref<int,3> array_ref;
 
     typedef array_ref::reverse_iterator riterator1;
@@ -29,5 +29,5 @@ int test_main(int,char*[]) {
     // Fail! ILLEGAL conversion from const_reverse_iterator to reverse_iterator
     riterator1 in = criterator1();
 
-    return boost::exit_success;
+    return boost::report_errors();
 }

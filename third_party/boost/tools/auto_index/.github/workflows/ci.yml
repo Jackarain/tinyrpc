@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+      - feature/**
+      - modular
+
+env:
+  UBSAN_OPTIONS: print_stacktrace=1
+
+jobs:
+  posix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - toolset: gcc
+            os: ubuntu-20.04
+          - toolset: gcc
+            os: ubuntu-22.04
+          - toolset: clang
+            cxxstd: 11
+            os: macos-11
+          - toolset: clang
+            cxxstd: 14
+            os: macos-12
+          - toolset: clang
+            cxxstd: 17
+            os: macos-13
+
+    runs-on: ${{matrix.os}}
+    container: ${{matrix.container}}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup container environment
+        if: matrix.container
+        run: |
+          apt-get update
+          apt-get -y install sudo python3 git g++
+
+      - name: Install packages
+        if: matrix.install
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install ${{matrix.install}}
+
+      - name: Setup Boost
+        run: |
+          echo GITHUB_REPOSITORY: $GITHUB_REPOSITORY
+          BOOST_BRANCH=develop && ( test "${GITHUB_REF_NAME}" == "master" || test "${GITHUB_REF_NAME}" == "modular" ) && BOOST_BRANCH=${GITHUB_REF_NAME} || true
+          BOOST_GIT=https://github.com/${GITHUB_REPOSITORY/auto_index/boost}.git
+          echo BOOST_GIT: ${BOOST_GIT}
+          echo BOOST_BRANCH: $BOOST_BRANCH
+          cd ..
+          git clone -b $BOOST_BRANCH --depth 1 "${BOOST_GIT}" boost-root
+          cd boost-root
+          git submodule update --init
+          rm -rf tools/auto_index/*
+          cp -r $GITHUB_WORKSPACE/* tools/auto_index
+          ./bootstrap.sh
+          ./b2 -d0 headers
+
+      - name: Create user-config.jam
+        if: matrix.compiler
+        run: |
+          echo "using ${{matrix.toolset}} : : ${{matrix.compiler}} ;" > ~/user-config.jam
+
+      - name: Run tests
+        run: |
+          cd ../boost-root
+          ./b2 -j3 tools/auto_index//all toolset=${{matrix.toolset}} cxxstd=${{matrix.cxxstd}} variant=debug,release
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - toolset: msvc-14.0
+            os: windows-2019
+          - toolset: msvc-14.2
+            os: windows-2019
+          - toolset: msvc-14.3
+            os: windows-2022
+          - toolset: clang-win
+            os: windows-2022
+          - toolset: gcc
+            os: windows-2019
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Boost
+        shell: cmd
+        run: |
+          echo GITHUB_REPOSITORY: %GITHUB_REPOSITORY%
+          set BOOST_BRANCH=develop
+          if "%GITHUB_REF_NAME%" == "master" set BOOST_BRANCH=master
+          if "%GITHUB_REF_NAME%" == "modular" set BOOST_BRANCH=modular
+          set BOOST_GIT=https://github.com/%GITHUB_REPOSITORY:auto_index=boost%.git
+          echo BOOST_GIT: %BOOST_GIT%
+          echo BOOST_BRANCH: %BOOST_BRANCH%
+          cd ..
+          git clone -b %BOOST_BRANCH% --depth 1 %BOOST_GIT% boost-root
+          cd boost-root
+          git submodule update --init
+          rd /s/q tools\auto_index
+          xcopy /s /e /q %GITHUB_WORKSPACE% tools\auto_index\
+          cmd /c bootstrap
+          b2 -d0 headers
+
+      - name: Run tests
+        shell: cmd
+        run: |
+          cd ../boost-root
+          b2 -j3 tools/auto_index//all toolset=${{matrix.toolset}} cxxstd=${{matrix.cxxstd}} variant=debug,release embed-manifest-via=linker

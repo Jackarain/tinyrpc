@@ -55,13 +55,25 @@ rule deduce-architecture ( properties * )
         {
             return <architecture>arm ;
         }
-        else if [ configure.builds /boost/architecture//mips1 : $(properties) : mips1 ]
+        else if [ configure.builds /boost/architecture//loongarch : $(properties) : loongarch ]
         {
-            return <architecture>mips1 ;
+            return <architecture>loongarch ;
+        }
+        else if [ configure.builds /boost/architecture//mips : $(properties) : mips ]
+        {
+            return <architecture>mips ;
         }
         else if [ configure.builds /boost/architecture//power : $(properties) : power ]
         {
             return <architecture>power ;
+        }
+        else if [ configure.builds /boost/architecture//riscv : $(properties) : riscv ]
+        {
+            return <architecture>riscv ;
+        }
+        else if [ configure.builds /boost/architecture//s390x : $(properties) : s390x ]
+        {
+            return <architecture>s390x ;
         }
         else if [ configure.builds /boost/architecture//sparc : $(properties) : sparc ]
         {
@@ -71,9 +83,9 @@ rule deduce-architecture ( properties * )
         {
             return <architecture>x86 ;
         }
-        else if [ configure.builds /boost/architecture//combined : $(properties) : combined ]
+        else if [ configure.builds /boost/architecture//arm+x86 : $(properties) : arm+x86 ]
         {
-            return <architecture>combined ;
+            return <architecture>arm+x86 ;
         }
     }
 }

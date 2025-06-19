@@ -168,21 +168,7 @@ definition using the `BOOST_SPIRIT_DEFINE` macro:
     BOOST_SPIRIT_DEFINE(r);
 
 Behind the scenes, what's actually happening is that we are defining a `parse_rule`
-function in the client namespace that tells X3 how to invoke the rule. For example,
-given a rule named `my_rule` and a corresponding definition named `my_rule_def`,
-`BOOST_SPIRIT_DEFINE(my_rule)` expands to this code:
-
-    template <typename Iterator, typename Context, typename Attribute>
-    inline bool parse_rule(
-        decltype(my_rule)
-      , Iterator& first, Iterator const& last
-      , Context const& context, Attribute& attr)
-    {
-        using boost::spirit::x3::unused;
-        static auto const def_ = my_rule_def;
-        return def_.parse(first, last, context, unused, attr);
-    }
-
+function in the client namespace that tells X3 how to invoke the rule.
 And so for each rule defined using `BOOST_SPIRIT_DEFINE`, there is an
 overloaded `parse_rule` function. At parse time, Spirit X3 recursively calls
 the appropriate `parse_rule` function.
@@ -206,9 +192,9 @@ The roman numeral grammar is a very nice and simple example of a grammar:
         using x3::_attr;
         using ascii::char_;
 
-        auto set_zero = [&](auto& ctx){ _val(ctx) = 0; };
-        auto add1000 = [&](auto& ctx){ _val(ctx) += 1000; };
-        auto add = [&](auto& ctx){ _val(ctx) += _attr(ctx); };
+        auto set_zero = [](auto& ctx){ _val(ctx) = 0; };
+        auto add1000 = [](auto& ctx){ _val(ctx) += 1000; };
+        auto add = [](auto& ctx){ _val(ctx) += _attr(ctx); };
 
         x3::rule<class roman, unsigned> const roman = "roman";
 

@@ -1,5 +1,6 @@
 // Copyright Paul A. Bristow 2007, 2009.
 // Copyright John Maddock 2006.
+// Copyright Matt Borland 2023.
 // Use, modification and distribution are subject to the
 // Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt
@@ -23,15 +24,19 @@
 #  pragma warning(disable: 4100) // unreferenced formal parameter.
 #endif
 
-#include <boost/math/tools/test.hpp> // for real_concept
+#include <boost/math/tools/config.hpp>
+#include "../include_private/boost/math/tools/test.hpp"
+
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
+#endif
+
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <boost/math/distributions/pareto.hpp>
     using boost::math::pareto_distribution;
-#include <boost/math/tools/test.hpp>
 #include "test_out_of_range.hpp"
 
 #include <iostream>
@@ -40,10 +45,20 @@
    using std::setprecision;
 #include <limits>
   using std::numeric_limits;
+#include <type_traits>
 
   template <class RealType>
   void check_pareto(RealType scale, RealType shape, RealType x, RealType p, RealType q, RealType tol)
   {
+    RealType logtol = tol * 10;
+    #ifndef BOOST_MATH_HAS_GPU_SUPPORT
+    BOOST_IF_CONSTEXPR (std::is_same<RealType, long double>::value || 
+                        std::is_same<RealType, boost::math::concepts::real_concept>::value)
+    {
+      logtol *= 100;
+    }
+    #endif
+    
     BOOST_CHECK_CLOSE_FRACTION(
       ::boost::math::cdf(
       pareto_distribution<RealType>(scale, shape),   // distribution.
@@ -57,6 +72,19 @@
       x)),                                           // random variable.
       q,                                             // probability complement.
       tol);                                          // tolerance eps.
+    BOOST_CHECK_CLOSE_FRACTION(
+      ::boost::math::logcdf(
+      pareto_distribution<RealType>(scale, shape),   // distribution.
+      x),                                            // random variable.
+      log(p),                                             // probability.
+      logtol);                                          // tolerance eps.
+    BOOST_CHECK_CLOSE_FRACTION(
+      ::boost::math::logcdf(
+      complement(
+      pareto_distribution<RealType>(scale, shape),   // distribution.
+      x)),                                           // random variable.
+      log(q),                                             // probability complement.
+      logtol);                                          // tolerance eps.
     BOOST_CHECK_CLOSE_FRACTION(
       ::boost::math::quantile(
       pareto_distribution<RealType>(scale, shape),   // distribution.
@@ -224,16 +252,20 @@ void test_spots(RealType)
     // skewness:
     BOOST_CHECK_CLOSE_FRACTION(
        skewness(pareto15), static_cast<RealType>(4.6475800154489004L), tol5eps);
-    // kertosis:
+    // kurtosis:
     BOOST_CHECK_CLOSE_FRACTION(
        kurtosis(pareto15), static_cast<RealType>(73.8L), tol5eps);
-    // kertosis excess:
+    // kurtosis excess:
     BOOST_CHECK_CLOSE_FRACTION(
        kurtosis_excess(pareto15), static_cast<RealType>(70.8L), tol5eps);
     // Check difference between kurtosis and excess:
     BOOST_CHECK_CLOSE_FRACTION(
       kurtosis_excess(pareto15), kurtosis(pareto15) - static_cast<RealType>(3L), tol5eps);
     // Check kurtosis excess = kurtosis - 3;
+
+    RealType expected_entropy = 1 + RealType(1)/RealType(5) + log(RealType(1)/RealType(5));
+    BOOST_CHECK_CLOSE_FRACTION(
+      entropy(pareto15), expected_entropy, tol5eps);
 
     // Error condition checks:
     check_out_of_range<pareto_distribution<RealType> >(1, 1);
@@ -333,7 +365,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double. OK at decdigits 7, tol5eps = 1e07 %
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_spots(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x0582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x0582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #else

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -22,19 +22,31 @@
 #include <string>
 #include <thread>
 
-using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
-namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 //------------------------------------------------------------------------------
 
 // Echoes back all received WebSocket messages
 void
-do_session(tcp::socket& socket)
+do_session(tcp::socket socket)
 {
     try
     {
         // Construct the stream by moving in the socket
         websocket::stream<tcp::socket> ws{std::move(socket)};
+
+        // Set a decorator to change the Server of the handshake
+        ws.set_option(websocket::stream_base::decorator(
+            [](websocket::response_type& res)
+            {
+                res.set(http::field::server,
+                    std::string(BOOST_BEAST_VERSION_STRING) +
+                        " websocket-server-sync");
+            }));
 
         // Accept the websocket handshake
         ws.accept();
@@ -42,7 +54,7 @@ do_session(tcp::socket& socket)
         for(;;)
         {
             // This buffer will hold the incoming message
-            boost::beast::multi_buffer buffer;
+            beast::flat_buffer buffer;
 
             // Read a message
             ws.read(buffer);
@@ -52,7 +64,7 @@ do_session(tcp::socket& socket)
             ws.write(buffer.data());
         }
     }
-    catch(boost::system::system_error const& se)
+    catch(beast::system_error const& se)
     {
         // This indicates that the session was closed
         if(se.code() != websocket::error::closed)
@@ -79,11 +91,11 @@ int main(int argc, char* argv[])
                 "    websocket-server-sync 0.0.0.0 8080\n";
             return EXIT_FAILURE;
         }
-        auto const address = boost::asio::ip::make_address(argv[1]);
+        auto const address = net::ip::make_address(argv[1]);
         auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
 
         // The io_context is required for all I/O
-        boost::asio::io_context ioc{1};
+        net::io_context ioc{1};
 
         // The acceptor receives incoming connections
         tcp::acceptor acceptor{ioc, {address, port}};
@@ -96,9 +108,9 @@ int main(int argc, char* argv[])
             acceptor.accept(socket);
 
             // Launch the session, transferring ownership of the socket
-            std::thread{std::bind(
+            std::thread(
                 &do_session,
-                std::move(socket))}.detach();
+                std::move(socket)).detach();
         }
     }
     catch (const std::exception& e)

@@ -8,10 +8,13 @@
 #
 
 build-project async ;
+build-project async-local ;
+build-project awaitable ;
 build-project coro ;
 build-project sync ;
 
-# VFALCO How do I make this work on Windows and if OpenSSL is not available?
-#build-project async-ssl ;
-#build-project coro-ssl ;
-#build-project sync-ssl ;
+# SSL
+build-project async-ssl ;
+build-project async-ssl-system-executor ;
+build-project coro-ssl ;
+build-project sync-ssl ;

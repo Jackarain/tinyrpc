@@ -15,8 +15,6 @@
 #include "test_relate.hpp"
 #include "nan_cases.hpp"
 
-//TEST
-//#include <to_svg.hpp>
 
 template <typename P>
 void test_linestring_polygon()
@@ -527,10 +525,6 @@ int test_main( int , char* [] )
 {
     test_all<bg::model::d2::point_xy<int> >();
     test_all<bg::model::d2::point_xy<double> >();
-
-#if defined(HAVE_TTMATH)
-    test_all<bg::model::d2::point_xy<ttmath_big> >();
-#endif
 
     return 0;
 }

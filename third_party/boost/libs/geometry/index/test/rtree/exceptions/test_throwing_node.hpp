@@ -13,6 +13,13 @@
 #define BOOST_GEOMETRY_INDEX_TEST_RTREE_THROWING_NODE_HPP
 
 #include <rtree/exceptions/test_throwing.hpp>
+#include <boost/core/invoke_swap.hpp>
+#include <boost/move/core.hpp>
+#include <boost/move/utility_core.hpp>
+#include <boost/variant/variant.hpp>
+#include <boost/variant/static_visitor.hpp>
+#include <exception>
+#include <stddef.h>
 
 struct throwing_nodes_stats
 {
@@ -96,13 +103,12 @@ struct variant_internal_node<Value, Parameters, Box, Allocators, node_throwing_s
     {
         throwing_nodes_stats::get_internal_nodes_counter_ref()++;
     }
-#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
+
     inline variant_internal_node(variant_internal_node && n)
         : elements(boost::move(n.elements))
     {
         throwing_nodes_stats::get_internal_nodes_counter_ref()++;
     }
-#endif
 
     elements_type elements;
 
@@ -126,13 +132,12 @@ struct variant_leaf<Value, Parameters, Box, Allocators, node_throwing_static_tag
     {
         throwing_nodes_stats::get_leafs_counter_ref()++;
     }
-#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
+
     inline variant_leaf(variant_leaf && n)
         : elements(boost::move(n.elements))
     {
         throwing_nodes_stats::get_leafs_counter_ref()++;
     }
-#endif
 
     elements_type elements;
 
@@ -229,17 +234,15 @@ public:
         return *this;
     }
 
-#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
     inline allocators & operator=(allocators const& a)
     {
         node_allocator() = a.node_allocator();
         return *this;
     }
-#endif
 
     void swap(allocators & a)
     {
-        boost::swap(node_allocator(), a.node_allocator());
+        boost::core::invoke_swap(node_allocator(), a.node_allocator());
     }
 
     bool operator==(allocators const& a) const { return node_allocator() == a.node_allocator(); }
@@ -254,7 +257,7 @@ public:
 
 struct node_bad_alloc : public std::exception
 {
-    const char * what() const throw() { return "internal node creation failed."; }
+    const char * what() const noexcept { return "internal node creation failed."; }
 };
 
 struct throwing_node_settings

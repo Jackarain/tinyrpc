@@ -15,10 +15,10 @@
 // with exceptions
 //
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
 #define BOOST_ENABLE_ASSERT_HANDLER
-#include "boost/multi_array.hpp" // includes assert.hpp
+#include <boost/multi_array.hpp> // includes assert.hpp
 
 #include <stdexcept>
 
@@ -40,7 +40,7 @@ namespace boost {
 using namespace boost;
 
 int
-test_main(int,char*[]) {
+main() {
 
   typedef multi_array<int,2> array_t;
 
@@ -55,5 +55,5 @@ test_main(int,char*[]) {
     //...all good
   }
 
-  return boost::exit_success;
+  return boost::report_errors();
 }

@@ -11,7 +11,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <memory>
 #include <utility>
 
@@ -194,8 +194,6 @@ int main()
         BOOST_TEST( wp5.lock() == 0 );
     }
 
-#if !defined( BOOST_NO_CXX11_SMART_PTR ) && !defined( BOOST_NO_CXX11_RVALUE_REFERENCES )
-
     {
         std::unique_ptr<X[]> px( new X[ 4 ] );
         BOOST_TEST( X::allocations == 1 );
@@ -254,8 +252,6 @@ int main()
         BOOST_TEST( X::allocations == 0 );
         BOOST_TEST( X::instances == 0 );
     }
-
-#endif
 
     {
         boost::shared_ptr<X[]> px( new X[ 5 ], array_deleter< X >() );

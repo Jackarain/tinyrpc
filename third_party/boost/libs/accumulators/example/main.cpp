@@ -6,6 +6,7 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <iostream>
+#include <fstream> // needed for de/serialization example (4)
 #include <algorithm>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
@@ -13,6 +14,9 @@
 #include <boost/foreach.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+// needed for de/serialization example (4)
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace boost::accumulators;
@@ -160,6 +164,85 @@ void example3()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// example4
+//
+//  Show how accumulators could be persisted into a file, and then continued
+//  from where they were left of
+//
+void example4()
+{
+    accumulator_set<
+        double
+      , stats<tag::min, tag::mean(immediate), tag::sum, tag::moment<2>, tag::p_square_quantile, tag::kurtosis >
+    > acc(quantile_probability = 0.9);
+
+    {
+        // accumulate values from array
+        boost::array<double, 10> data = {-10., -8., -7., -6., -5., -4., -3., -2., -1., 0.};
+
+        acc = std::for_each(data.begin(), data.end(), acc);
+    }
+
+    std::cout << "  min        = " << (min)(acc) << std::endl;
+    std::cout << "  mean       = " << mean(acc) << std::endl;
+    std::cout << "  count      = " << count(acc) << std::endl;
+    std::cout << "  sum        = " << sum(acc) << std::endl;
+    std::cout << "  moment<2>  = " << accumulators::moment<2>(acc) << std::endl;
+    std::cout << "  p_square_quantile  = " << accumulators::p_square_quantile(acc) << std::endl;
+    std::cout << "  kurtosis   = " << accumulators::kurtosis(acc) << std::endl;
+
+    // save accumulator list into a file called "saved-stats"
+    const unsigned ACC_VER = 0;
+    const char* file_name = "saved-stats";
+    {
+        std::ofstream ofs(file_name);
+        boost::archive::text_oarchive oa(ofs);
+        acc.serialize(oa, ACC_VER);
+    }
+
+    // create a new accumulator set and initialize from data saved into the file
+    accumulator_set<
+        double
+      , stats<tag::min, tag::mean(immediate), tag::sum, tag::moment<2>, tag::p_square_quantile, tag::kurtosis >
+    > restored_acc(quantile_probability = 0.9);
+
+    {
+        std::ifstream ifs(file_name);
+        boost::archive::text_iarchive ia(ifs);
+        restored_acc.serialize(ia, ACC_VER);
+    }
+
+    // continue accumulating into both sets
+    {
+        // accumulate values from array
+        boost::array<double, 10> data = {10., 8., 7., 6., 5., 4., 3., 2., 1., 0.};
+
+        acc = std::for_each(data.begin(), data.end(), acc);
+        restored_acc = std::for_each(data.begin(), data.end(), restored_acc);
+    }
+
+    // validate that both return th same values
+    std::cout << std::endl << "Values in original set:" << std::endl;
+    std::cout << "  min""(acc)        = " << (min)(acc) << std::endl;
+    std::cout << "  mean(acc)       = " << mean(acc) << std::endl;
+    std::cout << "  count(acc)      = " << count(acc) << std::endl;
+    std::cout << "  sum(acc)        = " << sum(acc) << std::endl;
+    std::cout << "  moment<2>(acc)  = " << accumulators::moment<2>(acc) << std::endl;
+    std::cout << "  p_square_quantile(acc)  = " << accumulators::p_square_quantile(acc) << std::endl;
+    std::cout << "  kurtosis(acc)  = " << accumulators::kurtosis(acc) << std::endl;
+    
+    std::cout << std::endl << "Values in restored set:" << std::endl;
+    std::cout << "  min""(acc)        = " << (min)(restored_acc) << std::endl;
+    std::cout << "  mean(acc)       = " << mean(restored_acc) << std::endl;
+    std::cout << "  count(acc)      = " << count(restored_acc) << std::endl;
+    std::cout << "  sum(acc)        = " << sum(restored_acc) << std::endl;
+    std::cout << "  moment<2>(acc)  = " << accumulators::moment<2>(restored_acc) << std::endl;
+    std::cout << "  p_square_quantile(acc)  = " << accumulators::p_square_quantile(restored_acc) << std::endl;
+    std::cout << "  kurtosis(acc)  = " << accumulators::kurtosis(restored_acc) << std::endl;
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // main
 int main()
 {
@@ -171,6 +254,9 @@ int main()
 
     std::cout << "\nExample 3:\n";
     example3();
+
+    std::cout << "\nExample 4:\n";
+    example4();
 
     return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -94,7 +94,9 @@ namespace boost { namespace hana {
         struct trap_construct {
             trap_construct() = default;
             trap_construct(trap_construct const&) = default;
+#ifndef BOOST_HANA_WORKAROUND_MSVC_MULTIPLECTOR_106654
             trap_construct(trap_construct&) = default;
+#endif
             trap_construct(trap_construct&&) = default;
 
             template <typename X>

@@ -14,11 +14,11 @@
 // -----------------------------------------------------------
 
 #include "bitset_test.hpp"
-#include "boost/dynamic_bitset/dynamic_bitset.hpp"
-#include "boost/limits.hpp"
-#include "boost/config.hpp"
+#include <boost/dynamic_bitset/dynamic_bitset.hpp>
+#include <boost/limits.hpp>
+#include <boost/config.hpp>
 
-#include "boost/detail/workaround.hpp"
+#include <boost/config/workaround.hpp>
 
 #if !defined(BOOST_NO_CXX11_ALLOCATOR)
 #include <cstdlib>
@@ -509,6 +509,26 @@ void run_test_cases( BOOST_EXPLICIT_TEMPLATE_TYPE(Block) )
       bit_vec[i] = long_string[n - 1 - i] == '0' ? 0 : 1;
     Tests::operator_bracket(b, bit_vec);
   }
+  //=====================================================================
+  // Test at
+  {
+      boost::dynamic_bitset<Block> b1;
+      std::vector<bool> bitvec1;
+      Tests::at(b1, bitvec1);
+  }
+  {
+      boost::dynamic_bitset<Block> b(std::string("1"));
+      std::vector<bool> bit_vec(1, true);
+      Tests::at(b, bit_vec);
+  }
+  {
+      boost::dynamic_bitset<Block> b(long_string);
+      std::size_t n = long_string.size();
+      std::vector<bool> bit_vec(n);
+      for (std::size_t i = 0; i < n; ++i)
+          bit_vec[i] = long_string[n - 1 - i] == '0' ? 0 : 1;
+      Tests::at(b, bit_vec);
+  }
 #if !defined(BOOST_NO_CXX11_ALLOCATOR)
   {
      typedef boost::dynamic_bitset<Block,
@@ -517,10 +537,15 @@ void run_test_cases( BOOST_EXPLICIT_TEMPLATE_TYPE(Block) )
      bitset_test<Bitset>::max_size(b);
   }
 #endif
+  // Test copy-initialize with default constructor
+  {
+    boost::dynamic_bitset<Block> b[1] = {};
+    (void)b;
+  }
 }
 
 int
-test_main(int, char*[])
+main()
 {
   run_test_cases<unsigned char>();
   run_test_cases<unsigned short>();
@@ -530,5 +555,5 @@ test_main(int, char*[])
   run_test_cases< ::boost::ulong_long_type>();
 # endif
 
-  return 0;
+  return boost::report_errors();
 }

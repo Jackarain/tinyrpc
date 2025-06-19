@@ -111,11 +111,14 @@ If option ['catch_system_errors] has value "no" the __UTF__ does not attempt to 
 within an IDE or to get a coredump for a stack analysis. See
 [link ref_usage_recommendations usage recommendations] pages for more details.
 
+[note If the __UTF__ detects that the current process is being run under a debugger, the `catch_system_errors` is
+ automatically disabled.]
+
 [h4 Acceptable values]
 
 [link boolean_param_value Boolean] with default value [*no].
 
-[note The __UTF__ can be built with flag BOOST_TEST_DEFAULTS_TO_CORE_DUMP in which case default changes to [*yes]]
+[note The __UTF__ can be built with flag `BOOST_TEST_DEFAULTS_TO_CORE_DUMP` in which case default changes to [*yes]]
 
 [h4 Command line syntax]
 
@@ -466,7 +469,7 @@ Case sensitive [link regular_param_value string]:
 ]
 
 [note For JUnit and if not specified, the log file is generated after the name of the
- [link boost_test.tests_organization.test_suite.master_test_suite master test suite].]
+ [link boost_test.tests_organization.test_tree.master_test_suite master test suite].]
 
 [h4 Command line syntax]
 

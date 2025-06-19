@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -38,6 +38,10 @@ namespace boost { namespace hana { namespace test {
             hana::for_each(xs, [](auto x) {
                 static_assert(EuclideanRing<decltype(x)>{}, "");
             });
+
+#ifdef BOOST_HANA_WORKAROUND_MSVC_DECLTYPEAUTO_RETURNTYPE_662735
+            zero<D>(); // force adding zero<D>'s member function to pending temploid list
+#endif
 
             foreach2(xs, [](auto a, auto b) {
 

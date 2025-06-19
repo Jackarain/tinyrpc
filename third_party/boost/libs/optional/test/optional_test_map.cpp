@@ -11,34 +11,34 @@
 
 #include "boost/optional/optional.hpp"
 
-#ifdef __BORLANDC__
+#ifdef BOOST_BORLANDC
 #pragma hdrstop
 #endif
 
 #include "boost/core/ignore_unused.hpp"
-#include "boost/core/is_same.hpp"
 #include "boost/core/lightweight_test.hpp"
 #include "boost/core/lightweight_test_trait.hpp"
+#include "boost/type_traits/is_same.hpp"
 
 
 using boost::optional;
 using boost::make_optional;
-using boost::core::is_same;
+using boost::is_same;
 
 template <typename Expected, typename Deduced>
 void verify_type(Deduced)
 {
   BOOST_TEST_TRAIT_TRUE(( is_same<Expected, Deduced> ));
 }
-  
-#if (!defined BOOST_NO_CXX11_REF_QUALIFIERS) && (!defined BOOST_OPTIONAL_DETAIL_NO_RVALUE_REFERENCES) 
+
+#if (!defined BOOST_NO_CXX11_REF_QUALIFIERS) && (!defined BOOST_OPTIONAL_DETAIL_NO_RVALUE_REFERENCES)
 struct MoveOnly
 {
   int value;
   explicit MoveOnly(int i) : value(i) {}
   MoveOnly(MoveOnly && r) : value(r.value) { r.value = 0; }
   MoveOnly& operator=(MoveOnly && r) { value = r.value; r.value = 0; return *this; }
-  
+
 private:
   MoveOnly(MoveOnly const&);
   void operator=(MoveOnly const&);
@@ -62,17 +62,17 @@ int get_val(MoveOnly m)
 void test_map_move_only()
 {
   optional<MoveOnly> om (makeMoveOnly(7)), om2 (makeMoveOnly(8));
-  verify_type<optional<int> >(boost::move(om).map(get_val));
-  optional<int> oi = boost::move(om2).map(get_val);
+  verify_type<optional<int> >(std::move(om).map(get_val));
+  optional<int> oi = std::move(om2).map(get_val);
   BOOST_TEST(bool(oi));
   BOOST_TEST_EQ(8, *oi);
 
   optional<int> oj = makeOptMoveOnly(4).map(get_val);
   BOOST_TEST(bool(oj));
   BOOST_TEST_EQ(4, *oj);
-  
+
   optional<MoveOnly> o_;
-  optional<int> oi_ = boost::move(o_).map(get_val);
+  optional<int> oi_ = std::move(o_).map(get_val);
   BOOST_TEST(!oi_);
 }
 
@@ -126,16 +126,16 @@ void test_map_optional()
   optional<int> o9 (9), o0 (0), o_;
   verify_type<optional<optional<Int> > >(o9.map(make_opt_int));
   optional<optional<Int> > oo9 = o9.map(make_opt_int);
-  BOOST_TEST(bool(oo9));  
-  BOOST_TEST(bool(*oo9));  
+  BOOST_TEST(bool(oo9));
+  BOOST_TEST(bool(*oo9));
   BOOST_TEST_EQ(9, (**oo9).i);
 
   optional<optional<Int> > oo0 = o0.map(make_opt_int);
-  BOOST_TEST(bool(oo0));  
-  BOOST_TEST(!*oo0);  
-  
+  BOOST_TEST(bool(oo0));
+  BOOST_TEST(!*oo0);
+
   optional<optional<Int> > oo_ = o_.map(make_opt_int);
-  BOOST_TEST(!oo_);  
+  BOOST_TEST(!oo_);
 }
 
 void test_map_with_lambda()
@@ -178,7 +178,7 @@ void test_map_optional_ref()
 
 int main()
 {
-#if (!defined BOOST_NO_CXX11_REF_QUALIFIERS) && (!defined BOOST_OPTIONAL_DETAIL_NO_RVALUE_REFERENCES) 
+#if (!defined BOOST_NO_CXX11_REF_QUALIFIERS) && (!defined BOOST_OPTIONAL_DETAIL_NO_RVALUE_REFERENCES)
   test_map_move_only();
 #endif
   test_map_with_lambda();

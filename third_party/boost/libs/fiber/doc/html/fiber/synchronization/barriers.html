@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Barriers</title>
 <link rel="stylesheet" href="../../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../synchronization.html" title="Synchronization">
 <link rel="prev" href="conditions.html" title="Condition Variables">
@@ -83,7 +83,7 @@
           It is unwise to tie the lifespan of a barrier to any one of its participating
           fibers. Although conceptually all waiting fibers awaken <span class="quote">&#8220;<span class="quote">simultaneously,</span>&#8221;</span>
           because of the nature of fibers, in practice they will awaken one by one
-          in indeterminate order.<a href="#ftn.fiber.synchronization.barriers.f0" class="footnote" name="fiber.synchronization.barriers.f0"><sup class="footnote">[1]</sup></a> The rest of the waiting fibers will still be blocked in <code class="computeroutput"><span class="identifier">wait</span><span class="special">()</span></code>,
+          in indeterminate order.<sup>[<a name="fiber.synchronization.barriers.f0" href="#ftn.fiber.synchronization.barriers.f0" class="footnote">1</a>]</sup> The rest of the waiting fibers will still be blocked in <code class="computeroutput"><span class="identifier">wait</span><span class="special">()</span></code>,
           which must, before returning, access data members in the barrier object.
         </p></td></tr>
 </table></div>
@@ -91,7 +91,7 @@
         </p>
 <h5>
 <a name="class_barrier_bridgehead"></a>
-  <span class="phrase"><a name="class_barrier"></a></span>
+  <span><a name="class_barrier"></a></span>
   <a class="link" href="barriers.html#class_barrier">Class <code class="computeroutput">barrier</code></a>
 </h5>
 <p>
@@ -118,13 +118,13 @@
       </p>
 <h5>
 <a name="fiber.synchronization.barriers.h0"></a>
-        <span class="phrase"><a name="fiber.synchronization.barriers.constructor"></a></span><a class="link" href="barriers.html#fiber.synchronization.barriers.constructor">Constructor</a>
+        <span><a name="fiber.synchronization.barriers.constructor"></a></span><a class="link" href="barriers.html#fiber.synchronization.barriers.constructor">Constructor</a>
       </h5>
 <pre class="programlisting"><span class="keyword">explicit</span> <span class="identifier">barrier</span><span class="special">(</span> <span class="identifier">std</span><span class="special">::</span><span class="identifier">size_t</span> <span class="identifier">initial</span><span class="special">);</span>
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Construct a barrier for <code class="computeroutput"><span class="identifier">initial</span></code>
@@ -144,7 +144,7 @@
         </p>
 <h5>
 <a name="barrier_wait_bridgehead"></a>
-  <span class="phrase"><a name="barrier_wait"></a></span>
+  <span><a name="barrier_wait"></a></span>
   <a class="link" href="barriers.html#barrier_wait">Member function <code class="computeroutput">wait</code>()</a>
 </h5>
 <p>
@@ -153,7 +153,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Block until <code class="computeroutput"><span class="identifier">initial</span></code>
@@ -176,8 +176,8 @@
 </dl>
 </div>
 <div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.synchronization.barriers.f0" class="footnote"><p><a href="#fiber.synchronization.barriers.f0" class="para"><sup class="para">[1] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.synchronization.barriers.f0" href="#fiber.synchronization.barriers.f0" class="para">1</a>] </sup>
             The current implementation wakes fibers in FIFO order: the first to call
             <code class="computeroutput"><span class="identifier">wait</span><span class="special">()</span></code>
             wakes first, and so forth. But it is perilous to rely on the order in

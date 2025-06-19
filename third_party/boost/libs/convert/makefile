@@ -1,10 +1,9 @@
 BOOST_ROOT = $(PRJROOT)/boost
 
-cflags = -O3 -I./include -I$(BOOST_ROOT) -Wno-unused-variable -Wno-uninitialized -Wno-sign-compare -Wno-deprecated-declarations 
-lflags = -L$(BOOST_ROOT)/stage/lib -lboost_timer -lboost_chrono -lboost_system
+cflags := -O3 -I./include -I$(BOOST_ROOT) -Wno-unused-variable -Wno-uninitialized -Wno-deprecated-declarations -Wno-stringop-overflow
+lflags := -L$(BOOST_ROOT)/stage/lib -lboost_timer -lboost_chrono -lboost_system
 
 target_1  = convert-test-callable           test/callable.cpp
-target_2  = convert-test-is-converter       test/is_converter.cpp
 target_3  = convert-test-fallbacks          test/fallbacks.cpp
 target_4  = convert-test-spirit-converter   test/spirit_converter.cpp
 target_5  = convert-test-stream-converter   test/stream_converter.cpp
@@ -18,6 +17,8 @@ target_12 = convert-test-sfinae             test/sfinae.cpp
 target_13 = convert-test-has-member         test/has_member.cpp
 target_14 = convert-test-performance        test/performance.cpp
 target_15 = convert-test-performance-spirit test/performance_spirit.cpp
+target_16 = convert-test-charconv-converter test/charconv_converter.cpp
+target_17 = convert-test-63 				test/issue-63.cpp
 
 target_21 = convert-example-algorithms         example/algorithms.cpp
 target_22 = convert-example-default_converter  example/default_converter.cpp

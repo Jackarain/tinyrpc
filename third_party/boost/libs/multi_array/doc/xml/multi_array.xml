@@ -18,7 +18,7 @@ using a replaceable allocator.
 <para>
 <link linkend="MultiArray">MultiArray</link>,
 <ulink url="../../../libs/utility/CopyConstructible.html">CopyConstructible</ulink>. Depending on the element type, 
-it may also model <ulink url="http://www.sgi.com/tech/stl/EqualityComparable.html">EqualityComparable</ulink> and <ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink>. 
+it may also model <ulink url="https://www.boost.org/sgi/stl/EqualityComparable.html">EqualityComparable</ulink> and <ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink>. 
 </para>
 </formalpara>
 

@@ -75,17 +75,17 @@ to current Boost practice.</p>
       <td><b>Functionality</b></td>
     </tr>
     <tr>
-      <td><a href="../../boost/timer.hpp">timer.hpp</a></td>
+      <td><a href="../../../boost/timer.hpp">timer.hpp</a></td>
       <td><a href="#Class timer">timer</a></td>
       <td>Measure elapsed time.</td>
     </tr>
     <tr>
-      <td><a href="../../boost/progress.hpp">progress.hpp</a></td>
+      <td><a href="../../../boost/progress.hpp">progress.hpp</a></td>
       <td><a href="#Class progress_timer">progress_timer</a></td>
       <td>Measure elapsed time (using timer), display on destruction.</td>
     </tr>
     <tr>
-      <td><a href="../../boost/progress.hpp">progress.hpp</a></td>
+      <td><a href="../../../boost/progress.hpp">progress.hpp</a></td>
       <td><a href="#Class progress_display">progress_display</a></td>
       <td>Display an indication of progress toward a known goal.</td>
     </tr>
@@ -105,7 +105,7 @@ low as 596.5 hours (or even less) for the supplied implementation. Because of
 these limitations, this timer cannot be depended upon to
 be robust, and should not be used if that is of any concern.</p>
 <h3>Synopsis</h3>
-<pre>#include &lt;<a href="../../boost/timer.hpp">boost/timer.hpp</a>&gt;
+<pre>#include &lt;<a href="../../../boost/timer.hpp">boost/timer.hpp</a>&gt;
 namespace boost {
 class timer {
  public:
@@ -136,7 +136,7 @@ destruction displays an elapsed time message at an appropriate place in an appro
 The supplied implementation defaults to a character display on std::cout.</p>
 <p>Class progress_timer is often used to time program execution.&nbsp; Its use is as simple as:</p>
 <blockquote>
-  <pre>#include &lt;<a href="../../boost/progress.hpp">boost/progress.hpp</a>&gt;
+  <pre>#include &lt;<a href="../../../boost/progress.hpp">boost/progress.hpp</a>&gt;
 int main()
 {
    progress_timer t;  // start timing
@@ -151,9 +151,9 @@ int main()
 <p>Note that &quot;s&quot; is the official System International d'Unités
 abbreviation for seconds.</p>
 <h3>Synopsis</h3>
-<pre>#include &lt;<a href="../../boost/progress.hpp">boost/progress.hpp</a>&gt;
+<pre>#include &lt;<a href="../../../boost/progress.hpp">boost/progress.hpp</a>&gt;
 namespace boost {
-class progress_timer : public <a href="#Class timer">timer</a>, <a href="../utility/utility.htm#Class_noncopyable">noncopyable</a>  {
+class progress_timer : public <a href="#Class timer">timer</a>, <a href="../../core/doc/html/core/noncopyable.html">noncopyable</a>  {
  public:
    progress_timer();
    progress_timer( std::ostream&amp; os ); // os is hint; implementation may ignore
@@ -188,7 +188,7 @@ something like this:</p>
 <h2>Synopsis</h2>
 <pre>#include &lt;boost/progress.hpp&gt;
 namespace boost {
-class progress_display : <a href="../utility/utility.htm#Class_noncopyable">noncopyable</a> {
+class progress_display : <a href="../../core/doc/html/core/noncopyable.html">noncopyable</a> {
  public:
    progress_display( unsigned long expected_count );
    // Effects: restart(expected_count)

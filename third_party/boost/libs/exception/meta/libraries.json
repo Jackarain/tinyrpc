@@ -7,9 +7,11 @@
     "description": "The Boost Exception library supports transporting of arbitrary data in exception objects, and transporting of exceptions between threads.",
     "documentation": "doc/boost-exception.html",
     "category": [
+        "Error-handling",
         "Emulation"
     ],
     "maintainers": [
         "Emil Dotchevski <emil -at- revergestudios.com>"
-    ]
+    ],
+    "cxxstd": "03"
 }

@@ -1,20 +1,18 @@
-//  Copyright (c) 2001-2011 Hartmut Kaiser
+//  Copyright (c) 2001-2020 Hartmut Kaiser
 //  Copyright (c) 2011      Bryce Lelbach
 // 
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying 
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-//#define KARMA_FAIL_COMPILATION
+#include "real.hpp"
 
 #include <boost/spirit/include/version.hpp>
 #include <boost/spirit/include/karma_phoenix_attributes.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include "real.hpp"
+#include <boost/phoenix/core.hpp>
+#include <boost/phoenix/operator.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
-// the customization points below have been added only recently
-#if SPIRIT_VERSION >= 0x2050
+#ifndef BOOST_SPIRIT_NO_MATH_REAL_CONCEPT
 // does not provide proper std::numeric_limits, we need to roll our own
 namespace boost { namespace spirit { namespace traits
 {
@@ -37,6 +35,11 @@ namespace boost { namespace spirit { namespace traits
     };
 }}}
 #endif
+
+struct double_prec16_policy : boost::spirit::karma::real_policies<double>
+{
+    static unsigned int precision(double) { return 16; }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 int main()
@@ -80,10 +83,7 @@ int main()
         BOOST_TEST(test("-123420000000000000000.0", fixed, -1.23420e20));
     }
 
-// support for using real_concept with a Karma generator has been implemented 
-// in Boost versions > 1.36 only, additionally real_concept is available only
-// if BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS  is not defined
-#if BOOST_VERSION > 103600 && !defined(BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS)
+#ifndef BOOST_SPIRIT_NO_MATH_REAL_CONCEPT
     {
         using boost::math::concepts::real_concept;
         typedef karma::real_generator<real_concept> custom_type;
@@ -164,8 +164,6 @@ int main()
         BOOST_TEST(test("1.0", double_(1.0), v));
     }
 
-// we support Phoenix attributes only starting with V2.2
-#if SPIRIT_VERSION >= 0x2020
     {   // Phoenix expression tests (requires to include 
         // karma_phoenix_attributes.hpp)
         namespace phoenix = boost::phoenix;
@@ -176,12 +174,30 @@ int main()
         BOOST_TEST(test("1.2", double_, phoenix::ref(d)));
         BOOST_TEST(test("2.2", double_, ++phoenix::ref(d)));
     }
-#endif
 
     // test for denormalized numbers
     {
         BOOST_TEST(test("4.941e-324", double_, std::numeric_limits<double>::denorm_min()));
     }
+
+    // test for #628: spirit::karma::generate generates 10.0e-04, but expecting 1.0e-03
+    {
+        BOOST_TEST(test("1.0", double_, 0.99999999999999829));
+        BOOST_TEST(test("0.1", double_, 0.099999999999999829));
+        BOOST_TEST(test("0.01", double_, 0.0099999999999999829));
+        BOOST_TEST(test("1.0e-03", double_, 0.00099999999999999829));
+        BOOST_TEST(test("1.0e-04", double_, 0.00009999999999999982));
+        BOOST_TEST(test("1.0e-05", double_, 0.00000999999999999998));
+    }
+
+    // test for #735: off by a magnitude due to log10 rounding up
+    {
+        BOOST_TEST(test("0.0999999999999998",
+            karma::real_generator<double, double_prec16_policy>(),
+            0.099999999999999770
+            ));
+    }
+
     return boost::report_errors();
 }
 

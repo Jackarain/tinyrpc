@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,15 +13,17 @@
 #include "message_fuzz.hpp"
 #include "test_parser.hpp"
 
+#include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/buffers_cat.hpp>
 #include <boost/beast/core/buffers_prefix.hpp>
 #include <boost/beast/core/buffers_suffix.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/test/fuzz.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 namespace boost {
 namespace beast {
@@ -152,11 +154,11 @@ public:
 
     template<class Parser, class ConstBufferSequence, class Test>
     typename std::enable_if<
-        boost::asio::is_const_buffer_sequence<ConstBufferSequence>::value>::type
+        net::is_const_buffer_sequence<ConstBufferSequence>::value>::type
     parsegrind(ConstBufferSequence const& buffers,
         Test const& test, bool skip = false)
     {
-        auto const size = boost::asio::buffer_size(buffers);
+        auto const size = buffer_bytes(buffers);
         for(std::size_t i = 1; i < size - 1; ++i)
         {
             Parser p;
@@ -174,7 +176,7 @@ public:
             n = p.put(cb, ec);
             if(! BEAST_EXPECTS(! ec, ec.message()))
                 continue;
-            if(! BEAST_EXPECT(n == boost::asio::buffer_size(cb)))
+            if(! BEAST_EXPECT(n == buffer_bytes(cb)))
                 continue;
             if(p.need_eof())
             {
@@ -213,13 +215,13 @@ public:
     void
     parsegrind(string_view msg, Test const& test, bool skip = false)
     {
-        parsegrind<Parser>(boost::asio::const_buffer{
+        parsegrind<Parser>(net::const_buffer{
             msg.data(), msg.size()}, test, skip);
     }
 
     template<class Parser, class ConstBufferSequence>
     typename std::enable_if<
-        boost::asio::is_const_buffer_sequence<ConstBufferSequence>::value>::type
+        net::is_const_buffer_sequence<ConstBufferSequence>::value>::type
     parsegrind(ConstBufferSequence const& buffers)
     {
         parsegrind<Parser>(buffers, [](Parser const&){});
@@ -241,7 +243,7 @@ public:
             Parser p;
             p.eager(true);
             error_code ec;
-            buffers_suffix<boost::asio::const_buffer> cb{
+            buffers_suffix<net::const_buffer> cb{
                 boost::in_place_init, msg.data(), msg.size()};
             auto n = p.put(buffers_prefix(i, cb), ec);
             if(ec == result)
@@ -266,8 +268,8 @@ public:
             p.eager(true);
             error_code ec;
             p.put(buffers_cat(
-                boost::asio::const_buffer{msg.data(), i},
-                boost::asio::const_buffer{
+                net::const_buffer{msg.data(), i},
+                net::const_buffer{
                     msg.data() + i, msg.size() - i}), ec);
             if(! ec)
                 p.put_eof(ec);
@@ -363,6 +365,18 @@ public:
     {
         parsegrind<test_parser<true>>(
             "GET / HTTP/1.1\r\n"
+            "\r\n",
+            [&](test_parser<true> const& p)
+            {
+                BEAST_EXPECT(p.got_on_begin     == 1);
+                BEAST_EXPECT(p.got_on_field     == 0);
+                BEAST_EXPECT(p.got_on_header    == 1);
+                BEAST_EXPECT(p.got_on_body      == 0);
+                BEAST_EXPECT(p.got_on_chunk     == 0);
+                BEAST_EXPECT(p.got_on_complete  == 1);
+            });
+        parsegrind<test_parser<true>>(
+            "GET / HTTP/1.1\r\n"
             "User-Agent: test\r\n"
             "Content-Length: 1\r\n"
             "\r\n"
@@ -373,6 +387,18 @@ public:
                 BEAST_EXPECT(p.got_on_field     == 2);
                 BEAST_EXPECT(p.got_on_header    == 1);
                 BEAST_EXPECT(p.got_on_body      == 1);
+                BEAST_EXPECT(p.got_on_chunk     == 0);
+                BEAST_EXPECT(p.got_on_complete  == 1);
+            });
+        parsegrind<test_parser<false>>(
+            "HTTP/1.1 100 Continue\r\n"
+            "\r\n",
+            [&](test_parser<false> const& p)
+            {
+                BEAST_EXPECT(p.got_on_begin     == 1);
+                BEAST_EXPECT(p.got_on_field     == 0);
+                BEAST_EXPECT(p.got_on_header    == 1);
+                BEAST_EXPECT(p.got_on_body      == 0);
                 BEAST_EXPECT(p.got_on_chunk     == 0);
                 BEAST_EXPECT(p.got_on_complete  == 1);
             });
@@ -691,6 +717,8 @@ public:
         parsegrind<P>(m("Content-LengtX: 0\r\n"),           expect_flags{*this, 0});
         parsegrind<P>(m("Content-Lengths: many\r\n"),       expect_flags{*this, 0});
         parsegrind<P>(m("Content: full\r\n"),               expect_flags{*this, 0});
+        parsegrind<P>(m("Content-Length: 0\r\n"
+                        "Content-Length: 0\r\n"),           expect_flags{*this, 0});
 
         failgrind<P>(c("\r\n"),                             error::bad_content_length);
         failgrind<P>(c("18446744073709551616\r\n"),         error::bad_content_length);
@@ -698,8 +726,8 @@ public:
         failgrind<P>(c("0 1\r\n"),                          error::bad_content_length);
         failgrind<P>(c(",\r\n"),                            error::bad_content_length);
         failgrind<P>(c("0,\r\n"),                           error::bad_content_length);
-        failgrind<P>(m(
-            "Content-Length: 0\r\nContent-Length: 0\r\n"),  error::bad_content_length);
+        failgrind<P>(m("Content-Length: 0\r\n"
+                        "Content-Length: 100\r\n"),         error::multiple_content_length);
     }
 
     void
@@ -827,7 +855,7 @@ public:
     {
         {
             multi_buffer b;
-            ostream(b) << 
+            ostream(b) <<
                 "POST / HTTP/1.1\r\n"
                 "Content-Length: 2\r\n"
                 "\r\n"
@@ -841,7 +869,43 @@ public:
         }
         {
             multi_buffer b;
-            ostream(b) << 
+            ostream(b) <<
+                "POST / HTTP/1.1\r\n";
+            error_code ec;
+            test_parser<true> p;
+            p.header_limit(18);
+            p.eager(true);
+            b.consume(p.put(b.data(), ec));
+            BEAST_EXPECTS(ec == error::need_more, ec.message());
+            ostream(b) <<
+                "field: value\r\n";
+            b.consume(p.put(b.data(), ec));
+            BEAST_EXPECT(! p.is_done());
+            BEAST_EXPECTS(ec == error::header_limit, ec.message());
+        }
+        {
+            multi_buffer b;
+            ostream(b) <<
+                "POST / HTTP/1.1\r\n"
+                "Transfer-Encoding: chunked\r\n"
+                "\r\n"
+                "0\r\n";
+            error_code ec;
+            test_parser<true> p;
+            p.header_limit(47);
+            p.eager(true);
+            b.consume(p.put(b.data(), ec));
+            BEAST_EXPECTS(ec == error::need_more, ec.message());
+            ostream(b) <<
+                "field: value\r\n"
+                "\r\n";
+            b.consume(p.put(b.data(), ec));
+            BEAST_EXPECT(! p.is_done());
+            BEAST_EXPECTS(ec == error::header_limit, ec.message());
+        }
+        {
+            multi_buffer b;
+            ostream(b) <<
                 "POST / HTTP/1.1\r\n"
                 "Content-Length: 2\r\n"
                 "\r\n"
@@ -855,7 +919,7 @@ public:
         }
         {
             multi_buffer b;
-            ostream(b) << 
+            ostream(b) <<
                 "HTTP/1.1 200 OK\r\n"
                 "\r\n"
                 "**";
@@ -868,7 +932,7 @@ public:
         }
         {
             multi_buffer b;
-            ostream(b) << 
+            ostream(b) <<
                 "POST / HTTP/1.1\r\n"
                 "Transfer-Encoding: chunked\r\n"
                 "\r\n"
@@ -887,16 +951,16 @@ public:
     //--------------------------------------------------------------------------
 
     static
-    boost::asio::const_buffer
+    net::const_buffer
     buf(string_view s)
     {
         return {s.data(), s.size()};
     }
 
-    template<class ConstBufferSequence, bool isRequest, class Derived>
+    template<class ConstBufferSequence, bool isRequest>
     std::size_t
     feed(ConstBufferSequence const& buffers,
-        basic_parser<isRequest, Derived>& p, error_code& ec)
+        basic_parser<isRequest>& p, error_code& ec)
     {
         p.eager(true);
         return p.put(buffers, ec);
@@ -1080,7 +1144,7 @@ public:
             "GET / HTTP/1.1\r\n"
             "\r\n"
             "die!";
-        p.put(boost::asio::buffer(
+        p.put(net::buffer(
             s.data(), s.size()), ec);
         if(! BEAST_EXPECTS(! ec, ec.message()))
             return;
@@ -1117,7 +1181,7 @@ public:
             "HTTP/1.1 101 Switching Protocols\r\n"
             "Content-Length: 2147483648\r\n"
             "\r\n";
-        p.put(boost::asio::buffer(
+        p.put(net::buffer(
             s.data(), s.size()), ec);
         if(! BEAST_EXPECTS(! ec, ec.message()))
             return;
@@ -1132,7 +1196,7 @@ public:
         auto const grind =
         [&](string_view s)
         {
-            static_string<100> ss{s};
+            static_string<100> ss(s.data(), s.size());
             test::fuzz_rand r;
             test::fuzz(ss, 4, 5, r,
             [&](string_view s)
@@ -1140,7 +1204,7 @@ public:
                 error_code ec;
                 test_parser<false> p;
                 p.eager(true);
-                p.put(boost::asio::const_buffer{
+                p.put(net::const_buffer{
                     s.data(), s.size()}, ec);
             });
         };
@@ -1151,12 +1215,12 @@ public:
                 "HTTP/1.1 200 OK\r\n"
                 "Transfer-Encoding: chunked\r\n"
                 "\r\n"
-                "0" + s.to_string() + "\r\n"
+                "0" + std::string(s) + "\r\n"
                 "\r\n";
             error_code ec;
             test_parser<false> p;
             p.eager(true);
-            p.put(boost::asio::const_buffer{
+            p.put(net::const_buffer{
                 msg.data(), msg.size()}, ec);
             BEAST_EXPECTS(! ec, ec.message());
             grind(msg);
@@ -1168,12 +1232,12 @@ public:
                 "HTTP/1.1 200 OK\r\n"
                 "Transfer-Encoding: chunked\r\n"
                 "\r\n"
-                "0" + s.to_string() + "\r\n"
+                "0" + std::string(s) + "\r\n"
                 "\r\n";
             error_code ec;
             test_parser<false> p;
             p.eager(true);
-            p.put(boost::asio::const_buffer{
+            p.put(net::const_buffer{
                 msg.data(), msg.size()}, ec);
             BEAST_EXPECT(ec);
             grind(msg);
@@ -1209,7 +1273,7 @@ public:
 
         error_code ec;
         test_parser<true> p;
-        feed(boost::asio::buffer(buf, sizeof(buf)), p, ec);
+        feed(net::buffer(buf, sizeof(buf)), p, ec);
         BEAST_EXPECT(ec);
     }
 
@@ -1220,18 +1284,18 @@ public:
         auto const good =
             [&](string_view s, std::uint32_t v0)
             {
-                std::uint32_t v;
+                std::uint64_t v;
                 auto const result =
-                    base::parse_dec(s.begin(), s.end(), v);
+                    base::parse_dec(s, v);
                 if(BEAST_EXPECTS(result, s))
                     BEAST_EXPECTS(v == v0, s);
             };
         auto const bad =
             [&](string_view s)
             {
-                std::uint32_t v;
+                std::uint64_t v;
                 auto const result =
-                    base::parse_dec(s.begin(), s.end(), v);
+                    base::parse_dec(s, v);
                 BEAST_EXPECTS(! result, s);
             };
         good("0",           0);
@@ -1246,7 +1310,7 @@ public:
         bad (" 0");
         bad ("0 ");
         bad ("-1");
-        bad ("4294967296");
+        bad ("18446744073709551616"); // max(uint64) + 1
     }
 
     void
@@ -1257,7 +1321,7 @@ public:
             [&](string_view s, std::uint64_t v0)
             {
                 std::uint64_t v;
-                auto it = s.begin();
+                auto it = s.data();
                 auto const result =
                     base::parse_hex(it, v);
                 if(BEAST_EXPECTS(result, s))
@@ -1267,7 +1331,7 @@ public:
             [&](string_view s)
             {
                 std::uint64_t v;
-                auto it = s.begin();
+                auto it = s.data();
                 auto const result =
                     base::parse_hex(it, v);
                 BEAST_EXPECTS(! result, s);
@@ -1281,6 +1345,253 @@ public:
         bad ("g\r\n");
         bad ("10000000000000000\r\n");
         bad ("ffffffffffffffffffffff\r\n");
+    }
+
+    //--------------------------------------------------------------------------
+
+    // https://github.com/boostorg/beast/issues/1734
+
+    void
+    testIssue1734()
+    {
+        // Ensure more than one buffer, this is to avoid an optimized path in
+        // basic_parser::put(ConstBufferSequence const&,...) which avoids
+        // buffer flattening.
+        auto multibufs = [](multi_buffer::const_buffers_type buffers) {
+            std::vector<net::const_buffer> bs;
+            for (auto b : buffers_range(buffers))
+                bs.push_back(b);
+            while (std::distance(bs.begin(), bs.end()) < 2) {
+                bs.push_back({});
+            }
+            return bs;
+        };
+
+        // Buffers must be bigger than max_stack_buffer to force flattening
+        // in basic_parser::put(ConstBufferSequence const&,...)
+        std::string first_chunk_data(
+            2 * basic_parser<false>::max_stack_buffer + 1, 'x');
+
+        std::string second_chunk_data_part1(
+            basic_parser<false>::max_stack_buffer + 2, 'x');
+        std::string second_chunk_data_part2(
+            basic_parser<false>::max_stack_buffer + 1, 'x');
+
+        multi_buffer b;
+        parser<false, string_body> p;
+        p.eager(true);
+        error_code ec;
+        std::size_t used;
+
+        ostream(b) <<
+            "HTTP/1.1 200 OK\r\n"
+            "Server: test\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n";
+
+        used = p.put(b.data(), ec);
+        b.consume(used);
+
+        BEAST_EXPECT(net::buffer_size(b.data()) == 0);
+        BEAST_EXPECTS(!ec, ec.message());
+        BEAST_EXPECT(!p.is_done());
+        BEAST_EXPECT(p.is_header_done());
+
+        ostream(b) <<
+            std::hex <<
+            first_chunk_data.size() << "\r\n" <<
+            first_chunk_data << "\r\n";
+
+        // First chunk
+        used = p.put(multibufs(b.data()), ec);
+        b.consume(used);
+
+        BEAST_EXPECTS(ec == error::need_more, ec.message());
+        BEAST_EXPECT(!p.is_done());
+
+        ostream(b) <<
+            std::hex <<
+            (second_chunk_data_part1.size() +
+             second_chunk_data_part2.size() ) << "\r\n" <<
+            second_chunk_data_part1;
+
+        // Second chunk, part 1
+        used = p.put(multibufs(b.data()), ec);
+        b.consume(used);
+
+        BEAST_EXPECTS(!ec, ec.message());
+        BEAST_EXPECT(!p.is_done());
+
+        ostream(b) <<
+            second_chunk_data_part2 << "\r\n"
+            << "0\r\n\r\n";
+
+        // Second chunk, part 2
+        used = p.put(multibufs(b.data()), ec);
+        b.consume(used);
+
+        BEAST_EXPECTS(!ec, ec.message()); // <-- Error: bad chunk
+        if(p.need_eof())
+        {
+            p.put_eof(ec);
+            BEAST_EXPECTS(! ec, ec.message());
+        }
+        BEAST_EXPECT(p.is_done());
+    }
+
+    void
+    testChunkedOverflow()
+    {
+        {
+            const std::string hdr =
+                "HTTP/1.1 200 OK" "\r\n"
+                "Server: test" "\r\n"
+                "Transfer-Encoding: chunked" "\r\n"
+                "\r\n";
+            const std::string chunk1 =
+                "10000000000000000" "\r\n"
+                "data...";
+            test_parser<false> p;
+            error_code ec;
+            p.put(net::buffer(hdr), ec);
+            BEAST_EXPECT(!ec);
+            BEAST_EXPECT(p.is_header_done());
+            auto bt = p.put(net::buffer(chunk1), ec);
+            BEAST_EXPECT(bt == 0);
+            BEAST_EXPECT(ec == error::bad_chunk);
+        }
+        {
+            const std::string hdr =
+                "HTTP/1.1 200 OK" "\r\n"
+                "Server: test" "\r\n"
+                "Transfer-Encoding: chunked" "\r\n"
+                "\r\n"
+                "1" "\r\n"
+                "x" "\r\n";
+            const std::string chunk2 =
+                "FFFFFFFFFFFFFFFF" "\r\n"
+                "data...";
+            test_parser<false> p;
+            p.eager(true);
+            error_code ec;
+            flat_buffer fb;
+            fb.commit(net::buffer_copy(fb.prepare(10000), net::buffer(hdr)));
+            fb.consume(p.put(fb.data(), ec));
+            BEAST_EXPECT(p.is_header_done());
+            BEAST_EXPECT(ec = error::need_more);
+            fb.commit(net::buffer_copy(fb.prepare(10000), net::buffer(chunk2)));
+            auto bt = p.put(fb.data(), ec);
+            BEAST_EXPECT(bt == 0);
+            BEAST_EXPECT(ec == error::body_limit);
+        }
+        {
+            const std::string hdr =
+                "HTTP/1.1 200 OK" "\r\n"
+                "Server: test" "\r\n"
+                "Transfer-Encoding: chunked" "\r\n"
+                "\r\n"
+                "1" "\r\n"
+                "x" "\r\n";
+            const std::string chunk2 =
+                "FFFFFFFFFFFFFFFF" "\r\n"
+                "data...";
+            test_parser<false> p;
+            p.eager(true);
+            p.body_limit(boost::none);
+            error_code ec;
+            flat_buffer fb;
+            fb.commit(net::buffer_copy(fb.prepare(10000), net::buffer(hdr)));
+            fb.consume(p.put(fb.data(), ec));
+            BEAST_EXPECT(p.is_header_done());
+            BEAST_EXPECTS(ec = error::need_more, ec.message());
+            fb.commit(net::buffer_copy(fb.prepare(10000), net::buffer(chunk2)));
+            auto bt = p.put(fb.data(), ec);
+            BEAST_EXPECT(bt == 27);
+            BEAST_EXPECT(!ec);
+        }
+    }
+
+    void testChunkedBodySize()
+    {
+        string_view resp =
+            "HTTP/1.1 200 OK\r\n"
+            "Server: test\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+
+            // chunk 1
+            "4\r\n"
+            "Wiki\r\n"
+
+            // chunk 2
+            "5\r\n"
+            "pedia\r\n"
+
+            // chunk 3
+            "E\r\n"
+            " in\r\n"
+            "\r\n"
+            "chunks.\r\n"
+
+            // end
+            "0\r\n"
+            "\r\n";
+
+        {  // body limit not exceeded
+            test_parser<false> p;
+            p.eager(true);
+            p.body_limit(23);
+            error_code ec;
+            p.put(net::buffer(resp.data(), resp.size()), ec);
+            BEAST_EXPECT(!ec);
+            p.put_eof(ec);
+            BEAST_EXPECT(!ec);
+        }
+
+        {  // body limit exceeded
+            test_parser<false> p;
+            p.eager(true);
+            p.body_limit(22);
+            error_code ec;
+            p.put(net::buffer(resp.data(), resp.size()), ec);
+            BEAST_EXPECT(ec == error::body_limit);
+            p.put_eof(ec);
+            BEAST_EXPECT(ec == error::partial_message);
+        }
+    }
+
+    void
+    testUnlimitedBody()
+    {
+        const char data[] =
+            "POST / HTTP/1.1\r\n"
+            "Content-Length: 5\r\n"
+            "\r\n"
+            "*****";
+
+        test::fail_count fc(1000);
+        test_parser<true> p(fc);
+        p.body_limit(none);
+        error_code ec;
+        p.put(net::buffer(data, strlen(data)), ec);
+        BEAST_EXPECTS(!ec, ec.message());
+    }
+
+    void
+    testIssue2201()
+    {
+        const char data[] =
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Length: 5\r\n"
+            "\r\n"
+            "*****";
+
+        test_parser<false> p;
+        p.eager(true);
+        p.body_limit(3);
+        error_code ec;
+        p.put(net::buffer(data, strlen(data)), ec);
+        BEAST_EXPECT(ec == error::body_limit);
     }
 
     //--------------------------------------------------------------------------
@@ -1309,6 +1620,10 @@ public:
         testRegression1();
         testIssue1211();
         testIssue1267();
+        testChunkedOverflow();
+        testChunkedBodySize();
+        testUnlimitedBody();
+        testIssue2201();
     }
 };
 

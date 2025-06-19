@@ -9,7 +9,7 @@
 #include <boost/math/tools/test.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/next.hpp>
 #include <boost/math/special_functions/ulp.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -17,7 +17,7 @@
 #include <iostream>
 #include <iomanip>
 
-#ifdef BOOST_MSVC
+#ifdef _MSC_VER
 #pragma warning(disable:4127)
 #endif
 
@@ -27,7 +27,7 @@ bool is_normalized_value(const T& val)
    //
    // Returns false if value has guard digits that are non-zero
    //
-   boost::intmax_t shift = std::numeric_limits<T>::digits - ilogb(val) - 1;
+   std::intmax_t shift = std::numeric_limits<T>::digits - ilogb(val) - 1;
    T shifted = scalbn(val, shift);
    return floor(shifted) == shifted;
 }
@@ -61,7 +61,7 @@ void test_value(const T& val, const char* name)
    }
    BOOST_CHECK_EQUAL(float_distance(float_advance(val, 4), val), -4);
    BOOST_CHECK_EQUAL(float_distance(float_advance(val, -4), val), 4);
-   if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present))
+   if(std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>())
    {
       BOOST_CHECK_EQUAL(float_distance(float_advance(float_next(float_next(val)), 4), float_next(float_next(val))), -4);
       BOOST_CHECK_EQUAL(float_distance(float_advance(float_next(float_next(val)), -4), float_next(float_next(val))), 4);
@@ -104,8 +104,8 @@ void test_value(const T& val, const char* name)
 template <class T>
 void test_values(const T& val, const char* name)
 {
-   static const T a = boost::lexical_cast<T>("1.3456724e22");
-   static const T b = boost::lexical_cast<T>("1.3456724e-22");
+   static const T a = T("1.3456724e22");
+   static const T b = T("1.3456724e-22");
    static const T z = 0;
    static const T one = 1;
    static const T radix = std::numeric_limits<T>::radix;
@@ -132,7 +132,7 @@ void test_values(const T& val, const char* name)
    test_value(T(-boost::math::tools::epsilon<T>()), name);
    test_value(boost::math::tools::min_value<T>(), name);
    test_value(T(-boost::math::tools::min_value<T>()), name);
-   if (std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present) && ((std::numeric_limits<T>::min)() / 2 != 0))
+   if (std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>() && ((std::numeric_limits<T>::min)() / 2 != 0))
    {
       test_value(z, name);
       test_value(T(-z), name);
@@ -142,7 +142,7 @@ void test_values(const T& val, const char* name)
    test_value(radix, name);
    test_value(T(-radix), name);
 
-   if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_denorm == std::denorm_present) && ((std::numeric_limits<T>::min)() / 2 != 0))
+   if(std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>() && ((std::numeric_limits<T>::min)() / 2 != 0))
    {
       test_value(std::numeric_limits<T>::denorm_min(), name);
       test_value(T(-std::numeric_limits<T>::denorm_min()), name);
@@ -176,12 +176,12 @@ void test_values(const T& val, const char* name)
       BOOST_CHECK_EQUAL(boost::math::float_advance(val, primes[i]), v1);
       BOOST_CHECK_EQUAL(boost::math::float_advance(val, -primes[i]), v2);
    }
-   if(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_infinity))
+   BOOST_IF_CONSTEXPR(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_infinity))
    {
       BOOST_CHECK_EQUAL(boost::math::float_prior(std::numeric_limits<T>::infinity()), (std::numeric_limits<T>::max)());
       BOOST_CHECK_EQUAL(boost::math::float_next(-std::numeric_limits<T>::infinity()), -(std::numeric_limits<T>::max)());
-      BOOST_MATH_CHECK_THROW(boost::math::float_prior(-std::numeric_limits<T>::infinity()), std::domain_error);
-      BOOST_MATH_CHECK_THROW(boost::math::float_next(std::numeric_limits<T>::infinity()), std::domain_error);
+      BOOST_CHECK_EQUAL(boost::math::float_prior(-std::numeric_limits<T>::infinity()), -std::numeric_limits<T>::infinity());
+      BOOST_CHECK_EQUAL(boost::math::float_next(std::numeric_limits<T>::infinity()), std::numeric_limits<T>::infinity());
       if(boost::math::policies:: BOOST_MATH_OVERFLOW_ERROR_POLICY == boost::math::policies::throw_on_error)
       {
          BOOST_MATH_CHECK_THROW(boost::math::float_prior(-(std::numeric_limits<T>::max)()), std::overflow_error);
@@ -193,6 +193,11 @@ void test_values(const T& val, const char* name)
          BOOST_CHECK_EQUAL(boost::math::float_next((std::numeric_limits<T>::max)()), std::numeric_limits<T>::infinity());
       }
    }
+   BOOST_IF_CONSTEXPR(std::numeric_limits<T>::is_specialized && (std::numeric_limits<T>::has_quiet_NaN))
+   {
+      BOOST_MATH_CHECK_THROW(boost::math::float_prior(std::numeric_limits<T>::quiet_NaN()), std::domain_error);
+      BOOST_MATH_CHECK_THROW(boost::math::float_next(std::numeric_limits<T>::quiet_NaN()), std::domain_error);
+   }
 }
 
 BOOST_AUTO_TEST_CASE( test_main )
@@ -200,8 +205,10 @@ BOOST_AUTO_TEST_CASE( test_main )
    // Very slow, but debuggable:
    //test_values(boost::multiprecision::number<boost::multiprecision::debug_adaptor<boost::multiprecision::cpp_dec_float_50::backend_type> >(0), "cpp_dec_float_50");
    
-   // Faster, but no good for diagnising the cause of any issues:
+   // Faster, but no good for diagnosing the cause of any issues:
+   #ifndef BOOST_MATH_STANDALONE
    test_values(boost::multiprecision::cpp_dec_float_50(0), "cpp_dec_float_50");
+   #endif
 }
 
 

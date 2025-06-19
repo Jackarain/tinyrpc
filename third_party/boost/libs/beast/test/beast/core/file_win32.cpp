@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -14,13 +14,10 @@
 
 #include "file_test.hpp"
 
-#include <boost/beast/core/type_traits.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 namespace boost {
 namespace beast {
-
-BOOST_STATIC_ASSERT(! std::is_copy_constructible<file_win32>::value);
 
 class file_win32_test
     : public beast::unit_test::suite
@@ -29,7 +26,7 @@ public:
     void
     run()
     {
-        doTestFile<file_win32>(*this);
+        test_file<file_win32, true>();
     }
 };
 

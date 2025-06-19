@@ -4,7 +4,7 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/random.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -38,12 +38,17 @@ void test_stat()
         acc_cdist( p_square_cumulative_distribution_num_cells = 100 );
 
 
-    for (std::size_t i=0; i<100000; ++i)
+    for (std::size_t i=0; i<1000000; ++i)
     {
         double sample = normal_narrow();
-        acc(sample, weight = std::exp(0.5 * (sample - mu) * (sample - mu) * ( 1./sigma_narrow/sigma_narrow - 1./sigma/sigma )));
-        acc_dens(sample, weight = std::exp(0.5 * (sample - mu) * (sample - mu) * ( 1./sigma_narrow/sigma_narrow - 1./sigma/sigma )));
-        acc_cdist(sample, weight = std::exp(0.5 * (sample - mu) * (sample - mu) * ( 1./sigma_narrow/sigma_narrow - 1./sigma/sigma )));
+        double w = std::exp(
+            0.5 * (sample - mu) * (sample - mu) * (
+                1./sigma_narrow/sigma_narrow - 1./sigma/sigma
+            )
+        );
+        acc(sample, weight = w);
+        acc_dens(sample, weight = w);
+        acc_cdist(sample, weight = w);
     }
 
     BOOST_CHECK_CLOSE(1., weighted_median(acc), 2);

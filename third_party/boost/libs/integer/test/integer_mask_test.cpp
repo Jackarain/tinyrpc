@@ -3,14 +3,14 @@
 //  (C) Copyright Daryle Walker 2001.
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  https://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for most recent version including documentation.
+//  See https://www.boost.org for most recent version including documentation.
 
 //  Revision History
 //  23 Sep 2001  Initial version (Daryle Walker)
 
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 #include <boost/cstdlib.hpp>               // for boost::exit_success
 #include <boost/integer/integer_mask.hpp>  // for boost::high_bit_mask_t, etc.

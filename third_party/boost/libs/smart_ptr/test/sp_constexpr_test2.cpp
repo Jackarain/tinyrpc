@@ -9,27 +9,27 @@
 //
 
 #include <boost/config.hpp>
-#include <boost/detail/workaround.hpp>
+#include <boost/config/workaround.hpp>
+#include <boost/config/pragma_message.hpp>
+#include <boost/config/helper_macros.hpp>
 
-#define HAVE_CONSTEXPR_INIT
+#if BOOST_WORKAROUND( BOOST_MSVC, < 1930 )
 
-#if defined( BOOST_NO_CXX11_CONSTEXPR )
-# undef HAVE_CONSTEXPR_INIT
-#endif
+// MSVC does not implement static initialization for constexpr constructors
+BOOST_PRAGMA_MESSAGE("Skipping test due to BOOST_MSVC < 1930")
+int main() {}
 
-#if BOOST_WORKAROUND( BOOST_MSVC, < 1920 )
-# undef HAVE_CONSTEXPR_INIT
-#endif
+#elif defined(__clang__) && defined( BOOST_NO_CXX14_CONSTEXPR )
 
-#if defined(__clang__) && defined( BOOST_NO_CXX14_CONSTEXPR )
-# undef HAVE_CONSTEXPR_INIT
-#endif
+// Clang only implements static initialization for constexpr in C++14 mode
+BOOST_PRAGMA_MESSAGE("Skipping test due to __clang__ and BOOST_NO_CXX14_CONSTEXPR")
+int main() {}
 
-#if !defined( HAVE_CONSTEXPR_INIT )
+#elif defined( _LIBCPP_VERSION ) && ( _LIBCPP_VERSION < 6000 )
 
-int main()
-{
-}
+// in libc++, atomic_flag has a non-constexpr constructor from bool
+BOOST_PRAGMA_MESSAGE("Skipping test due to _LIBCPP_VERSION " BOOST_STRINGIZE(_LIBCPP_VERSION))
+int main() {}
 
 #else
 
@@ -42,7 +42,7 @@ struct X: public boost::enable_shared_from_this<X>
 {
     int v_;
 
-    constexpr X() BOOST_NOEXCEPT: v_( 1 )
+    constexpr X() noexcept: v_( 1 )
     {
     }
 };
@@ -65,4 +65,4 @@ int main()
     return boost::report_errors();
 }
 
-#endif // #if defined( BOOST_NO_CXX11_CONSEXPR )
+#endif

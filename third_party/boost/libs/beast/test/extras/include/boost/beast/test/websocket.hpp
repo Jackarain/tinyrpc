@@ -1,5 +1,5 @@
 //
-// Copyright (w) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,7 +12,7 @@
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/websocket/stream.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
@@ -25,12 +25,13 @@ namespace boost {
 namespace beast {
 namespace test {
 
+// DEPRECATED
 class ws_echo_server
 {
     std::ostream& log_;
-    boost::asio::io_context ioc_;
-    boost::asio::executor_work_guard<
-        boost::asio::io_context::executor_type> work_;
+    net::io_context ioc_;
+    net::executor_work_guard<
+        net::io_context::executor_type> work_;
     multi_buffer buffer_;
     test::stream ts_;
     std::thread t_;
@@ -102,7 +103,7 @@ public:
     void
     async_close()
     {
-        boost::asio::post(ioc_,
+        net::post(ioc_,
         [&]
         {
             if(ws_.is_open())
@@ -141,7 +142,7 @@ private:
 #if 0
             if( se.code() != error::closed &&
                 se.code() != error::failed &&
-                se.code() != boost::asio::error::eof)
+                se.code() != net::error::eof)
                 log_ << "ws_echo_server: " << se.code().message() << std::endl;
 #endif
         }
@@ -233,7 +234,7 @@ private:
 #if 0
         if( ec != error::closed &&
             ec != error::failed &&
-            ec != boost::asio::error::eof)
+            ec != net::error::eof)
             log_ <<
                 "echo_server_async: " <<
                 ec.message() <<

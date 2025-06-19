@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,13 +10,13 @@
 #include <boost/beast/core/string.hpp>
 #include <boost/beast/zlib/deflate_stream.hpp>
 #include <boost/beast/test/throughput.hpp>
-#include <boost/beast/unit_test/dstream.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/dstream.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <iomanip>
 #include <random>
 #include <string>
 
-#include "zlib-1.2.11/zlib.h"
+#include "zlib-1.2.12/zlib.h"
 
 namespace boost {
 namespace beast {
@@ -68,7 +68,6 @@ public:
     doDeflateBeast(string_view const& in)
     {
         z_params zs;
-        memset(&zs, 0, sizeof(zs));
         deflate_stream ds;
         ds.reset(
             Z_DEFAULT_COMPRESSION,

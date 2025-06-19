@@ -1,17 +1,17 @@
 // Boost.Convert test and usage example
-// Copyright (c) 2009-2016 Vladimir Batov.
+// Copyright (c) 2009-2020 Vladimir Batov.
 // Use, modification and distribution are subject to the Boost Software License,
 // Version 1.0. See http://www.boost.org/LICENSE_1_0.txt.
 
 #include "./test.hpp"
 
-#if defined(BOOST_CONVERT_IS_NOT_SUPPORTED)
+#if !defined(BOOST_CONVERT_CXX14)
 int main(int, char const* []) { return 0; }
 #else
 
 #include <boost/convert.hpp>
 #include <boost/convert/stream.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <stdlib.h>
@@ -197,8 +197,8 @@ static
 void
 test_manipulators()
 {
-    boost::cnv::cstream ccnv;
-    boost::cnv::wstream wcnv;
+    auto ccnv = boost::cnv::cstream();
+    auto wcnv = boost::cnv::wstream();
 
     int const hex_v01 = boost::convert<int>("FF", ccnv(std::hex)).value_or(0);
     int const hex_v02 = boost::convert<int>(L"F", wcnv(std::hex)).value_or(0);
@@ -246,19 +246,19 @@ test_locale_example()
 
     char const* eng_locale_name = test::cnv::is_msc ? "English_United States.1251" : "en_US.UTF-8";
     char const* rus_locale_name = test::cnv::is_msc ? "Russian_Russia.1251" : "ru_RU.UTF-8";
-    char const*    rus_expected = test::cnv::is_msc ? "1,235e-002" : "1,235e-02";
-    char const*    eng_expected = test::cnv::is_msc ? "1.235e-002" : "1.235e-02";
-    char const*      double_s01 = test::cnv::is_msc ? "1.2345E-002" : "1.2345E-02";
+    char const*    rus_expected = test::cnv::is_msc ? "1,235e-002"  : "1,235e-02";
+    char const*    eng_expected = test::cnv::is_msc ? "1.235e-002"  : "1.235e-02";
+    char const*    dbl_expected = test::cnv::is_msc ? "1.2345E-002" : "1.2345E-02";
 
 //  cnv(std::setprecision(4))(std::uppercase)(std::scientific);
     cnv(arg::precision = 4)
        (arg::uppercase = true)
        (arg::notation = cnv::notation::scientific);
 
-    double double_v01 = convert<double>(double_s01, cnv).value_or(0);
+    double double_v01 = convert<double>(dbl_expected, cnv).value_or(0);
     string double_s02 = convert<string>(double_v01, cnv).value_or("bad");
 
-    BOOST_TEST(double_s01 == double_s02);
+    BOOST_TEST(dbl_expected == double_s02);
 
     try { rus_locale = std::locale(rus_locale_name); }
     catch (...) { printf("Bad locale %s.\n", rus_locale_name); exit(1); }
@@ -301,22 +301,22 @@ test_locale()
     bool             rus_ignore = false;
     char const* eng_locale_name = test::cnv::is_msc ? "English_United States.1251" : "en_US.UTF-8";
     char const* rus_locale_name = test::cnv::is_msc ? "Russian_Russia.1251" : "ru_RU.UTF-8";
-    char const*    eng_expected = test::cnv::is_old_msc ? "1.235e-002" : "1.235e-02";
-    char const*    rus_expected = test::cnv::is_old_msc ? "1,235e-002" : "1,235e-02";
-    char const*      double_s01 = test::cnv::is_old_msc ? "1.2345E-002" : "1.2345E-02";
+    char const*    eng_expected = test::cnv::is_old_msc ? "1.235e-002"  : "1.235e-02";
+    char const*    rus_expected = test::cnv::is_old_msc ? "1,235e-002"  : "1,235e-02";
+    char const*    dbl_expected = test::cnv::is_old_msc ? "1.2345E-002" : "1.2345E-02";
 
     cnv(arg::precision = 4)
        (arg::uppercase = true)
        (arg::notation = cnv::notation::scientific);
 
-    double const double_v01 = convert<double>(double_s01, cnv).value_or(0);
+    double const double_v01 = convert<double>(dbl_expected, cnv).value_or(0);
     string const double_s02 = convert<string>(double_v01, cnv).value_or("bad");
 
     BOOST_TEST(double_v01 != 0);
-    BOOST_TEST(double_s01 == double_s02);
+    BOOST_TEST(dbl_expected == double_s02);
 
-    if (double_s01 != double_s02)
-        printf("%s [%d]: <%s> != <%s>\n", __FILE__, __LINE__, double_s01, double_s02.c_str());
+    if (dbl_expected != double_s02)
+        printf("%s [%d]: <%s> != <%s>\n", __FILE__, __LINE__, dbl_expected, double_s02.c_str());
 
     try { eng_locale = std::locale(eng_locale_name); }
     catch (...) { printf("Bad locale %s. Ignored.\n", eng_locale_name); eng_ignore = true; }
@@ -349,6 +349,28 @@ test_user_str()
     //]
 }
 
+static
+void
+test_notation()
+{
+    //[stream_notation
+    boost::cnv::cstream cnv;
+
+    BOOST_TEST(  "-3.14159" == convert<string>(-3.14159, cnv(arg::notation = cnv::notation::fixed)(arg::precision = 5)).value());
+    BOOST_TEST("-3.142e+00" == convert<string>(-3.14159, cnv(arg::notation = cnv::notation::scientific)(arg::precision = 3)).value());
+
+    // precision doesn't affect hexfloat
+    BOOST_TEST("-0x1.921f9f01b866ep+1" == convert<string>(-3.14159, cnv(arg::notation = cnv::notation::hex)).value());
+
+    const auto close = boost::math::fpc::close_at_tolerance<double>(1);
+
+    BOOST_TEST_WITH(-3.14159, convert<double>("-3.14159", cnv(arg::notation = cnv::notation::fixed)).value(), close);
+    BOOST_TEST_WITH(-3.14159, convert<double>("-3.142e+00", cnv(arg::notation = cnv::notation::scientific)).value(), close);
+    // not supported due to https://gcc.gnu.org/bugzilla//show_bug.cgi?id=81122
+    // BOOST_TEST_WITH(-3.14159, convert<double>("-0x1.921f9f01b866ep+1", cnv(arg::notation = cnv::notation::hex)).value(), close);
+    //]
+}
+
 int
 main(int, char const* [])
 {
@@ -366,6 +388,7 @@ main(int, char const* [])
         test_locale();
         test_dbl_to_str();
         test_user_str();
+        test_notation();
     }
     catch(boost::bad_optional_access const&)
     {

@@ -12,6 +12,7 @@
 
 #include "boost/fiber/exceptions.hpp"
 #include "boost/fiber/scheduler.hpp"
+#include "boost/fiber/algo/round_robin.hpp"
 
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
@@ -30,18 +31,20 @@ public:
 class dispatcher_context final : public context {
 private:
     boost::context::fiber
-    run_( boost::context::fiber && c) {
 #if (defined(BOOST_USE_UCONTEXT)||defined(BOOST_USE_WINFIB))
+    run_( boost::context::fiber && c) {
         std::move( c).resume();
+#else
+    run_( boost::context::fiber &&) {
 #endif
 		// execute scheduler::dispatch()
 		return get_scheduler()->dispatch();
     }
 
 public:
-    dispatcher_context( boost::context::preallocated const& palloc, default_stack const& salloc) :
+    dispatcher_context( boost::context::preallocated const& palloc, stack_allocator_wrapper&& salloc) :
         context{ 0, type::dispatcher_context, launch::post } {
-        c_ = boost::context::fiber{ std::allocator_arg, palloc, salloc,
+        c_ = boost::context::fiber{ std::allocator_arg, palloc, std::move(salloc),
                                     std::bind( & dispatcher_context::run_, this, std::placeholders::_1) };
 #if (defined(BOOST_USE_UCONTEXT)||defined(BOOST_USE_WINFIB))
         c_ = std::move( c_).resume();
@@ -49,8 +52,7 @@ public:
     }
 };
 
-static intrusive_ptr< context > make_dispatcher_context() {
-    default_stack salloc; // use default satck-size
+static intrusive_ptr< context > make_dispatcher_context(stack_allocator_wrapper&& salloc) {
     auto sctx = salloc.allocate();
     // reserve space for control structure
     void * storage = reinterpret_cast< void * >(
@@ -62,7 +64,7 @@ static intrusive_ptr< context > make_dispatcher_context() {
     // placement new of context on top of fiber's stack
     return intrusive_ptr< context >{
         new ( storage) dispatcher_context{
-                boost::context::preallocated{ storage, size, sctx }, salloc } };
+                boost::context::preallocated{ storage, size, sctx }, std::move( salloc) } };
 }
 
 // schwarz counter
@@ -70,35 +72,77 @@ struct context_initializer {
     static thread_local context *   active_;
     static thread_local std::size_t counter_;
 
-    context_initializer() {
+    using default_scheduler = algo::round_robin;
+
+    template< typename ... Args >
+    context_initializer(Args && ... args) {
         if ( 0 == counter_++) {
-            // main fiber context of this thread
-            context * main_ctx = new main_context{};
-            // scheduler of this thread
-            scheduler * sched = new scheduler{};
-            // attach main context to scheduler
-            sched->attach_main_context( main_ctx);
-            // create and attach dispatcher context to scheduler
-            sched->attach_dispatcher_context( make_dispatcher_context() );
-            // make main context to active context
-            active_ = main_ctx;
+            initialize(std::forward< Args >( args) ... );
         }
     }
 
     ~context_initializer() {
         if ( 0 == --counter_) {
-            context * main_ctx = active_;
-            BOOST_ASSERT( main_ctx->is_context( type::main_context) );
-            scheduler * sched = main_ctx->get_scheduler();
-            delete sched;
-            delete main_ctx;
+            deinitialize();
         }
+    }
+
+    void initialize()
+    {
+        initialize(new default_scheduler(), make_stack_allocator_wrapper<default_stack>());
+    }
+
+    void initialize(algo::algorithm::ptr_t algo, stack_allocator_wrapper&& salloc)
+    {
+        // main fiber context of this thread
+        context * main_ctx = new main_context{};
+        // scheduler of this thread
+        auto sched = new scheduler(algo);
+        // attach main context to scheduler
+        sched->attach_main_context( main_ctx);
+        // create and attach dispatcher context to scheduler
+        sched->attach_dispatcher_context( make_dispatcher_context(std::move(salloc)) );
+        // make main context to active context
+        active_ = main_ctx;
+    }
+
+    void deinitialize()
+    {
+        context * main_ctx = active_;
+        BOOST_ASSERT( main_ctx->is_context( type::main_context) );
+        scheduler * sched = main_ctx->get_scheduler();
+        delete sched;
+        delete main_ctx;
     }
 };
 
 // zero-initialization
 thread_local context * context_initializer::active_{ nullptr };
 thread_local std::size_t context_initializer::counter_{ 0 };
+
+bool context::initialize_thread(algo::algorithm::ptr_t algo, stack_allocator_wrapper&& salloc) noexcept
+{
+    if (context_initializer::counter_ == 0)
+    {
+        // Initilization is not done yet, so do it now with a local variable
+        // context_initializer which will decrease the counter when leaving this function.
+        context_initializer ctx_initializer(algo, std::move(salloc));
+
+        // Now call active() to register a thread local context_initializer which will
+        // ensure resources are free'ed when the thread exits.
+        active();
+
+        return true;
+    }
+    else
+    {
+        // It's too late already to initialize the dispatcher stack allocator, still we can update
+        // the algo.
+        active()->get_scheduler()->set_algo(algo);
+
+        return false;
+    }
+}
 
 context *
 context::active() noexcept {
@@ -118,18 +162,8 @@ context::~context() {
     BOOST_ASSERT( ! ready_is_linked() );
     BOOST_ASSERT( ! remote_ready_is_linked() );
     BOOST_ASSERT( ! sleep_is_linked() );
-    BOOST_ASSERT( ! wait_is_linked() );
     if ( is_context( type::dispatcher_context) ) {
-        // dispatcher-context is resumed by main-context
-        // while the scheduler is deconstructed
-#ifdef BOOST_DISABLE_ASSERTS
-        wait_queue_.pop_front();
-#else
-        context * ctx = & wait_queue_.front();
-        wait_queue_.pop_front();
-        BOOST_ASSERT( ctx->is_context( type::main_context) );
         BOOST_ASSERT( nullptr == active() );
-#endif
     }
     BOOST_ASSERT( wait_queue_.empty() );
     delete properties_;
@@ -202,9 +236,7 @@ context::join() {
         // push active context to wait-queue, member
         // of the context which has to be joined by
         // the active context
-        active_ctx->wait_link( wait_queue_);
-        // suspend active context
-        active_ctx->get_scheduler()->suspend( lk);
+        wait_queue_.suspend_and_wait( lk, active_ctx);
         // active context resumed
         BOOST_ASSERT( context::active() == active_ctx);
     }
@@ -236,13 +268,7 @@ context::terminate() noexcept {
     // mark as terminated
     terminated_ = true;
     // notify all waiting fibers
-    while ( ! wait_queue_.empty() ) {
-        context * ctx = & wait_queue_.front();
-        // remove fiber from wait-queue
-        wait_queue_.pop_front();
-        // notify scheduler
-        schedule( ctx);
-    }
+    wait_queue_.notify_all();
     BOOST_ASSERT( wait_queue_.empty() );
     // release fiber-specific-data
     for ( fss_data_t::value_type & data : fss_data_) {
@@ -262,11 +288,33 @@ context::wait_until( std::chrono::steady_clock::time_point const& tp) noexcept {
 
 bool
 context::wait_until( std::chrono::steady_clock::time_point const& tp,
-                     detail::spinlock_lock & lk) noexcept {
+                     detail::spinlock_lock & lk,
+                     waker && w) noexcept {
     BOOST_ASSERT( nullptr != get_scheduler() );
     BOOST_ASSERT( this == active() );
-    return get_scheduler()->wait_until( this, tp, lk);
+    return get_scheduler()->wait_until( this, tp, lk, std::move(w));
 }
+
+
+bool context::wake(const size_t epoch) noexcept
+{
+    size_t expected = epoch;
+    bool is_last_waker = waker_epoch_.compare_exchange_strong(expected, epoch + 1, std::memory_order_acq_rel);
+    if ( ! is_last_waker) {
+        // waker_epoch_ has been incremented before, so consider this wake
+        // operation as outdated and do nothing
+        return false;
+    }
+
+    BOOST_ASSERT( context::active() != this);
+    if ( context::active()->get_scheduler() == get_scheduler()) {
+        get_scheduler()->schedule( this);
+    } else {
+        get_scheduler()->schedule_from_remote( this);
+    }
+    return true;
+}
+
 
 void
 context::schedule( context * ctx) noexcept {
@@ -293,8 +341,8 @@ context::schedule( context * ctx) noexcept {
 
 void *
 context::get_fss_data( void const * vp) const {
-    uintptr_t key = reinterpret_cast< uintptr_t >( vp);
-    fss_data_t::const_iterator i = fss_data_.find( key);
+    auto key = reinterpret_cast< uintptr_t >( vp);
+    auto i = fss_data_.find( key);
     return fss_data_.end() != i ? i->second.vp : nullptr;
 }
 
@@ -304,8 +352,8 @@ context::set_fss_data( void const * vp,
                        void * data,
                        bool cleanup_existing) {
     BOOST_ASSERT( cleanup_fn);
-    uintptr_t key = reinterpret_cast< uintptr_t >( vp);
-    fss_data_t::iterator i = fss_data_.find( key);
+    auto key = reinterpret_cast< uintptr_t >( vp);
+    auto i = fss_data_.find( key);
     if ( fss_data_.end() != i) {
         if( cleanup_existing) {
             i->second.do_cleanup();
@@ -354,11 +402,6 @@ context::terminated_is_linked() const noexcept {
     return terminated_hook_.is_linked();
 }
 
-bool
-context::wait_is_linked() const noexcept {
-    return wait_hook_.is_linked();
-}
-
 void
 context::worker_unlink() noexcept {
     BOOST_ASSERT( worker_is_linked() );
@@ -378,12 +421,6 @@ context::sleep_unlink() noexcept {
 }
 
 void
-context::wait_unlink() noexcept {
-    BOOST_ASSERT( wait_is_linked() );
-    wait_hook_.unlink();
-}
-
-void
 context::detach() noexcept {
     BOOST_ASSERT( context::active() != this);
     get_scheduler()->detach_worker_context( this);
@@ -396,6 +433,16 @@ context::attach( context * ctx) noexcept {
 }
 
 }}
+
+namespace std {
+
+std::size_t
+hash< ::boost::fibers::context::id >::operator() ( ::boost::fibers::context::id const& id ) const noexcept {
+    return reinterpret_cast<std::size_t>(id.impl_);
+}
+
+}
+
 
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX

@@ -18,12 +18,19 @@
 #  pragma warning (disable :4127) // conditional expression is constant.
 #endif
 
+#include <boost/math/tools/config.hpp>
+
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
+#include <boost/math/special_functions/next.hpp>  // for has_denorm_now
 
+#include "../include_private/boost/math/tools/test.hpp"
+
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
-#include <boost/math/tools/test.hpp> // for real_concept
+#endif
+
 #include "test_out_of_range.hpp"
 #include <boost/math/distributions/students_t.hpp>
     using boost::math::students_t_distribution;
@@ -34,6 +41,7 @@
    using std::setprecision;
 #include <limits>
   using std::numeric_limits;
+#include <type_traits>
 
 template <class RealType>
 RealType naive_pdf(RealType v, RealType t)
@@ -265,9 +273,15 @@ void test_spots(RealType)
       // Some special tests to exercise the double-precision approximations
       // to the quantile:
       //
-      // tolerance is 50 eps expressed as a persent:
+      // tolerance is 50 eps expressed as a percent:
       //
       tolerance = boost::math::tools::epsilon<RealType>() * 5000;
+      //
+      // But higher error rates at 128 bit precision?
+      //
+      if (boost::math::tools::digits<RealType>() > 100)
+         tolerance *= 500;
+
       BOOST_CHECK_CLOSE(boost::math::quantile(
          students_t_distribution<RealType>(2.00390625L),                     // degrees_of_freedom.
          static_cast<RealType>(0.5625L)),                                    //  probability.
@@ -381,6 +395,13 @@ void test_spots(RealType)
                boost::math::quantile(
                   students_t_distribution<RealType>(static_cast<RealType>(0x0fffffff)), static_cast<RealType>(0.25f))), 
             static_cast<RealType>(0.25f), tolerance);
+         //
+         // Bug cases:
+         //
+         if (std::numeric_limits<RealType>::is_specialized && boost::math::detail::has_denorm_now<RealType>())
+         {
+            BOOST_CHECK_THROW(boost::math::quantile(students_t_distribution<RealType>((std::numeric_limits<RealType>::min)() / 2), static_cast<RealType>(0.0025f)), std::overflow_error);
+         }
       }
 
   // Student's t pdf tests.
@@ -451,6 +472,13 @@ void test_spots(RealType)
        kurtosis_excess(dist)
        , static_cast<RealType>(1.5), tol2);
 
+    using std::log;
+    using std::sqrt;
+    RealType expected_entropy = (RealType(9)/2)*(boost::math::digamma(RealType(9)/2) - boost::math::digamma(RealType(4))) + log(sqrt(RealType(8))*boost::math::beta(RealType(4), RealType(1)/2));
+    BOOST_CHECK_CLOSE(
+       entropy(dist)
+       , expected_entropy, 300*tol2);
+
     // Parameter estimation. These results are close to but
     // not identical to those reported on the NIST website at
     // http://www.itl.nist.gov/div898/handbook/prc/section2/prc222.htm
@@ -507,7 +535,10 @@ void test_spots(RealType)
 
     std::string type = typeid(RealType).name();
 //    if (type != "class boost::math::concepts::real_concept") fails for gcc
-    if (typeid(RealType) != typeid(boost::math::concepts::real_concept))
+
+    #ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
+    BOOST_MATH_IF_CONSTEXPR(!std::is_same<RealType, boost::math::concepts::real_concept>::value)
+    #endif
     { // Ordinary floats only.
       RealType limit = 1/ boost::math::tools::epsilon<RealType>();
       // Default policy to get full accuracy.
@@ -741,7 +772,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double. OK at decdigits 7, tolerance = 1e07 %
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_spots(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #else

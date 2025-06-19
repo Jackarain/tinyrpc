@@ -9,8 +9,8 @@
 //
 
 #include <boost/shared_ptr.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/container_hash/hash.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 int main()
 {

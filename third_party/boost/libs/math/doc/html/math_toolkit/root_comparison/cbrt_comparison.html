@@ -1,13 +1,14 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Comparison of Cube Root Finding Algorithms</title>
 <link rel="stylesheet" href="../../math.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
-<link rel="home" href="../../index.html" title="Math Toolkit 2.8.0">
+<link rel="home" href="../../index.html" title="Math Toolkit 4.2.1">
 <link rel="up" href="../root_comparison.html" title="Comparison of Root Finding Algorithms">
 <link rel="prev" href="../root_comparison.html" title="Comparison of Root Finding Algorithms">
 <link rel="next" href="root_n_comparison.html" title="Comparison of Nth-root Finding Algorithms">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <table cellpadding="2" width="100%"><tr>
@@ -74,7 +75,7 @@
         the CPU times were judged from repeat runs to have an uncertainty of 10 %.
         Comparing MSVC for <code class="computeroutput"><span class="keyword">double</span></code> and
         <code class="computeroutput"><span class="keyword">long</span> <span class="keyword">double</span></code>
-        (which are identical on this patform) may give a guide to uncertainty of
+        (which are identical on this platform) may give a guide to uncertainty of
         timing.
       </p>
 <p>
@@ -137,7 +138,7 @@
 <tr>
 <td>
                 <p>
-                  Schr&#246;der
+                  Schröder
                 </p>
               </td>
 <td>
@@ -186,7 +187,7 @@
             allowing inlining and loop unrolling. It also algebraically simplifies
             the Halley steps leading to a big reduction in the number of floating
             point operations required compared to a "black box" implementation
-            that calculates the derivatives seperately and then combines them in
+            that calculates the derivatives separately and then combines them in
             the Halley code. Typically, it was found that computation using type
             <code class="computeroutput"><span class="keyword">double</span></code> took a few times
             longer when using the various root-finding algorithms directly rather
@@ -214,7 +215,7 @@
             between algorithms became nearly negligible. The optimisation speed-up
             of the <a href="http://portal.acm.org/citation.cfm?id=210111" target="_top">TOMS
             Algorithm 748: enclosing zeros of continuous functions</a> was especially
-            noticable.
+            noticeable.
           </li>
 <li class="listitem">
             Using a multiprecision type like <code class="computeroutput"><span class="identifier">cpp_bin_float_50</span></code>
@@ -253,7 +254,7 @@
         of 5 root_finding algorithms.</a>
       </h6>
 <div class="table">
-<a name="math_toolkit.root_comparison.cbrt_comparison.cbrt_4"></a><p class="title"><b>Table&#160;8.1.&#160;Cube root(28) for float, double, long double and cpp_bin_float_50</b></p>
+<a name="math_toolkit.root_comparison.cbrt_comparison.cbrt_4"></a><p class="title"><b>Table 10.1. Cube root(28) for float, double, long double and cpp_bin_float_50</b></p>
 <div class="table-contents"><table class="table" summary="Cube root(28) for float, double, long double and cpp_bin_float_50">
 <colgroup>
 <col>
@@ -329,8 +330,8 @@
               </th>
 <th>
               </th>
-<td class="auto-generated">&#160;</td>
-<td class="auto-generated">&#160;</td>
+<td class="auto-generated"> </td>
+<td class="auto-generated"> </td>
 </tr></thead>
 <tbody>
 <tr>
@@ -811,7 +812,7 @@
 <tr>
 <td>
                 <p>
-                  Schr&#246;der
+                  Schröder
                 </p>
               </td>
 <td>
@@ -909,12 +910,12 @@
 <br class="table-break"><h6>
 <a name="math_toolkit.root_comparison.cbrt_comparison.h1"></a>
         <span class="phrase"><a name="math_toolkit.root_comparison.cbrt_comparison.program_root_finding_algorithms0"></a></span><a class="link" href="cbrt_comparison.html#math_toolkit.root_comparison.cbrt_comparison.program_root_finding_algorithms0">Program
-        root_finding_algorithms.cpp, GNU C++ version 7.1.0, GNU libstdc++ version
-        20170502, Win32, x64<br> 1000000 evaluations of each of 5 root_finding
+        root_finding_algorithms.cpp, GNU C++ version 9.3.1 20200425, GNU libstdc++
+        version 20200425, Win32, x64<br> 1000000 evaluations of each of 5 root_finding
         algorithms.</a>
       </h6>
 <div class="table">
-<a name="math_toolkit.root_comparison.cbrt_comparison.cbrt_4_0"></a><p class="title"><b>Table&#160;8.2.&#160;Cube root(28) for float, double, long double and cpp_bin_float_50</b></p>
+<a name="math_toolkit.root_comparison.cbrt_comparison.cbrt_4_0"></a><p class="title"><b>Table 10.2. Cube root(28) for float, double, long double and cpp_bin_float_50</b></p>
 <div class="table-contents"><table class="table" summary="Cube root(28) for float, double, long double and cpp_bin_float_50">
 <colgroup>
 <col>
@@ -990,8 +991,8 @@
               </th>
 <th>
               </th>
-<td class="auto-generated">&#160;</td>
-<td class="auto-generated">&#160;</td>
+<td class="auto-generated"> </td>
+<td class="auto-generated"> </td>
 </tr></thead>
 <tbody>
 <tr>
@@ -1102,7 +1103,7 @@
               </td>
 <td>
                 <p>
-                  46875
+                  15625
                 </p>
               </td>
 <td>
@@ -1146,7 +1147,7 @@
               </td>
 <td>
                 <p>
-                  78125
+                  62500
                 </p>
               </td>
 <td>
@@ -1168,12 +1169,12 @@
               </td>
 <td>
                 <p>
-                  3859375
+                  2718750
                 </p>
               </td>
 <td>
                 <p>
-                  1.3
+                  1.2
                 </p>
               </td>
 <td>
@@ -1197,12 +1198,12 @@
               </td>
 <td>
                 <p>
-                  203125
+                  140625
                 </p>
               </td>
 <td>
                 <p>
-                  <span class="red">4.3</span>
+                  <span class="red">9.0</span>
                 </p>
               </td>
 <td>
@@ -1219,12 +1220,12 @@
               </td>
 <td>
                 <p>
-                  453125
+                  265625
                 </p>
               </td>
 <td>
                 <p>
-                  <span class="red">7.2</span>
+                  <span class="red">4.2</span>
                 </p>
               </td>
 <td>
@@ -1241,12 +1242,12 @@
               </td>
 <td>
                 <p>
-                  781250
+                  718750
                 </p>
               </td>
 <td>
                 <p>
-                  <span class="red">10.</span>
+                  <span class="red">12.</span>
                 </p>
               </td>
 <td>
@@ -1263,12 +1264,12 @@
               </td>
 <td>
                 <p>
-                  21796875
+                  16796875
                 </p>
               </td>
 <td>
                 <p>
-                  <span class="red">7.6</span>
+                  <span class="red">7.5</span>
                 </p>
               </td>
 <td>
@@ -1292,34 +1293,12 @@
               </td>
 <td>
                 <p>
-                  109375
+                  62500
                 </p>
               </td>
 <td>
                 <p>
-                  2.3
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-<td>
-                <p>
-                  6
-                </p>
-              </td>
-<td>
-                <p>
-                  140625
-                </p>
-              </td>
-<td>
-                <p>
-                  2.2
+                  4.0
                 </p>
               </td>
 <td>
@@ -1336,12 +1315,34 @@
               </td>
 <td>
                 <p>
-                  125000
+                  62500
                 </p>
               </td>
 <td>
                 <p>
-                  1.6
+                  <span class="blue">1.0</span>
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+<td>
+                <p>
+                  6
+                </p>
+              </td>
+<td>
+                <p>
+                  203125
+                </p>
+              </td>
+<td>
+                <p>
+                  3.2
                 </p>
               </td>
 <td>
@@ -1358,7 +1359,7 @@
               </td>
 <td>
                 <p>
-                  2859375
+                  2234375
                 </p>
               </td>
 <td>
@@ -1387,124 +1388,7 @@
               </td>
 <td>
                 <p>
-                  109375
-                </p>
-              </td>
-<td>
-                <p>
-                  2.3
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-<td>
-                <p>
-                  4
-                </p>
-              </td>
-<td>
-                <p>
-                  140625
-                </p>
-              </td>
-<td>
-                <p>
-                  2.2
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-<td>
-                <p>
-                  4
-                </p>
-              </td>
-<td>
-                <p>
-                  187500
-                </p>
-              </td>
-<td>
-                <p>
-                  2.4
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-<td>
-                <p>
-                  2
-                </p>
-              </td>
-<td>
-                <p>
-                  6750000
-                </p>
-              </td>
-<td>
-                <p>
-                  2.4
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-</tr>
-<tr>
-<td>
-                <p>
-                  Schr&#246;der
-                </p>
-              </td>
-<td>
-                <p>
-                  4
-                </p>
-              </td>
-<td>
-                <p>
-                  125000
-                </p>
-              </td>
-<td>
-                <p>
-                  2.7
-                </p>
-              </td>
-<td>
-                <p>
-                  0
-                </p>
-              </td>
-<td>
-              </td>
-<td>
-                <p>
-                  5
-                </p>
-              </td>
-<td>
-                <p>
-                  187500
+                  46875
                 </p>
               </td>
 <td>
@@ -1521,12 +1405,34 @@
               </td>
 <td>
                 <p>
-                  5
+                  4
                 </p>
               </td>
 <td>
                 <p>
-                  296875
+                  93750
+                </p>
+              </td>
+<td>
+                <p>
+                  1.5
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+<td>
+                <p>
+                  4
+                </p>
+              </td>
+<td>
+                <p>
+                  234375
                 </p>
               </td>
 <td>
@@ -1548,12 +1454,107 @@
               </td>
 <td>
                 <p>
-                  8156250
+                  5187500
                 </p>
               </td>
 <td>
                 <p>
-                  2.9
+                  2.3
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+</tr>
+<tr>
+<td>
+                <p>
+                  Schröder
+                </p>
+              </td>
+<td>
+                <p>
+                  4
+                </p>
+              </td>
+<td>
+                <p>
+                  78125
+                </p>
+              </td>
+<td>
+                <p>
+                  <span class="red">5.0</span>
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+<td>
+                <p>
+                  5
+                </p>
+              </td>
+<td>
+                <p>
+                  78125
+                </p>
+              </td>
+<td>
+                <p>
+                  1.2
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+<td>
+                <p>
+                  5
+                </p>
+              </td>
+<td>
+                <p>
+                  265625
+                </p>
+              </td>
+<td>
+                <p>
+                  <span class="red">4.2</span>
+                </p>
+              </td>
+<td>
+                <p>
+                  0
+                </p>
+              </td>
+<td>
+              </td>
+<td>
+                <p>
+                  2
+                </p>
+              </td>
+<td>
+                <p>
+                  6609375
+                </p>
+              </td>
+<td>
+                <p>
+                  3.0
                 </p>
               </td>
 <td>
@@ -1569,18 +1570,15 @@
 </div>
 <br class="table-break">
 </div>
-<table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
-<td align="left"></td>
-<td align="right"><div class="copyright-footer">Copyright &#169; 2006-2010, 2012-2014, 2017 Nikhar
-      Agrawal, Anton Bikineev, Paul A. Bristow, Marco Guazzone, Christopher Kormanyos,
-      Hubert Holin, Bruno Lalande, John Maddock, Jeremy Murphy, Johan R&#229;de, Gautam
-      Sewani, Benjamin Sobotta, Nicholas Thompson, Thijs van den Berg, Daryle Walker
-      and Xiaogang Zhang<p>
+<div class="copyright-footer">Copyright © 2006-2021 Nikhar Agrawal, Anton Bikineev, Matthew Borland,
+      Paul A. Bristow, Marco Guazzone, Christopher Kormanyos, Hubert Holin, Bruno
+      Lalande, John Maddock, Evan Miller, Jeremy Murphy, Matthew Pulver, Johan Råde,
+      Gautam Sewani, Benjamin Sobotta, Nicholas Thompson, Thijs van den Berg, Daryle
+      Walker and Xiaogang Zhang<p>
         Distributed under the Boost Software License, Version 1.0. (See accompanying
         file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
       </p>
-</div></td>
-</tr></table>
+</div>
 <hr>
 <div class="spirit-nav">
 <a accesskey="p" href="../root_comparison.html"><img src="../../../../../../doc/src/images/prev.png" alt="Prev"></a><a accesskey="u" href="../root_comparison.html"><img src="../../../../../../doc/src/images/up.png" alt="Up"></a><a accesskey="h" href="../../index.html"><img src="../../../../../../doc/src/images/home.png" alt="Home"></a><a accesskey="n" href="root_n_comparison.html"><img src="../../../../../../doc/src/images/next.png" alt="Next"></a>

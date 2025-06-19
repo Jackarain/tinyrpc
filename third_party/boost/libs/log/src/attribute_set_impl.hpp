@@ -1,5 +1,5 @@
 /*
- *          Copyright Andrey Semashev 2007 - 2015.
+ *          Copyright Andrey Semashev 2007 - 2020.
  * Distributed under the Boost Software License, Version 1.0.
  *    (See accompanying file LICENSE_1_0.txt or copy at
  *          http://www.boost.org/LICENSE_1_0.txt)
@@ -17,19 +17,19 @@
 #define BOOST_LOG_ATTRIBUTE_SET_IMPL_HPP_INCLUDED_
 
 #include <boost/log/detail/config.hpp>
+#include <cstddef>
 #include <new>
 #include <memory>
 #include <limits>
 #include <utility>
 #include <algorithm>
-#include <cstddef>
 #include <boost/assert.hpp>
-#include <boost/array.hpp>
 #include <boost/intrusive/options.hpp>
 #include <boost/intrusive/list.hpp>
 #include <boost/intrusive/link_mode.hpp>
 #include <boost/intrusive/derivation_value_traits.hpp>
 #include <boost/log/attributes/attribute_set.hpp>
+#include <boost/log/detail/allocator_traits.hpp>
 #include <boost/log/detail/header.hpp>
 
 #ifndef BOOST_LOG_HASH_TABLE_SIZE_LOG
@@ -62,16 +62,16 @@ public:
 
 #if BOOST_LOG_ATTRIBUTE_SET_MAX_POOL_SIZE > 0
 
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::size_type size_type;
-    typedef typename base_type::difference_type difference_type;
-    typedef typename base_type::pointer pointer;
-    typedef typename base_type::const_pointer const_pointer;
-    typedef typename base_type::reference reference;
-    typedef typename base_type::const_reference const_reference;
+    typedef typename log::aux::allocator_traits< base_type >::value_type value_type;
+    typedef typename log::aux::allocator_traits< base_type >::size_type size_type;
+    typedef typename log::aux::allocator_traits< base_type >::difference_type difference_type;
+    typedef typename log::aux::allocator_traits< base_type >::pointer pointer;
+    typedef typename log::aux::allocator_traits< base_type >::const_pointer const_pointer;
+    typedef value_type& reference;
+    typedef value_type const& const_reference;
 
 private:
-    array< pointer, BOOST_LOG_ATTRIBUTE_SET_MAX_POOL_SIZE > m_Pool;
+    pointer m_Pool[BOOST_LOG_ATTRIBUTE_SET_MAX_POOL_SIZE];
     size_type m_PooledCount;
 
 public:
@@ -96,7 +96,7 @@ public:
     {
         for (size_type i = 0; i < m_PooledCount; ++i)
         {
-            base_type::deallocate(m_Pool[i], 1);
+            log::aux::allocator_traits< base_type >::deallocate(*static_cast< base_type* >(this), m_Pool[i], 1);
         }
     }
 
@@ -116,24 +116,28 @@ public:
 
     pointer allocate(size_type n, const void* hint = NULL)
     {
-        if (m_PooledCount > 0)
+        if (BOOST_LIKELY(m_PooledCount > 0))
         {
             --m_PooledCount;
             return m_Pool[m_PooledCount];
         }
         else
-            return base_type::allocate(n, hint);
+        {
+            return log::aux::allocator_traits< base_type >::allocate(*static_cast< base_type* >(this), n, hint);
+        }
     }
 
     void deallocate(pointer p, size_type n)
     {
-        if (m_PooledCount < m_Pool.size())
+        if (BOOST_LIKELY(m_PooledCount < (sizeof(m_Pool) / sizeof(*m_Pool))))
         {
             m_Pool[m_PooledCount] = p;
             ++m_PooledCount;
         }
         else
-            base_type::deallocate(p, n);
+        {
+            log::aux::allocator_traits< base_type >::deallocate(*static_cast< base_type* >(this), p, n);
+        }
     }
 
 #else
@@ -194,9 +198,6 @@ public:
         bucket() : first(NULL), last(NULL) {}
     };
 
-    //! A list of buckets
-    typedef boost::array< bucket, 1U << BOOST_LOG_HASH_TABLE_SIZE_LOG > buckets;
-
     //! Cleanup function object used to erase elements from the container
     struct disposer
     {
@@ -220,8 +221,10 @@ private:
     node_list m_Nodes;
     //! Node allocator
     node_allocator m_Allocator;
+    //! Number of buckets in the hash table
+    static BOOST_CONSTEXPR_OR_CONST std::size_t bucket_count = static_cast< std::size_t >(1u) << BOOST_LOG_HASH_TABLE_SIZE_LOG;
     //! Hash table buckets
-    buckets m_Buckets;
+    bucket m_Buckets[bucket_count];
 
 public:
     implementation()
@@ -257,7 +260,7 @@ public:
     void clear()
     {
         m_Nodes.clear_and_dispose(disposer(m_Allocator));
-        std::fill_n(m_Buckets.begin(), m_Buckets.size(), bucket());
+        std::fill_n(m_Buckets, bucket_count, bucket());
     }
 
     std::pair< iterator, bool > insert(key_type key, mapped_type const& data)
@@ -360,7 +363,7 @@ private:
     //! The function returns a bucket for the specified element
     bucket& get_bucket(id_type id)
     {
-        return m_Buckets[id & (buckets::static_size - 1)];
+        return m_Buckets[id & (bucket_count - 1u)];
     }
 
     //! Attempts to find an element with the specified key in the bucket

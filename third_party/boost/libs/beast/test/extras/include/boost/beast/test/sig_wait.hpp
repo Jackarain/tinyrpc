@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,8 +21,8 @@ inline
 void
 sig_wait()
 {
-    boost::asio::io_context ioc;
-    boost::asio::signal_set signals(
+    net::io_context ioc;
+    net::signal_set signals(
         ioc, SIGINT, SIGTERM);
     signals.async_wait(
         [&](boost::system::error_code const&, int)

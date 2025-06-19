@@ -11,8 +11,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/call_traits.hpp>
-#include <boost/progress.hpp>
 #include <boost/bind.hpp>
 #include <deque>
 #include <list>
@@ -229,11 +229,11 @@ template<class Buffer>
 void fifo_test(Buffer* buffer) {
 
     // Start of measurement
-    boost::progress_timer progress;
+    boost::timer::auto_cpu_timer progress;
 
     // Initialize the buffer with some values before launching producer and consumer threads.
     for (unsigned long i = QUEUE_SIZE / 2L; i > 0; --i) {
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x581))
+#if BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x581))
         buffer->push_front(Buffer::value_type());
 #else
         buffer->push_front(BOOST_DEDUCED_TYPENAME Buffer::value_type());

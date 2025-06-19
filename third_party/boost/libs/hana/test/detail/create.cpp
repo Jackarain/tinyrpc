@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -34,10 +34,5 @@ int main() {
     hana::detail::create<single_holder>{}(1);
     hana::detail::create<single_holder>{}([]{});
     hana::detail::create<identity_t>{}(1);
-
-    // Clang < 3.7.0 fails this test
-#if !defined(BOOST_HANA_CONFIG_CLANG) || \
-    BOOST_HANA_CONFIG_CLANG >= BOOST_HANA_CONFIG_VERSION(3, 7, 0)
     hana::detail::create<identity_t>{}([]{});
-#endif
 }

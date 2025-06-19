@@ -1,6 +1,6 @@
 // Copyright 2011-2012 Renato Tegon Forti
 // Copyright 2014 Renato Tegon Forti, Antony Polukhin.
-// Copyright 2015-2016, Antony Polukhin.
+// Copyright Antony Polukhin, 2015-2025.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt
@@ -11,13 +11,12 @@
 // MinGW related workaround
 #define BOOST_DLL_FORCE_ALIAS_INSTANTIATION
 
-#include <boost/config.hpp>
+#include <boost/dll/config.hpp>
 #include <boost/dll/alias.hpp>
+#include <memory>
 #include <iostream>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/fusion/container.hpp>
 
 #define LIBRARY_API BOOST_SYMBOL_EXPORT
@@ -25,6 +24,10 @@
 extern "C" void LIBRARY_API say_hello(void);
 extern "C" float LIBRARY_API lib_version(void);
 extern "C" int LIBRARY_API increment(int);
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && defined(__ELF__)
+extern "C" int __attribute__((visibility ("protected"))) protected_function(int);
+#endif
 
 extern "C" int LIBRARY_API integer_g;
 extern "C" const int LIBRARY_API const_integer_g = 777;
@@ -45,7 +48,7 @@ namespace namespace1 { namespace namespace2 { namespace namespace3 {
         boost::fusion::vector<std::vector<int>, std::vector<int>, std::vector<int>, const std::vector<int>*, std::vector<int>* >
     do_share_res_t;
 
-    boost::shared_ptr<do_share_res_t> do_share(
+    std::shared_ptr<do_share_res_t> do_share(
             std::vector<int> v1,
             std::vector<int>& v2,
             const std::vector<int>& v3,
@@ -55,7 +58,7 @@ namespace namespace1 { namespace namespace2 { namespace namespace3 {
     {
         v2.back() = 777;
         v5->back() = 9990;
-        return boost::make_shared<do_share_res_t>(v1, v2, v3, v4, v5);
+        return std::make_shared<do_share_res_t>(v1, v2, v3, v4, v5);
     }
 
     std::string info("I am a std::string from the test_library (Think of me as of 'Hello world'. Long 'Hello world').");
@@ -94,9 +97,16 @@ int increment(int n)
    return ++n;
 }
 
+#if defined(__GNUC__) && __GNUC__ >= 4 && defined(__ELF__)
+int protected_function(int) {
+    return 42;
+}
+#endif
+
+
 #include <boost/dll/runtime_symbol_info.hpp>
 
-boost::filesystem::path this_module_location_from_itself() {
+boost::dll::fs::path this_module_location_from_itself() {
     return boost::dll::this_line_location();
 }
 
@@ -108,8 +118,6 @@ int internal_integer_i = 0xFF0000;
 extern "C" LIBRARY_API int& reference_to_internal_integer;
 int& reference_to_internal_integer = internal_integer_i;
 
-#ifndef BOOST_NO_RVALUE_REFERENCES
 extern "C" LIBRARY_API int&& rvalue_reference_to_internal_integer;
 int&& rvalue_reference_to_internal_integer = static_cast<int&&>(internal_integer_i);
-#endif
 

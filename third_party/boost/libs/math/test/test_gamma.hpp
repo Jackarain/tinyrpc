@@ -4,15 +4,15 @@
 //  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#define BOOST_MATH_OVERFLOW_ERROR_POLICY ignore_error
-
+#include <boost/math/tools/config.hpp>
 #include <boost/math/concepts/real_concept.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
+#include <boost/math/special_functions/next.hpp>  // for has_denorm_now
 #include <boost/math/tools/stats.hpp>
-#include <boost/math/tools/test.hpp>
+#include "../include_private/boost/math/tools/test.hpp"
 #include <boost/math/constants/constants.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
 #include <boost/array.hpp>
@@ -115,22 +115,22 @@ void test_gamma(T, const char* name)
    // three items, input value, gamma and lgamma:
    //
    // gamma and lgamma at integer and half integer values:
-   // boost::array<boost::array<T, 3>, N> factorials;
+   // std::array<std::array<T, 3>, N> factorials;
    //
    // gamma and lgamma for z near 0:
-   // boost::array<boost::array<T, 3>, N> near_0;
+   // std::array<std::array<T, 3>, N> near_0;
    //
    // gamma and lgamma for z near 1:
-   // boost::array<boost::array<T, 3>, N> near_1;
+   // std::array<std::array<T, 3>, N> near_1;
    //
    // gamma and lgamma for z near 2:
-   // boost::array<boost::array<T, 3>, N> near_2;
+   // std::array<std::array<T, 3>, N> near_2;
    //
    // gamma and lgamma for z near -10:
-   // boost::array<boost::array<T, 3>, N> near_m10;
+   // std::array<std::array<T, 3>, N> near_m10;
    //
    // gamma and lgamma for z near -55:
-   // boost::array<boost::array<T, 3>, N> near_m55;
+   // std::array<std::array<T, 3>, N> near_m55;
    //
    // The last two cases are chosen more or less at random,
    // except that one is even and the other odd, and both are
@@ -217,7 +217,7 @@ void test_spots(T, const char* name)
       BOOST_CHECK_CLOSE(::boost::math::tgamma(-4 - ldexp(static_cast<T>(1), -55)), static_cast<T>(-1.50119987579016527057843048200831672241827850458884790004313e15L), tolerance * extra_tol);
    }
 
-#ifdef BOOST_MSVC
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4127)
 #endif
@@ -226,7 +226,7 @@ void test_spots(T, const char* name)
    {
       BOOST_CHECK_CLOSE(::boost::math::tgamma(static_cast<T>(142.75)), static_cast<T>(7.8029496083318133344429227511387928576820621466e244L), tolerance * 4);
    }
-#ifdef BOOST_MSVC
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
    // An extra fudge factor for real_concept which has a less accurate tgamma:
@@ -319,10 +319,33 @@ void test_spots(T, const char* name)
       BOOST_CHECK(sign == -1);
    }
 
-   if(std::numeric_limits<T>::has_denorm && std::numeric_limits<T>::has_infinity && (boost::math::isinf)(1 / std::numeric_limits<T>::denorm_min()))
+   #ifndef BOOST_MATH_HAS_GPU_SUPPORT
+   if(boost::math::detail::has_denorm_now<T>() && std::numeric_limits<T>::has_infinity && (boost::math::isinf)(1 / std::numeric_limits<T>::denorm_min()))
    {
       BOOST_CHECK_EQUAL(boost::math::tgamma(-std::numeric_limits<T>::denorm_min()), -std::numeric_limits<T>::infinity());
       BOOST_CHECK_EQUAL(boost::math::tgamma(std::numeric_limits<T>::denorm_min()), std::numeric_limits<T>::infinity());
+   }
+   #endif
+   //
+   // Extra large values for lgamma, see https://github.com/boostorg/math/issues/242
+   //
+   if (boost::math::tools::digits<T>() >= std::numeric_limits<double>::digits)
+   {
+      BOOST_CHECK_CLOSE(::boost::math::lgamma(ldexp(static_cast<T>(11103367432951928LL), 32)), static_cast<T>(2.7719825960021351251696385101478518546793793286704974382373670822285114741208958e27L), tolerance);
+      BOOST_CHECK_CLOSE(::boost::math::lgamma(ldexp(static_cast<T>(11103367432951928LL), 62)), static_cast<T>(4.0411767712186990905102512019058204792570873633363159e36L), tolerance);
+      BOOST_CHECK_CLOSE(::boost::math::lgamma(ldexp(static_cast<T>(11103367432951928LL), 326)), static_cast<T>(3.9754720509185529233002820161357111676582583112671658e116L), tolerance);
+   }
+   //
+   // Super small values may cause spurious overflow:
+   //
+   if (std::numeric_limits<T>::is_specialized && boost::math::detail::has_denorm_now<T>())
+   {
+      T value = (std::numeric_limits<T>::min)();
+      while (value != 0)
+      {
+         BOOST_CHECK((boost::math::isfinite)(boost::math::lgamma(value)));
+         value /= 2;
+      }
    }
 }
 

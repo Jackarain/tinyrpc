@@ -21,8 +21,8 @@
 
 #include <boost/array.hpp>
 #include <boost/assert.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/test/unit_test.hpp>
 #include <boost/utility.hpp>
 #include <boost/variant.hpp>
 
@@ -32,6 +32,9 @@
 #ifdef BOOST_WINDOWS
 #include <windows.h>
 #endif
+
+#define BOOST_CHECK(x) BOOST_TEST(x)
+#define BOOST_CHECK_EQUAL(a, b) BOOST_TEST_EQ(a, b)
 
 #if defined(BOOST_MSVC)
 # pragma warning(push)
@@ -256,11 +259,12 @@ void test_ontop() {
                     return std::move( f);
                 }};
         f = std::move( f).resume();
-        f = std::move( f).resume_with(
-               [&i](ctx::fiber && f){
+        // Pass fn by reference to see if the types are properly decayed.
+        auto fn = [&i](ctx::fiber && f){
                    i -= 10;
                    return std::move( f);
-               });
+        };
+        f = std::move( f).resume_with(fn);
         BOOST_CHECK( f);
         BOOST_CHECK_EQUAL( i, 200);
     }
@@ -290,7 +294,7 @@ void test_ontop_exception() {
                     f = std::move( f).resume();
                 } catch ( my_exception & ex) {
                     value2 = ex.what();
-                    return std::move( ex.f); 
+                    return std::move( ex.f);
                 }
             }
             return std::move( f);
@@ -496,7 +500,7 @@ void test_badcatch() {
         BOOST_CHECK_EQUAL( 3, value1);
         BOOST_CHECK_EQUAL( 3., value3);
         // the destruction of ctx here will cause a forced_unwind to be thrown that is not caught
-        // in fn19.  That will trigger the "not caught" assertion in ~forced_unwind.  Getting that 
+        // in fn19.  That will trigger the "not caught" assertion in ~forced_unwind.  Getting that
         // assertion to propogate bak here cleanly is non-trivial, and there seems to not be a good
         // way to hook directly into the assertion when it happens on an alternate stack.
         std::move( f);
@@ -506,30 +510,27 @@ void test_badcatch() {
 #endif
 }
 
-boost::unit_test::test_suite * init_unit_test_suite( int, char* [])
+int main()
 {
-    boost::unit_test::test_suite * test =
-        BOOST_TEST_SUITE("Boost.Context: fiber test suite");
-
-    test->add( BOOST_TEST_CASE( & test_move) );
-    test->add( BOOST_TEST_CASE( & test_bind) );
-    test->add( BOOST_TEST_CASE( & test_exception) );
-    test->add( BOOST_TEST_CASE( & test_fp) );
-    test->add( BOOST_TEST_CASE( & test_stacked) );
-    test->add( BOOST_TEST_CASE( & test_prealloc) );
-    test->add( BOOST_TEST_CASE( & test_ontop) );
-    test->add( BOOST_TEST_CASE( & test_ontop_exception) );
-    test->add( BOOST_TEST_CASE( & test_termination1) );
-    test->add( BOOST_TEST_CASE( & test_termination2) );
-    test->add( BOOST_TEST_CASE( & test_sscanf) );
-    test->add( BOOST_TEST_CASE( & test_snprintf) );
+    test_move();
+    test_bind();
+    test_exception();
+    test_fp();
+    test_stacked();
+    test_prealloc();
+    test_ontop();
+    test_ontop_exception();
+    test_termination1();
+    test_termination2();
+    test_sscanf();
+    test_snprintf();
 #ifdef BOOST_WINDOWS
-    test->add( BOOST_TEST_CASE( & test_bug12215) );
+    test_bug12215();
 #endif
-    test->add( BOOST_TEST_CASE( & test_goodcatch) );
-    test->add( BOOST_TEST_CASE( & test_badcatch) );
+    test_goodcatch();
+    test_badcatch();
 
-    return test;
+    return boost::report_errors();
 }
 
 #if defined(BOOST_MSVC)

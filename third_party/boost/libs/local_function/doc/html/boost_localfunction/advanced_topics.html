@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Advanced Topics</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Boost.LocalFunction 1.0.0">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Boost.LocalFunction 1.0.0">
 <link rel="prev" href="tutorial.html" title="Tutorial">
@@ -180,7 +180,7 @@
         are needed: The parenthesis to invoke the <code class="computeroutput"><span class="identifier">BOOST_IDENTITY_TYPE</span><span class="special">(...)</span></code> macro plus the parenthesis to wrap the
         type expression (and therefore any comma <code class="computeroutput"><span class="special">,</span></code>
         that it contains) passed as parameter to the <code class="computeroutput"><span class="identifier">BOOST_IDENTITY_TYPE</span><span class="special">((...))</span></code> macro. Finally, the <code class="computeroutput"><span class="identifier">BOOST_IDENTITY_TYPE</span></code> macro must be prefixed
-        by the <code class="computeroutput"><span class="keyword">typename</span></code> keyword <code class="computeroutput"><span class="keyword">typename</span> <span class="identifier">BOOST_IDENTITY_TYPE</span><span class="special">(</span></code><code class="literal"><span class="emphasis"><em>parenthesized-type</em></span></code><code class="computeroutput"><span class="special">)</span></code> when used together with the <code class="computeroutput">BOOST_LOCAL_FUNCTION_TPL</code>
+        by the <code class="computeroutput"><span class="keyword">typename</span></code> keyword <code class="computeroutput"><span class="keyword">typename</span> <span class="identifier">BOOST_IDENTITY_TYPE</span><span class="special">(</span></code><code class="literal"><span class="emphasis"><em>parenthesized-type</em></span></code><code class="computeroutput"><span class="special">)</span></code> when used together with the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_TPL">BOOST_LOCAL_FUNCTION_TPL</a></code>
         macro within templates.
       </p>
 <div class="note"><table border="0" summary="Note">
@@ -421,7 +421,7 @@
 <pre class="programlisting"><span class="identifier">BOOST_LOCAL_FUNCTION_TYPEOF</span><span class="special">(</span><span class="emphasis"><em>bound-variable-name</em></span><span class="special">)</span>
 </pre>
 <p>
-        The <code class="computeroutput">BOOST_LOCAL_FUNCTION_TYPEOF</code>
+        The <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TYPEOF.html" title="Macro BOOST_LOCAL_FUNCTION_TYPEOF">BOOST_LOCAL_FUNCTION_TYPEOF</a></code>
         macro expands to a type expression that evaluates (at compile-time) to the
         fully qualified type of the bound variable with the specified name. This
         type expression is fully qualified in the sense that it will be constant
@@ -458,7 +458,7 @@
 <p>
       </p>
 <p>
-        Within templates, <code class="computeroutput">BOOST_LOCAL_FUNCTION_TYPEOF</code>
+        Within templates, <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TYPEOF.html" title="Macro BOOST_LOCAL_FUNCTION_TYPEOF">BOOST_LOCAL_FUNCTION_TYPEOF</a></code>
         should not be prefixed by the <code class="computeroutput"><span class="keyword">typename</span></code>
         keyword but eventual type manipulations need the <code class="computeroutput"><span class="keyword">typename</span></code>
         prefix as usual (see also <a href="../../../test/typeof_template.cpp" target="_top"><code class="literal">typeof_template.cpp</code></a>
@@ -484,7 +484,7 @@
 <p>
       </p>
 <p>
-        In this context, it is best to use the <code class="computeroutput">BOOST_LOCAL_FUNCTION_TYPEOF</code>
+        In this context, it is best to use the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TYPEOF.html" title="Macro BOOST_LOCAL_FUNCTION_TYPEOF">BOOST_LOCAL_FUNCTION_TYPEOF</a></code>
         macro instead of using <a href="http://www.boost.org/libs/typeof" target="_top">Boost.Typeof</a>
         to reduce the number of times that <a href="http://www.boost.org/libs/typeof" target="_top">Boost.Typeof</a>
         is invoked (either the library already internally used <a href="http://www.boost.org/libs/typeof" target="_top">Boost.Typeof</a>
@@ -522,16 +522,16 @@
 </pre>
 <p>
         Note that within the local function body it is always possible to abstract
-        the access to the type of a bound variable using <code class="computeroutput">BOOST_LOCAL_FUNCTION_TYPEOF</code>
+        the access to the type of a bound variable using <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TYPEOF.html" title="Macro BOOST_LOCAL_FUNCTION_TYPEOF">BOOST_LOCAL_FUNCTION_TYPEOF</a></code>
         (even when the bound variable type is explicitly specified in the local function
         declaration).
       </p>
 <p>
         The library also uses <a href="http://www.boost.org/libs/typeof" target="_top">Boost.Typeof</a>
         to determine the local function result type (because this type is specified
-        outside the <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>
+        outside the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>
         macro). Thus it is also possible to specify the local function result type
-        as one of the <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>
+        as one of the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>
         macro parameters prefixing it by <code class="computeroutput"><span class="keyword">return</span></code>
         so the library will not use <a href="http://www.boost.org/libs/typeof" target="_top">Boost.Typeof</a>
         to deduce the result type:
@@ -795,7 +795,7 @@
 </h3></div></div></div>
 <p>
         It is possible to program exception specifications for local functions by
-        specifying them after the <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>
+        specifying them after the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>
         macro and before the body code block <code class="computeroutput"><span class="special">{</span>
         <span class="special">...</span> <span class="special">}</span></code>.
       </p>
@@ -867,13 +867,13 @@
       Line Expansions</a>
 </h3></div></div></div>
 <p>
-        In general, it is not possible to expand the <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>,
-        <code class="computeroutput">BOOST_LOCAL_FUNCTION_TPL</code>
+        In general, it is not possible to expand the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>,
+        <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_TPL">BOOST_LOCAL_FUNCTION_TPL</a></code>
         macros multiple times on the same line. <a href="#ftn.boost_localfunction.advanced_topics.same_line_expansions.f0" class="footnote" name="boost_localfunction.advanced_topics.same_line_expansions.f0"><sup class="footnote">[26]</sup></a>
       </p>
 <p>
-        Therefore, this library provides additional macros <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID</code>
-        and <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID_TPL</code>
+        Therefore, this library provides additional macros <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID.html" title="Macro BOOST_LOCAL_FUNCTION_ID">BOOST_LOCAL_FUNCTION_ID</a></code>
+        and <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_ID_TPL">BOOST_LOCAL_FUNCTION_ID_TPL</a></code>
         which can be expanded multiple times on the same line as long as programmers
         specify unique identifiers as the macros' first parameters. The unique identifier
         can be any token (not just numeric) that can be successfully concatenated
@@ -881,10 +881,10 @@
         <a href="#ftn.boost_localfunction.advanced_topics.same_line_expansions.f1" class="footnote" name="boost_localfunction.advanced_topics.same_line_expansions.f1"><sup class="footnote">[27]</sup></a>
       </p>
 <p>
-        The <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID</code>
-        and <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID_TPL</code>
+        The <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID.html" title="Macro BOOST_LOCAL_FUNCTION_ID">BOOST_LOCAL_FUNCTION_ID</a></code>
+        and <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_ID_TPL">BOOST_LOCAL_FUNCTION_ID_TPL</a></code>
         macros accept local function parameter declaration lists using the exact
-        same syntax as <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>.
+        same syntax as <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>.
         For example (see also <a href="../../../test/same_line.cpp" target="_top"><code class="literal">same_line.cpp</code></a>):
       </p>
 <p>
@@ -928,8 +928,8 @@
 <p>
       </p>
 <p>
-        As shown by the example above, the <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID</code>
-        and <code class="computeroutput">BOOST_LOCAL_FUNCTION_ID_TPL</code>
+        As shown by the example above, the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID.html" title="Macro BOOST_LOCAL_FUNCTION_ID">BOOST_LOCAL_FUNCTION_ID</a></code>
+        and <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_ID_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_ID_TPL">BOOST_LOCAL_FUNCTION_ID_TPL</a></code>
         macros are especially useful when it is necessary to invoke them multiple
         times within a user-defined macro (because the preprocessor expands all nested
         macros on the same line).
@@ -1360,13 +1360,13 @@
           code that might not work on <a href="http://www.open-std.org/JTC1/SC22/WG21/" target="_top">C++11</a>.
         </p></div>
 <div id="ftn.boost_localfunction.advanced_topics.same_line_expansions.f0" class="footnote"><p><a href="#boost_localfunction.advanced_topics.same_line_expansions.f0" class="para"><sup class="para">[26] </sup></a>
-          <span class="bold"><strong>Rationale.</strong></span> The <code class="computeroutput">BOOST_LOCAL_FUNCTION</code>
-          and <code class="computeroutput">BOOST_LOCAL_FUNCTION_TPL</code>
+          <span class="bold"><strong>Rationale.</strong></span> The <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION.html" title="Macro BOOST_LOCAL_FUNCTION">BOOST_LOCAL_FUNCTION</a></code>
+          and <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_TPL.html" title="Macro BOOST_LOCAL_FUNCTION_TPL">BOOST_LOCAL_FUNCTION_TPL</a></code>
           macros internally use <code class="computeroutput"><span class="identifier">__LINE__</span></code>
           to generate unique identifiers. Therefore, if these macros are expanded
           more than on time on the same line, the generated identifiers will no longer
           be unique and the code will not compile. (This restriction does not apply
-          to MSVC and other compilers that provide the non-standard <code class="computeroutput"><span class="identifier">__COUNTER__</span></code> macro.) Note that the <code class="computeroutput">BOOST_LOCAL_FUNCTION_NAME</code> macro
+          to MSVC and other compilers that provide the non-standard <code class="computeroutput"><span class="identifier">__COUNTER__</span></code> macro.) Note that the <code class="computeroutput"><a class="link" href="../BOOST_LOCAL_FUNCTION_NAME.html" title="Macro BOOST_LOCAL_FUNCTION_NAME">BOOST_LOCAL_FUNCTION_NAME</a></code> macro
           can always be expanded multiple times on the same line because the unique
           local function name (and not <code class="computeroutput"><span class="identifier">__LINE__</span></code>)
           is used by this macro to generate unique identifiers (so there is no need

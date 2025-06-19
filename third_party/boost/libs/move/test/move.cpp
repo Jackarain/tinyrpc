@@ -9,11 +9,9 @@
 // See http://www.boost.org/libs/move for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/move/detail/config_begin.hpp>
 #include <boost/move/utility_core.hpp>
 #include "../example/movable.hpp"
 #include "../example/copymovable.hpp"
-#include <boost/static_assert.hpp>
 
 movable function(movable m)
 {
@@ -97,12 +95,12 @@ R factory_wrapper(F f)
 int main()
 {
    #if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
-   BOOST_STATIC_ASSERT((boost::has_nothrow_move<movable>::value == true));
-   BOOST_STATIC_ASSERT((boost::has_move_emulation_enabled<copyable>::value == false));
-   BOOST_STATIC_ASSERT((boost::has_move_emulation_enabled<copyable*>::value == false));
-   BOOST_STATIC_ASSERT((boost::has_move_emulation_enabled<int>::value == false));
-   BOOST_STATIC_ASSERT((boost::has_move_emulation_enabled<int&>::value == false));
-   BOOST_STATIC_ASSERT((boost::has_move_emulation_enabled<int*>::value == false));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_nothrow_move<movable>::value == true));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_move_emulation_enabled<copyable>::value == false));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_move_emulation_enabled<copyable*>::value == false));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_move_emulation_enabled<int>::value == false));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_move_emulation_enabled<int&>::value == false));
+   BOOST_MOVE_STATIC_ASSERT((boost::has_move_emulation_enabled<int*>::value == false));
    #endif
 
    {
@@ -110,40 +108,40 @@ int main()
       movable m2(boost::move(m));
       movable m3(function(movable(boost::move(m2))));
       movable m4(function(boost::move(m3)));
-      (void)m;(void)m2;(void)m3;(void)m4;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);::boost::movelib::ignore(m4);
    }
    {
       movable m;
       movable m2(boost::move(m));
       movable m3(functionr(movable(boost::move(m2))));
       movable m4(functionr(boost::move(m3))); 
-      (void)m;(void)m2;(void)m3;(void)m4;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);::boost::movelib::ignore(m4);
    }
    {
       movable m;
       movable m2(boost::move(m));
       movable m3(function2(movable(boost::move(m2))));
       movable m4(function2(boost::move(m3)));
-      (void)m;(void)m2;(void)m3;(void)m4;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);::boost::movelib::ignore(m4);
    }
    {
       movable m;
       movable m2(boost::move(m));
       movable m3(function2r(movable(boost::move(m2))));
       movable m4(function2r(boost::move(m3)));
-      (void)m;(void)m2;(void)m3;(void)m4;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);::boost::movelib::ignore(m4);
    }
    {
       movable m;
       movable m2(boost::move(m));
       movable m3(move_return_function());
-      (void)m;(void)m2;(void)m3;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);
    }
    {
       movable m;
       movable m2(boost::move(m));
       movable m3(move_return_function2());
-      (void)m;(void)m2;(void)m3;
+      ::boost::movelib::ignore(m);::boost::movelib::ignore(m2);::boost::movelib::ignore(m3);
    }
    {
       //movable
@@ -151,9 +149,9 @@ int main()
       m = factory_wrapper<movable>(factory<movable>());
       movable&mr(factory_wrapper<movable&>(factory<movable&>()));
       movable&mr2 = factory_wrapper<movable&>(factory<movable&>());
-      (void)mr;
-      (void)mr2;
-      (void)m;
+      ::boost::movelib::ignore(mr);
+      ::boost::movelib::ignore(mr2);
+      ::boost::movelib::ignore(m);
    }
    {
       //copyable
@@ -161,9 +159,9 @@ int main()
       c = factory_wrapper<copyable>(factory<copyable>());
       copyable&cr(factory_wrapper<copyable&>(factory<copyable&>()));
       copyable&cr2 = factory_wrapper<copyable&>(factory<copyable&>());
-      (void)cr;
-      (void)cr2;
-      (void)c;
+      ::boost::movelib::ignore(cr);
+      ::boost::movelib::ignore(cr2);
+      ::boost::movelib::ignore(c);
    }
 
    {
@@ -172,12 +170,10 @@ int main()
       c = factory_wrapper<copy_movable>(factory<copy_movable>());
       copy_movable&cr(factory_wrapper<copy_movable&>(factory<copy_movable&>()));
       copy_movable&cr2 = factory_wrapper<copy_movable&>(factory<copy_movable&>());
-      (void)cr;
-      (void)cr2;
-      (void)c;
+      ::boost::movelib::ignore(cr);
+      ::boost::movelib::ignore(cr2);
+      ::boost::movelib::ignore(c);
    }
 
    return 0;
 }
-
-#include <boost/move/detail/config_end.hpp>

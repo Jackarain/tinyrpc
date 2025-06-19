@@ -5,11 +5,11 @@
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
 #include <boost/mpl/if.hpp>
-#include <boost/static_assert.hpp>
+#include <boost/math/tools/assert.hpp>
 #include <boost/math/complex.hpp>
 
 #include <iostream>
@@ -24,6 +24,14 @@ namespace std{ using ::sqrt; using ::tan; using ::tanh; }
 #ifndef VERBOSE
 #undef BOOST_TEST_MESSAGE
 #define BOOST_TEST_MESSAGE(x)
+#endif
+
+#ifdef _MSC_VER
+#pragma warning (disable:C4996)
+#elif __GNUC__ >= 5
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__clang__)
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 //
@@ -83,7 +91,7 @@ bool check_complex(const std::complex<T>& a, const std::complex<T>& b, int max_e
    }
    if((boost::math::isnan)(a.imag()))
    {
-      BOOST_ERROR("Found non-finite value for inaginary part: " << a);
+      BOOST_ERROR("Found non-finite value for imaginary part: " << a);
    }
 
    T rel = boost::math::fabs((b-a)/b) / eps;
@@ -258,7 +266,7 @@ void test_inverse_trig(T)
 
 //
 // check_spots:
-// Various spot values, mostly the C99 special cases (infinites and NAN's).
+// Various spot values, mostly the C99 special cases (infinities and NAN's).
 // TODO: add spot checks for the Wolfram spot values.
 //
 template <class T>
@@ -279,7 +287,7 @@ void check_spots(const T&)
    bool test_infinity = std::numeric_limits<T>::has_infinity;
    T nan = 0;
    bool test_nan = false;
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x564))
    // numeric_limits reports that a quiet NaN is present
    // but an attempt to access it will terminate the program!!!!
    if(std::numeric_limits<T>::has_quiet_NaN)

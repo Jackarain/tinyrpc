@@ -26,7 +26,7 @@
 #pragma warning(disable:4310) // cast truncates constant value
 #endif
 
-#if defined(__GNUC__) && !defined(BOOST_INTEL_CXX_VERSION)
+#if ( defined(__GNUC__) || defined(__clang__) ) && !defined(BOOST_INTEL_CXX_VERSION)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
@@ -103,10 +103,8 @@ void limits_test(T*)
 
         if (limits::is_integer)
         {
-            BOOST_TEST(BOOST_HASH_TEST_NAMESPACE::hash_value(min_value)
-                    == std::size_t(min_value));
-            BOOST_TEST(BOOST_HASH_TEST_NAMESPACE::hash_value(max_value)
-                    == std::size_t(max_value));
+            BOOST_TEST_EQ(BOOST_HASH_TEST_NAMESPACE::hash_value(min_value), std::size_t(min_value));
+            BOOST_TEST_EQ(BOOST_HASH_TEST_NAMESPACE::hash_value(max_value), std::size_t(max_value));
         }
 #endif
     }

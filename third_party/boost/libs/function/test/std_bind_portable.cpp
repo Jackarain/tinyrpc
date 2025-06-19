@@ -8,7 +8,16 @@
 
 // For more information, see http://www.boost.org/
 
-    
+#if defined(__clang__) && defined(__has_warning)
+# if __has_warning( "-Wdeprecated-declarations" )
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
+# endif
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 12
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <boost/function.hpp>
 #include <iostream>
 #include <functional>

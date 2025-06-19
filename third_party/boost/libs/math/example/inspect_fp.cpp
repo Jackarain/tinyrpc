@@ -13,7 +13,14 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <boost/detail/endian.hpp>
+
+#ifndef BOOST_MATH_STANDALONE
+#include <boost/endian.hpp>
+#else
+#include <boost/math/tools/config.hpp>
+#endif
+
+#include <boost/math/special_functions/next.hpp>  // for has_denorm_now
 
 //------------------------------------------------------------------------------
 
@@ -106,9 +113,9 @@ template<class T> void print_table()
 {
     print_row("0", (T)0);
     print_row("sn.min", std::numeric_limits<T>::denorm_min(),
-          std::numeric_limits<T>::has_denorm);
+          boost::math::detail::has_denorm_now<T>());
     print_row("-sn.min", -std::numeric_limits<T>::denorm_min(),
-          std::numeric_limits<T>::has_denorm);
+          boost::math::detail::has_denorm_now<T>());
     print_row("n.min/256", (std::numeric_limits<T>::min)()/256);
     print_row("n.min/2", (std::numeric_limits<T>::min)()/2);
     print_row("-n.min/2", -(std::numeric_limits<T>::min)()/2);

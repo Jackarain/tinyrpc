@@ -9,13 +9,18 @@
 
 import testing ;
 
+project : requirements
+    <library>/boost/core//boost_core
+    <library>/boost/container//boost_container
+    ;
+
 rule test_all
 {
    local all_rules = ;
 
    for local fileb in [ glob *.cpp ]
    {
-      all_rules += [ run $(fileb) /boost/timer//boost_timer
+      all_rules += [ run $(fileb)
       :  # additional args
       :  # test-files
       :  # requirements
@@ -26,4 +31,4 @@ rule test_all
 }
 
 test-suite move_test : [ test_all r ] ;
- 
+

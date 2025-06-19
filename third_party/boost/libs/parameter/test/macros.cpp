@@ -1,57 +1,67 @@
-// Copyright David Abrahams, Daniel Wallin 2003. Use, modification and 
-// distribution is subject to the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Copyright David Abrahams, Daniel Wallin 2003.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/parameter.hpp>
 #include <boost/parameter/macros.hpp>
-#include <boost/bind.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/ref.hpp>
-#include <cassert>
-#include <string.h>
-
+#include <boost/bind/bind.hpp>
 #include "basics.hpp"
 
-namespace test
-{
+namespace test {
 
-  BOOST_PARAMETER_FUN(int, f, 2, 4, f_parameters)
-  {
-      p[tester](
-          p[name]
-        , p[value || boost::bind(&value_default) ]
-#if BOOST_WORKAROUND(__DECCXX_VER, BOOST_TESTED_AT(60590042))
-        , p[test::index | 999 ]
-#else
-        , p[index | 999 ]
-#endif
-      );
+    BOOST_PARAMETER_FUN(int, f, 2, 4, f_parameters)
+    {
+        p[test::_tester](
+            p[test::_name]
+          , p[test::_value || boost::bind(&test::value_default)]
+          , p[test::_index | 999]
+        );
 
-      return 1;
-  }
-  
+        return 1;
+    }
+
+    BOOST_PARAMETER_NAME(foo)
+    BOOST_PARAMETER_NAME(bar)
+
+    struct baz_parameters
+      : boost::parameter::parameters<
+            boost::parameter::optional<test::tag::foo>
+          , boost::parameter::optional<test::tag::bar>
+        >
+    {
+    };
+
+    BOOST_PARAMETER_FUN(int, baz, 0, 2, baz_parameters)
+    {
+        return 1;
+    }
 } // namespace test
+
+#include <boost/core/ref.hpp>
+#include <boost/core/lightweight_test.hpp>
+#include <string>
 
 int main()
 {
-    using test::f;
-    using test::name;
-    using test::value;
-    using test::index;
-    using test::tester;
+    test::f(
+        test::values(
+            std::string("foo")
+          , std::string("bar")
+          , std::string("baz")
+        )
+      , std::string("foo")
+      , std::string("bar")
+      , std::string("baz")
+    );
+    BOOST_TEST_EQ(1, test::baz());
 
-    f(
-       test::values(S("foo"), S("bar"), S("baz"))
-     , S("foo"), S("bar"), S("baz")
-   );
+    int x = 56;
+    test::f(
+        test::values(std::string("foo"), 666.222, 56)
+      , test::_index = boost::ref(x)
+      , test::_name = std::string("foo")
+    );
 
-   int x = 56;
-   f(
-       test::values("foo", 666.222, 56)
-     , index = boost::ref(x), name = "foo"
-   );
-
-   return boost::report_errors();
+    return boost::report_errors();
 }
-

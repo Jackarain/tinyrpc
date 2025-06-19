@@ -18,10 +18,10 @@ LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
   namespace boost { namespace math {
 
    template <class T>
-   ``__sf_result`` airy_ai(T x);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_ai(T x);
 
    template <class T, class Policy>
-   ``__sf_result`` airy_ai(T x, const Policy&);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_ai(T x, const Policy&);
 
   }} // namespaces
   
@@ -33,8 +33,9 @@ to the differential equation:
 [equation airy]
 
 See Weisstein, Eric W. "Airy Functions." From MathWorld--A Wolfram Web Resource.
-[@http://mathworld.wolfram.com/AiryFunctions.html];
+[@http://mathworld.wolfram.com/AiryFunctions.html]
 
+and [@https://en.wikipedia.org/wiki/Airy_zeta_function Airy Zeta function].
 
 [optional_policy]
 
@@ -64,7 +65,7 @@ This function is implemented in terms of the Bessel functions using the relation
 
 [equation airy_ai]
 
-[endsect]
+[endsect] [/section:ai Airy Ai Function]
 
 [section:bi Airy Bi Function]
 
@@ -77,10 +78,10 @@ This function is implemented in terms of the Bessel functions using the relation
   namespace boost { namespace math {
 
    template <class T>
-   ``__sf_result`` airy_bi(T x);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_bi(T x);
 
    template <class T, class Policy>
-   ``__sf_result`` airy_bi(T x, const Policy&);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_bi(T x, const Policy&);
 
   }} // namespaces
   
@@ -118,7 +119,7 @@ This function is implemented in terms of the Bessel functions using the relation
 
 [equation airy_bi]
 
-[endsect]
+[endsect] [/section:bi Airy Bi Function]
 
 [section:aip Airy Ai' Function]
 
@@ -131,10 +132,10 @@ This function is implemented in terms of the Bessel functions using the relation
   namespace boost { namespace math {
 
    template <class T>
-   ``__sf_result`` airy_ai_prime(T x);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_ai_prime(T x);
 
    template <class T, class Policy>
-   ``__sf_result`` airy_ai_prime(T x, const Policy&);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_ai_prime(T x, const Policy&);
 
   }} // namespaces
   
@@ -172,7 +173,7 @@ This function is implemented in terms of the Bessel functions using the relation
 
 [equation airy_aip]
 
-[endsect]
+[endsect] [/section:aip Airy Ai' Function]
 
 [section:bip Airy Bi' Function]
 
@@ -185,10 +186,10 @@ This function is implemented in terms of the Bessel functions using the relation
   namespace boost { namespace math {
 
    template <class T>
-   ``__sf_result`` airy_bi_prime(T x);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_bi_prime(T x);
 
    template <class T, class Policy>
-   ``__sf_result`` airy_bi_prime(T x, const Policy&);
+   BOOST_MATH_GPU_ENABLED ``__sf_result`` airy_bi_prime(T x, const Policy&);
 
   }} // namespaces
   
@@ -226,7 +227,7 @@ This function is implemented in terms of the Bessel functions using the relation
 
 [equation airy_bip]
 
-[endsect]
+[endsect] [/section:bip Airy Bi' Function]
 
 [section:airy_root Finding Zeros of Airy Functions]
 
@@ -241,23 +242,23 @@ by providing an output iterator.
 The signature of the single value functions are:
 
   template <class T>
-  T airy_ai_zero(
+  BOOST_MATH_GPU_ENABLED T airy_ai_zero(
            int m);         // 1-based index of zero.
 
   template <class T>
-  T airy_bi_zero(
+  BOOST_MATH_GPU_ENABLED T airy_bi_zero(
            int m);         // 1-based index of zero.
 
 and for multiple zeros:
 
  template <class T, class OutputIterator>
- OutputIterator airy_ai_zero(
+ BOOST_MATH_GPU_ENABLED OutputIterator airy_ai_zero(
                       int start_index,           // 1-based index of first zero.
                       unsigned number_of_zeros,  // How many zeros to generate.
                       OutputIterator out_it);    // Destination for zeros.
 
  template <class T, class OutputIterator>
- OutputIterator airy_bi_zero(
+ BOOST_MATH_GPU_ENABLED OutputIterator airy_bi_zero(
                       int start_index,           // 1-based index of zero.
                       unsigned number_of_zeros,  // How many zeros to generate
                       OutputIterator out_it);    // Destination for zeros.
@@ -265,25 +266,25 @@ and for multiple zeros:
 There are also versions which allow control of the __policy_section for error handling and precision.
 
   template <class T>
-  T airy_ai_zero(
+  BOOST_MATH_GPU_ENABLED T airy_ai_zero(
            int m,          // 1-based index of zero.
            const Policy&); // Policy to use.
 
   template <class T>
-  T airy_bi_zero(
+  BOOST_MATH_GPU_ENABLED T airy_bi_zero(
            int m,          // 1-based index of zero.
            const Policy&); // Policy to use.
 
 
  template <class T, class OutputIterator>
- OutputIterator airy_ai_zero(
+ BOOST_MATH_GPU_ENABLED OutputIterator airy_ai_zero(
                       int start_index,           // 1-based index of first zero.
                       unsigned number_of_zeros,  // How many zeros to generate.
                       OutputIterator out_it,     // Destination for zeros.
                       const Policy& pol);        // Policy to use.
 
  template <class T, class OutputIterator>
- OutputIterator airy_bi_zero(
+ BOOST_MATH_GPU_ENABLED OutputIterator airy_bi_zero(
                       int start_index,           // 1-based index of zero.
                       unsigned number_of_zeros,  // How many zeros to generate.
                       OutputIterator out_it,     // Destination for zeros.
@@ -295,9 +296,9 @@ The Airy Ai and Bi functions have an infinite
 number of zeros on the negative real axis. The real zeros on the negative real
 axis can be found by solving for the roots of
 
-[emquad] ['Ai(x[sub m]) = 0]
+[:['Ai(x[sub m]) = 0]]
 
-[emquad] ['Bi(y[sub m]) = 0]
+[:['Bi(y[sub m]) = 0]]
 
 Here, ['x[sub m]] represents the ['m[super th]]
 root of the Airy Ai function,
@@ -330,7 +331,6 @@ The first few zeros returned by these functions have approximate values as follo
 ]
 
 [graph airy_zeros]
-
 
 [h4 Examples of finding Airy Zeros]
 
@@ -379,14 +379,12 @@ and an initial estimate for the n[super th] zero b[sub n] of Bi is given by (A&S
 
 Thereafter the roots are refined using Newton iteration.
 
-
 [h3 Testing]
 
 The precision of evaluation of zeros was tested at 50 decimal digits using `cpp_dec_float_50`
 and found identical with spot values computed by __WolframAlpha.
 
-[endsect]  [/section:bessel Finding Zeros of Bessel Functions of the First and Second Kinds]
+[endsect] [/section:airy_root Finding Zeros of Airy Functions]
 
-
-[endsect]
+[endsect] [/section:airy Airy Functions]
 

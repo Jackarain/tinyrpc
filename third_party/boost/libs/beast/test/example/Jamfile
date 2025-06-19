@@ -14,3 +14,7 @@ alias run-tests :
 alias fat-tests ;
 
 explicit fat-tests ;
+
+alias run-fat-tests : common//run-tests ;
+
+explicit run-fat-tests ;

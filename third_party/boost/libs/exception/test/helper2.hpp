@@ -3,8 +3,8 @@
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UUID_BC765EB4CA2A11DCBDC5828355D89593
-#define UUID_BC765EB4CA2A11DCBDC5828355D89593
+#ifndef BOOST_EXCEPTION_BC765EB4CA2A11DCBDC5828355D89593
+#define BOOST_EXCEPTION_BC765EB4CA2A11DCBDC5828355D89593
 
 #include <boost/exception/exception.hpp>
 #include <exception>
@@ -21,7 +21,7 @@ boost
             public std::exception
             {
             explicit derives_boost_exception( int x );
-            virtual ~derives_boost_exception() throw();
+            virtual ~derives_boost_exception() BOOST_NOEXCEPT_OR_NOTHROW;
             int x_;
             };
 
@@ -31,7 +31,7 @@ boost
             public std::exception
             {
             explicit derives_boost_exception_virtually( int x );
-            virtual ~derives_boost_exception_virtually() throw();
+            virtual ~derives_boost_exception_virtually() BOOST_NOEXCEPT_OR_NOTHROW;
             int x_;
             };
 
@@ -40,7 +40,7 @@ boost
             public std::exception
             {
             explicit derives_std_exception( int x );
-            virtual ~derives_std_exception() throw();
+            virtual ~derives_std_exception() BOOST_NOEXCEPT_OR_NOTHROW;
             int x_;
             };
 

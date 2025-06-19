@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -43,7 +43,7 @@ public:
     construct(std::size_t size)
     {
         auto p = new char[sizeof(static_pool) + size];
-        return *(new(p) static_pool{size});
+        return *(::new(p) static_pool{size});
     }
 
     static_pool&
@@ -56,7 +56,7 @@ public:
     void
     destroy()
     {
-        if(refs_--)
+        if(--refs_)
             return;
         this->~static_pool();
         delete[] reinterpret_cast<char*>(this);
@@ -169,7 +169,8 @@ public:
     void
     construct(U* ptr, Args&&... args)
     {
-        ::new((void*)ptr) U(std::forward<Args>(args)...);
+        ::new(static_cast<void*>(ptr)) U(
+            std::forward<Args>(args)...);
     }
 
     template<class U>

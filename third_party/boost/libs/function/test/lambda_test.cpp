@@ -28,13 +28,13 @@ int main()
   using namespace boost::lambda;
 
   function <unsigned(bool, double)> f1 = bind(func_impl, 15, _1, _2);
-  BOOST_TEST_EQ( f1(true, 2.0), 30 );
+  BOOST_TEST_EQ( f1(true, 2.0), 30u );
 
   function <unsigned(double)>       f2 = boost::lambda::bind(f1, false, _1);
-  BOOST_TEST_EQ( f2(2.0), 60 );
+  BOOST_TEST_EQ( f2(2.0), 60u );
 
   function <unsigned()>             f3 = boost::lambda::bind(f2, 4.0);
-  BOOST_TEST_EQ( f3(), 120 );
+  BOOST_TEST_EQ( f3(), 120u );
 
   return boost::report_errors();
 }

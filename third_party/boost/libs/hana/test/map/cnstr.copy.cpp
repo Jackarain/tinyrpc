@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -104,11 +104,11 @@ int main() {
 
     {
         using Map1 = hana::map<hana::pair<NoCopy, NoCopy>>;
-        Map1 map1;
+        Map1 map1; (void)map1;
         static_assert(!std::is_copy_constructible<Map1>::value, "");
 
         using Map2 = hana::map<hana::pair<NoCopy_nonempty, NoCopy_nonempty>>;
-        Map2 map2;
+        Map2 map2; (void)map2;
         static_assert(!std::is_copy_constructible<Map2>::value, "");
     }
 }

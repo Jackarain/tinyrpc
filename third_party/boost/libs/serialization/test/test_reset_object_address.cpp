@@ -1,7 +1,7 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // test_reset_object_address.cpp
 
-// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com . 
+// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -14,7 +14,7 @@
 #include <boost/config.hpp>
 #if defined(BOOST_NO_STDC_NAMESPACE)
 namespace std{
-    using ::rand; 
+    using ::rand;
     using ::size_t;
 }
 #endif
@@ -43,6 +43,7 @@ void test1(){
     {
         boost::archive::text_oarchive oa(ss);
         oa << a;
+        ss.flush();
     }
     A a1;
     {
@@ -86,6 +87,7 @@ void test2(){
         boost::archive::text_oarchive oa(ss);
         oa << b;
         oa << b_ptr;
+        ss.flush();
     }
     B b1;
     B * b1_ptr;
@@ -129,6 +131,7 @@ void test3(){
         boost::archive::text_oarchive oa(ss);
         oa << d;
         oa << b_ptr;
+        ss.flush();
     }
     D d1;
     B * b1_ptr;
@@ -200,6 +203,7 @@ void test4(){
     {
         boost::archive::text_oarchive oa(ss);
         oa << f;
+        ss.flush();
     }
     F f1;
     {
@@ -238,8 +242,8 @@ class G {
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 public:
     bool operator==(const G &rhs) const {
-        return 
-            m_a1 == rhs.m_a1 
+        return
+            m_a1 == rhs.m_a1
             && m_a2 == rhs.m_a2
             && *m_pa2 == *rhs.m_pa2;
     }
@@ -266,6 +270,7 @@ void test5(){
     {
         boost::archive::text_oarchive oa(ss);
         oa << g;
+        ss.flush();
     }
     G g1;
     {
@@ -276,7 +281,7 @@ void test5(){
 }
 
 // joaquin's test - this tests the case where rest_object_address
-// is applied to an item which in fact is not tracked so that 
+// is applied to an item which in fact is not tracked so that
 // the call is in fact superfluous.
 struct foo
 {
@@ -340,6 +345,7 @@ int test6()
   {
     boost::archive::text_oarchive oa(oss);
     oa<<const_cast<const bar&>(b);
+    oss.flush();
   }
 
   bar b1;
@@ -365,6 +371,7 @@ void test7(){
         l.push_back(b_ptr);
         boost::archive::text_oarchive oa(ss);
         oa << const_cast<const std::list<const B *> &>(l);
+        ss.flush();
     }
     B b1;
     {

@@ -353,21 +353,21 @@ This expression generates a view of the array determined by the
  used to construct <code class="literal">indices</code>.
 </td></tr><tr><td><code class="literal">a == b</code></td><td>bool</td><td>This performs a lexicographical comparison of the
 values of <code class="literal">a</code> and <code class="literal">b</code>.  The element
-type must model <a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> for this
+type must model <a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> for this
 expression to be valid.</td></tr><tr><td><code class="literal">a &lt; b</code></td><td>bool</td><td>This performs a lexicographical comparison of the
 values of <code class="literal">a</code> and <code class="literal">b</code>.  The element
-type must model <a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
+type must model <a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
 expression to be valid.</td></tr><tr><td><code class="literal">a &lt;= b</code></td><td>bool</td><td>This performs a lexicographical comparison of the
 values of <code class="literal">a</code> and <code class="literal">b</code>.  The element
-type must model <a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and
-<a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
+type must model <a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and
+<a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
 expression to be valid.</td></tr><tr><td><code class="literal">a &gt; b</code></td><td>bool</td><td>This performs a lexicographical comparison of the
 values of <code class="literal">a</code> and <code class="literal">b</code>.  The element
-type must model <a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and 
-<a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
+type must model <a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and 
+<a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
 expression to be valid.</td></tr><tr><td><code class="literal">a &gt;= b</code></td><td>bool</td><td>This performs a lexicographical comparison of the
 values of <code class="literal">a</code> and <code class="literal">b</code>.  The element
-type must model <a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
+type must model <a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a> for this
 expression to be valid.</td></tr></tbody></table></div></div><br class="table-break"></div><div class="sect2" title="Complexity guarantees"><div class="titlepage"><div><div><h3 class="title"><a name="idp18588736"></a>Complexity guarantees</h3></div></div></div><code class="literal">begin()</code> and <code class="literal">end()</code> execute in amortized
 constant time.
 <code class="literal">size()</code> executes in at most linear time in the 
@@ -589,7 +589,7 @@ using a replaceable allocator.
 </p><p title="Model Of."><b>Model Of. </b>
 <a class="link" href="#MultiArray" title="MultiArray Concept">MultiArray</a>,
 <a class="ulink" href="../../../libs/utility/CopyConstructible.html" target="_top">CopyConstructible</a>. Depending on the element type, 
-it may also model <a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
+it may also model <a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
 </p><p title="Synopsis"><b>Synopsis. </b></p><pre class="programlisting">
 
 namespace boost {
@@ -818,7 +818,7 @@ of the constructors.
 <a class="link" href="#MultiArray" title="MultiArray Concept">MultiArray</a>,
 <a class="ulink" href="../../../libs/utility/CopyConstructible.html" target="_top">CopyConstructible</a>.
 and depending on the element type, it may also model
-<a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
+<a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
 Detailed descriptions are provided here only for operations that are
 not described in the <code class="literal">multi_array</code> reference.
 </p><p title="Synopsis"><b>Synopsis. </b></p><pre class="programlisting">
@@ -978,7 +978,7 @@ of the constructors.
 <a class="link" href="#MultiArray" title="MultiArray Concept">MultiArray</a>,
 <a class="ulink" href="../../../libs/utility/CopyConstructible.html" target="_top">CopyConstructible</a>.
 and depending on the element type, it may also model
-<a class="ulink" href="http://www.sgi.com/tech/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="http://www.sgi.com/tech/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
+<a class="ulink" href="https://www.boost.org/sgi/stl/EqualityComparable.html" target="_top">EqualityComparable</a> and <a class="ulink" href="https://www.boost.org/sgi/stl/LessThanComparable.html" target="_top">LessThanComparable</a>. 
 
 Detailed descriptions are provided here only for operations that are
 not described in the <code class="literal">multi_array</code> reference.

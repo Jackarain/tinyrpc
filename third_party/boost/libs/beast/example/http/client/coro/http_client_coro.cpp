@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,22 +16,22 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
-#include <boost/asio/connect.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/asio/ip/tcp.hpp>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
 #include <string>
 
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
 
 //------------------------------------------------------------------------------
 
 // Report a failure
 void
-fail(boost::system::error_code ec, char const* what)
+fail(beast::error_code ec, char const* what)
 {
     std::cerr << what << ": " << ec.message() << "\n";
 }
@@ -43,22 +43,25 @@ do_session(
     std::string const& port,
     std::string const& target,
     int version,
-    boost::asio::io_context& ioc,
-    boost::asio::yield_context yield)
+    net::io_context& ioc,
+    net::yield_context yield)
 {
-    boost::system::error_code ec;
+    beast::error_code ec;
 
     // These objects perform our I/O
-    tcp::resolver resolver{ioc};
-    tcp::socket socket{ioc};
+    tcp::resolver resolver(ioc);
+    beast::tcp_stream stream(ioc);
 
     // Look up the domain name
     auto const results = resolver.async_resolve(host, port, yield[ec]);
     if(ec)
         return fail(ec, "resolve");
 
+    // Set the timeout.
+    stream.expires_after(std::chrono::seconds(30));
+
     // Make the connection on the IP address we get from a lookup
-    boost::asio::async_connect(socket, results.begin(), results.end(), yield[ec]);
+    stream.async_connect(results, yield[ec]);
     if(ec)
         return fail(ec, "connect");
 
@@ -67,19 +70,22 @@ do_session(
     req.set(http::field::host, host);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
+    // Set the timeout.
+    stream.expires_after(std::chrono::seconds(30));
+
     // Send the HTTP request to the remote host
-    http::async_write(socket, req, yield[ec]);
+    http::async_write(stream, req, yield[ec]);
     if(ec)
         return fail(ec, "write");
 
     // This buffer is used for reading and must be persisted
-    boost::beast::flat_buffer b;
+    beast::flat_buffer b;
 
     // Declare a container to hold the response
     http::response<http::dynamic_body> res;
 
     // Receive the HTTP response
-    http::async_read(socket, b, res, yield[ec]);
+    http::async_read(stream, b, res, yield[ec]);
     if(ec)
         return fail(ec, "read");
 
@@ -87,12 +93,12 @@ do_session(
     std::cout << res << std::endl;
 
     // Gracefully close the socket
-    socket.shutdown(tcp::socket::shutdown_both, ec);
+    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
 
     // not_connected happens sometimes
     // so don't bother reporting it.
     //
-    if(ec && ec != boost::system::errc::not_connected)
+    if(ec && ec != beast::errc::not_connected)
         return fail(ec, "shutdown");
 
     // If we get here then the connection is closed gracefully
@@ -118,7 +124,7 @@ int main(int argc, char** argv)
     int version = argc == 5 && !std::strcmp("1.0", argv[4]) ? 10 : 11;
 
     // The io_context is required for all I/O
-    boost::asio::io_context ioc;
+    net::io_context ioc;
 
     // Launch the asynchronous operation
     boost::asio::spawn(ioc, std::bind(
@@ -128,7 +134,18 @@ int main(int argc, char** argv)
         std::string(target),
         version,
         std::ref(ioc),
-        std::placeholders::_1));
+        std::placeholders::_1),
+            // on completion, spawn will call this function
+           [](std::exception_ptr ex)
+           {
+               // if an exception occurred in the coroutine,
+               // it's something critical, e.g. out of memory
+               // we capture normal errors in the ec
+               // so we just rethrow the exception here,
+               // which will cause `ioc.run()` to throw
+               if (ex)
+                   std::rethrow_exception(ex);
+           });
 
     // Run the I/O service. The call will return when
     // the get operation is complete.

@@ -17,7 +17,7 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 
-//#include <boost/geometry/io/wkt/read.hpp>
+#include <boost/range/size.hpp>
 
 template <typename Box, typename Linestring>
 void test_path_intersection(Box const& box, Linestring const& path,
@@ -102,7 +102,7 @@ int test_main(int, char* [])
     typedef bg::model::linestring<P3ic> L3ic;
     typedef bg::model::linestring<P3fc> L3fc;
     typedef bg::model::linestring<P3dc> L3dc;
-    
+
     // IMPORTANT! For 2-point linestrings comparable distance optimization is enabled!
 
     test_geometry<bg::model::box<P2ic>, L2ic>("POLYGON((0 1,2 4))", "LINESTRING(0 0, 2 5)", true, 1.0f/5);
@@ -115,17 +115,6 @@ int test_main(int, char* [])
     test_geometry<bg::model::box<P2fc>, L2fc>("POLYGON((0 1,2 4))", "LINESTRING(0 0, 1 0, 1 5)", true, 2);
     test_geometry<bg::model::box<P2fc>, L2fc>("POLYGON((0 1,2 4))", "LINESTRING(0 0, 3 0, 3 2, 0 2)", true, 6);
     test_geometry<bg::model::box<P2fc>, L2fc>("POLYGON((0 1,2 4))", "LINESTRING(1 2, 3 3, 0 3)", true, 0);
-    
-#ifdef HAVE_TTMATH
-    typedef bg::model::point<ttmath_big, 2, bg::cs::cartesian> P2ttmc;
-    typedef bg::model::point<ttmath_big, 3, bg::cs::cartesian> P3ttmc;
-
-    typedef bg::model::linestring<P2ttmc> L2ttmc;
-    typedef bg::model::linestring<P3ttmc> L3ttmc;
-
-    test_geometry<bg::model::box<P2ttmc>, L2ttmc>("POLYGON((0 1,2 4))", "LINESTRING(0 0, 2 5)", true, 1.0/5);
-    test_geometry<bg::model::box<P3ttmc>, L3ttmc>("POLYGON((0 1 2,2 4 6))", "LINESTRING(0 0 0, 2 5 7)", true, 2.0/7);
-#endif
 
     test_large_integers();
 

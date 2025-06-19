@@ -14,12 +14,12 @@
 // reverse_view.cpp - a small test of creating a view with negative strides
 //
 
-#include "boost/multi_array.hpp"
-#include "boost/test/minimal.hpp"
-#include "boost/array.hpp"
+#include <boost/multi_array.hpp>
+#include <boost/core/lightweight_test.hpp>
+#include <boost/array.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   using namespace boost;
   
@@ -36,8 +36,8 @@ test_main(int,char*[])
   array::array_view<1>::type B = A[indices[range(3, -1, -1)]];
   
   for(multi_array_types::size_type i = 0; i != B.size(); ++i) {
-    BOOST_CHECK(B[i] == rdata[i]);
+    BOOST_TEST(B[i] == rdata[i]);
   }
   
-  return boost::exit_success;
+  return boost::report_errors();
 }

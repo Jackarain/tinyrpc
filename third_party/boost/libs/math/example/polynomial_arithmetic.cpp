@@ -19,7 +19,7 @@
 
 #include <boost/array.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/assert.hpp>
+#include <boost/math/tools/assert.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -118,7 +118,7 @@ in descending order of degree, Boost.Math stores in [*ascending order of degree]
   Read/write for humans:    3x^3 - 4x^2 - 6x + 10
   Boost polynomial storage: [ 10, -6, -4, 3 ]
 */
-  boost::array<double, 4> const d3a = {{10, -6, -4, 3}};
+  std::array<double, 4> const d3a = {{10, -6, -4, 3}};
   polynomial<double> const a(d3a.begin(), d3a.end());
 
   // With C++11 and later, you can also use initializer_list construction.
@@ -161,8 +161,8 @@ to get both results together as a pair.
   pair< polynomial<double>, polynomial<double> > result;
   result = quotient_remainder(a, b);
 // Reassure ourselves that the result is the same.
-  BOOST_ASSERT(result.first == q);
-  BOOST_ASSERT(result.second == r);
+  BOOST_MATH_ASSERT(result.first == q);
+  BOOST_MATH_ASSERT(result.second == r);
 //] [/polynomial_arithmetic_4]
 //[polynomial_arithmetic_5
   /* 
@@ -213,6 +213,7 @@ catch (exception const &e)
 {
   cout << "\nMessage from thrown exception was:\n   " << e.what() << "\n";
 }
+return 0;
 } // int main()
 
 /*

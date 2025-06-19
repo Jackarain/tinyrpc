@@ -1,7 +1,7 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // test_simple_class.cpp
 
-// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com . 
+// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -14,12 +14,14 @@
 #include <cstdio> // remove
 #include <fstream>
 #include <cmath>
-#include <boost/math/special_functions/next.hpp>
 
 #include <boost/config.hpp>
+#if BOOST_CXX_VERSION > 199711L // only include floating point if C++ version >= C++11
+#include <boost/math/special_functions/next.hpp>
+#endif
 
 #if defined(BOOST_NO_STDC_NAMESPACE)
-namespace std{ 
+namespace std{
     using ::remove;
 }
 #endif
@@ -51,23 +53,25 @@ bool A::check_equal(const A &rhs) const
     BOOST_CHECK_EQUAL(u, rhs.u);
     BOOST_CHECK_EQUAL(v, rhs.v);
     BOOST_CHECK_EQUAL(l, rhs.l);
-    BOOST_CHECK(std::abs( boost::math::float_distance(w, rhs.w)) < 2);
-    BOOST_CHECK(std::abs( boost::math::float_distance(x, rhs.x)) < 2);
+    #if BOOST_CXX_VERSION > 199711L // only include floating point if C++ version >= C++11
+        BOOST_CHECK(std::abs( boost::math::float_distance(w, rhs.w)) < 2);
+        BOOST_CHECK(std::abs( boost::math::float_distance(x, rhs.x)) < 2);
+    #endif
     BOOST_CHECK(!(0 != y.compare(rhs.y)));
     #ifndef BOOST_NO_STD_WSTRING
     BOOST_CHECK(!(0 != z.compare(rhs.z)));
-    #endif      
+    #endif
     return true;
 }
 
-int 
+int
 test_main( int /* argc */, char* /* argv */[] )
 {
     const char * testfile = boost::archive::tmpnam(NULL);
     BOOST_REQUIRE(NULL != testfile);
 
     A a, a1;
-    {   
+    {
         test_ostream os(testfile, TEST_STREAM_FLAGS);
         test_oarchive oa(os, TEST_ARCHIVE_FLAGS);
         oa << boost::serialization::make_nvp("a", a);

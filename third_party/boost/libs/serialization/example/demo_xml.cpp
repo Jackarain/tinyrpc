@@ -15,7 +15,7 @@
 #include <cstdio> // remove
 #include <boost/config.hpp>
 #if defined(BOOST_NO_STDC_NAMESPACE)
-namespace std{ 
+namespace std{
     using ::remove;
 }
 #endif
@@ -47,7 +47,7 @@ restore_schedule(bus_schedule &s, const char * filename)
 }
 
 int main(int argc, char *argv[])
-{   
+{
     // make the schedule
     bus_schedule original_schedule;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         "Lincoln Memorial"
     );
 
-    // make a  routes
+    // make a route
     bus_route route0;
     route0.append(bs0);
     route0.append(bs1);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
     original_schedule.append("bob", 9, 57, &route0);
     original_schedule.append("alice", 11, 02, &route0);
 
-    // make aother routes
+    // make another route
     bus_route route1;
     route1.append(bs3);
     route1.append(bs2);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     // display the complete schedule
     std::cout << "original schedule";
     std::cout << original_schedule;
-    
+
     std::string filename(boost::archive::tmpdir());
     filename += "/demo.xml";
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     save_schedule(original_schedule, filename.c_str());
 
     // ... some time later
-    // make  a new schedule
+    // make a new schedule
     bus_schedule new_schedule;
 
     restore_schedule(new_schedule, filename.c_str());

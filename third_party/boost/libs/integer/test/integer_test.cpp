@@ -5,17 +5,17 @@
 //  Copyright John Maddock 2009.  
 //  Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 
-//  See http://www.boost.org/libs/integer for documentation.
+//  See https://www.boost.org/libs/integer for documentation.
 
 //  Revision History
 //   04 Oct 01  Added tests for new templates; rewrote code (Daryle Walker)
 //   10 Mar 01  Boost Test Library now used for tests (Beman Dawes)
 //   31 Aug 99  Initial version
 
-#include <boost/detail/lightweight_test.hpp>  // for main, BOOST_TEST
+#include <boost/core/lightweight_test.hpp>  // for main, BOOST_TEST
 #include <boost/integer.hpp>  // for boost::int_t, boost::uint_t
 #include <boost/type_traits/is_same.hpp>
 #include <boost/mpl/bool.hpp> // for mpl::true_ and false_
@@ -27,7 +27,7 @@
 #ifdef BOOST_MSVC
 #pragma warning(disable:4127) // conditional expression is constant
 #endif
-#if defined( __BORLANDC__ )
+#if defined( BOOST_BORLANDC )
 # pragma option -w-8008 -w-8066 // condition is always true
 #endif
 

@@ -7,25 +7,28 @@
 
 #include <boost/random.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/accumulators/numeric/functional/vector.hpp>
 #include <boost/accumulators/numeric/functional/complex.hpp>
 #include <boost/accumulators/numeric/functional/valarray.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/p_square_quantile.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
 using namespace boost::accumulators;
+
+typedef accumulator_set<double, stats<tag::p_square_quantile> > accumulator_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 // test_stat
 //
 void test_stat()
 {
-    typedef accumulator_set<double, stats<tag::p_square_quantile> > accumulator_t;
-
     // tolerance in %
     double epsilon = 1;
 
@@ -68,6 +71,43 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    // "persistent" storage
+    std::stringstream ss;
+    // tolerance in %
+    double epsilon = 1;
+    // a random number generator
+    boost::lagged_fibonacci607 rng;
+    {
+        accumulator_t acc1(quantile_probability = 0.75 );
+        accumulator_t acc2(quantile_probability = 0.999);
+
+        for (int i=0; i<100000; ++i)
+        {
+            double sample = rng();
+            acc1(sample);
+            acc2(sample);
+        }
+
+        BOOST_CHECK_CLOSE(p_square_quantile(acc1), 0.75 , epsilon);
+        BOOST_CHECK_CLOSE(p_square_quantile(acc2), 0.999, epsilon);
+        boost::archive::text_oarchive oa(ss);
+        acc1.serialize(oa, 0);
+        acc2.serialize(oa, 0);
+    }
+    accumulator_t acc1(quantile_probability = 0.75);
+    accumulator_t acc2(quantile_probability = 0.999);
+    boost::archive::text_iarchive ia(ss);
+    acc1.serialize(ia, 0);
+    acc2.serialize(ia, 0);
+    BOOST_CHECK_CLOSE(p_square_quantile(acc1), 0.75 , epsilon);
+    BOOST_CHECK_CLOSE(p_square_quantile(acc2), 0.999, epsilon);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -75,6 +115,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("p_square_quantile test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

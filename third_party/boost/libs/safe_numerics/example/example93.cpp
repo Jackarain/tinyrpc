@@ -31,11 +31,11 @@ using pic16_promotion = boost::safe_numerics::cpp<
 // compile time error whenever an operation MIGHT fail.
 
 // ***************************
-// generate compile time errors if operation could fail 
-using trap_policy = boost::safe_numerics::loose_trap_policy;
-
 // generate runtime errors if operation could fail
 using exception_policy = boost::safe_numerics::default_exception_policy;
+
+// generate compile time errors if operation could fail
+using trap_policy = boost::safe_numerics::loose_trap_policy;
 
 // ***************************
 // 2. Create a macro named literal an integral value
@@ -110,6 +110,13 @@ using c_t = boost::safe_numerics::safe_unsigned_range<
     exception_policy
 >;
 
+// 32 bit unsigned integer used for temporary purposes
+using temp_t = boost::safe_numerics::safe_unsigned_range<
+    0, 0xffffffff,
+    pic16_promotion,
+    exception_policy
+>;
+
 // index into phase table
 // note: The legal values are 0-3.  So why must this be a signed
 // type?  Turns out that expressions like phase_ix + d
@@ -124,6 +131,7 @@ using phase_ix_t = boost::safe_numerics::safe_signed_range<
 >;
 
 // settings for control value output
+
 using phase_t = boost::safe_numerics::safe<
     uint16_t,
     pic16_promotion,
@@ -186,7 +194,7 @@ using safe_bit_t = boost::safe_numerics::safe_unsigned_range<
 // correct bit in PIC register
 template<typename T, std::int8_t N>
 struct bit {
-    T & m_word;
+    T m_word;
     constexpr explicit bit(T & rhs) :
         m_word(rhs)
     {}
@@ -264,7 +272,7 @@ result_t test(position_t new_position){
             << motor_position << '\n';
         };
     }
-    catch(std::exception & e){
+    catch(const std::exception & e){
         std::cout << e.what() << '\n';
         return fail;
     }
@@ -277,7 +285,7 @@ int main(){
     try {
         initialize();
         // move motor to position 1000
-        result &= test(literal(1000));
+        result &= test(literal(9000));
         // move to the left before zero position
         // fails to compile !
         // result &= ! test(-10);

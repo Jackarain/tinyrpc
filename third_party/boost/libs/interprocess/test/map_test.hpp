@@ -15,8 +15,6 @@
 #include "check_equal_containers.hpp"
 #include <map>
 
-// interprocess
-#include <boost/interprocess/containers/pair.hpp>
 // interprocess/detail
 #include <boost/interprocess/detail/utilities.hpp>
 // intrusive/detail
@@ -46,18 +44,18 @@ template<class ManagedSharedMemory
 int map_test ()
 {
    typedef typename MyShmMap::key_type    IntType;
-   typedef boost::interprocess::pair<IntType, IntType>         IntPairType;
    typedef typename MyStdMap::value_type  StdPairType;
-   const int memsize = 65536;
+   typedef typename MyShmMap::value_type  IntPairType;
+   const int Memsize = 128u * 1024u;
    const char *const shMemName = test::get_process_id_name();
    const int max = 100;
 
-   try{
+   BOOST_INTERPROCESS_TRY{
       //Create shared memory
       shared_memory_object::remove(shMemName);
-      ManagedSharedMemory segment(create_only, shMemName, memsize);
+      ManagedSharedMemory segment(create_only, shMemName, Memsize);
 
-      segment.reserve_named_objects(100);
+      segment.reserve_named_objects(10);
 
       //Shared memory allocator must be always be initialized
       //since it has no default constructor
@@ -136,7 +134,7 @@ int map_test ()
 
          MyShmMap *shmmap3 =
             segment.template construct<MyShmMap>("MyShmMap3")
-               ( ordered_unique_range
+               ( boost::container::ordered_unique_range
                , ::boost::make_move_iterator(&aux_vect[0])
                , ::boost::make_move_iterator(aux_vect + 50)
                , std::less<IntType>(), segment.get_segment_manager());
@@ -145,7 +143,7 @@ int map_test ()
 
          MyShmMultiMap *shmmultimap3 =
             segment.template construct<MyShmMultiMap>("MyShmMultiMap3")
-               ( ordered_range
+               (boost::container::ordered_range
                , ::boost::make_move_iterator(&aux_vect3[0])
                , ::boost::make_move_iterator(aux_vect3 + 50)
                , std::less<IntType>(), segment.get_segment_manager());
@@ -172,13 +170,13 @@ int map_test ()
       }
       {
          //This is really nasty, but we have no other simple choice
-         IntPairType aux_vect[max];
+         IntPairType aux_vect[std::size_t(max)];
          for(int i = 0; i < max; ++i){
             IntType i1(i);
             IntType i2(i);
             new(&aux_vect[i])IntPairType(boost::move(i1), boost::move(i2));
          }
-         IntPairType aux_vect3[max];
+         IntPairType aux_vect3[std::size_t(max)];
          for(int i = 0; i < max; ++i){
             IntType i1(i);
             IntType i2(i);
@@ -320,13 +318,13 @@ int map_test ()
 
       {
          //This is really nasty, but we have no other simple choice
-         IntPairType aux_vect[max];
+         IntPairType aux_vect[std::size_t(max)];
          for(int i = 0; i < max; ++i){
             IntType i1(i);
             IntType i2(i);
             new(&aux_vect[i])IntPairType(boost::move(i1), boost::move(i2));
          }
-         IntPairType aux_vect3[max];
+         IntPairType aux_vect3[std::size_t(max)];
          for(int i = 0; i < max; ++i){
             IntType i1(i);
             IntType i2(i);
@@ -452,6 +450,8 @@ int map_test ()
          shmmap->clear();
          shmmultimap->clear();
 
+         typedef typename MyShmMultiMap::size_type map_size_type;
+
          for(int j = 0; j < 3; ++j)
          for(int i = 0; i < 100; ++i){
             IntPairType intpair;
@@ -465,9 +465,9 @@ int map_test ()
                new(&intpair)IntPairType(boost::move(i1), boost::move(i2));
             }
             shmmultimap->insert(boost::move(intpair));
-            if(shmmap->count(IntType(i)) != typename MyShmMultiMap::size_type(1))
+            if(shmmap->count(IntType(i)) != map_size_type(1u))
                return 1;
-            if(shmmultimap->count(IntType(i)) != typename MyShmMultiMap::size_type(j+1))
+            if(shmmultimap->count(IntType(i)) != map_size_type(j)+1u)
                return 1;
          }
       }
@@ -482,10 +482,10 @@ int map_test ()
       if(!segment.all_memory_deallocated())
          return 1;
    }
-   catch(...){
+   BOOST_INTERPROCESS_CATCH(...){
       shared_memory_object::remove(shMemName);
-      throw;
-   }
+      BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
    shared_memory_object::remove(shMemName);
    return 0;
 }
@@ -498,19 +498,19 @@ template<class ManagedSharedMemory
 int map_test_copyable ()
 {
    typedef typename MyShmMap::key_type    IntType;
-   typedef boost::interprocess::pair<IntType, IntType>         IntPairType;
+   typedef typename MyShmMap::value_type  IntPairType;
    typedef typename MyStdMap::value_type  StdPairType;
 
-   const int memsize = 65536;
+   const int Memsize = 128u * 1024u;
    const char *const shMemName = test::get_process_id_name();
    const int max = 100;
 
-   try{
+   BOOST_INTERPROCESS_TRY{
    //Create shared memory
    shared_memory_object::remove(shMemName);
-   ManagedSharedMemory segment(create_only, shMemName, memsize);
+   ManagedSharedMemory segment(create_only, shMemName, Memsize);
 
-   segment.reserve_named_objects(100);
+   segment.reserve_named_objects(10);
 
    //Shared memory allocator must be always be initialized
    //since it has no default constructor
@@ -576,10 +576,10 @@ int map_test_copyable ()
       if(!segment.all_memory_deallocated())
          return 1;
    }
-   catch(...){
+   BOOST_INTERPROCESS_CATCH(...){
       shared_memory_object::remove(shMemName);
-      throw;
-   }
+      BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
    shared_memory_object::remove(shMemName);
    return 0;
 }

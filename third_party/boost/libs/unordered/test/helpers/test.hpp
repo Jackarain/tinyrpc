@@ -7,8 +7,14 @@
 #define BOOST_UNORDERED_TEST_TEST_HEADER
 
 #include <boost/core/lightweight_test.hpp>
+#include <boost/core/lightweight_test_trait.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/stringize.hpp>
+
+#include <boost/type_traits/is_nothrow_move_assignable.hpp>
+#include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include <boost/type_traits/is_nothrow_swappable.hpp>
+#include <boost/type_traits/make_void.hpp>
 
 #define UNORDERED_AUTO_TEST(x)                                                 \
   struct BOOST_PP_CAT(x, _type) : public ::test::registered_test_base          \
@@ -119,7 +125,7 @@ namespace test {
     static state instance;
     return instance;
   }
-}
+} // namespace test
 
 #if defined(__cplusplus)
 #define BOOST_UNORDERED_CPLUSPLUS __cplusplus
@@ -133,14 +139,6 @@ namespace test {
       << "Compiler: " << BOOST_COMPILER << "\n"                                \
       << "Library: " << BOOST_STDLIB << "\n"                                   \
       << "__cplusplus: " << BOOST_UNORDERED_CPLUSPLUS << "\n\n"                \
-      << "BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT: "                          \
-      << BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT << "\n"                      \
-      << "BOOST_UNORDERED_EMPLACE_LIMIT: " << BOOST_UNORDERED_EMPLACE_LIMIT    \
-      << "\n"                                                                  \
-      << "BOOST_UNORDERED_USE_ALLOCATOR_TRAITS: "                              \
-      << BOOST_UNORDERED_USE_ALLOCATOR_TRAITS << "\n"                          \
-      << "BOOST_UNORDERED_CXX11_CONSTRUCTION: "                                \
-      << BOOST_UNORDERED_CXX11_CONSTRUCTION << "\n\n"                          \
       << std::flush;                                                           \
   }
 

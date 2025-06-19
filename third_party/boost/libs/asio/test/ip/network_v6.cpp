@@ -2,7 +2,7 @@
 // network_v6.cpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2014 Oliver Kowalke (oliver dot kowalke at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -233,6 +233,6 @@ void test()
 BOOST_ASIO_TEST_SUITE
 (
   "ip/network_v6",
-  BOOST_ASIO_TEST_CASE(ip_network_v6_compile::test)
+  BOOST_ASIO_COMPILE_TEST_CASE(ip_network_v6_compile::test)
   BOOST_ASIO_TEST_CASE(ip_network_v6_runtime::test)
 )

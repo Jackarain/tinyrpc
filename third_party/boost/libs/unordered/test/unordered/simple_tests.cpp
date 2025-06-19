@@ -1,21 +1,20 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright 2022-2023 Christian Mazakas.
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 // This test checks the runtime requirements of containers.
 
-// clang-format off
-#include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
-#include "../helpers/postfix.hpp"
-// clang-format on
+#include "../helpers/unordered.hpp"
 
-#include "../helpers/test.hpp"
-#include <cstdlib>
-#include <algorithm>
 #include "../helpers/equivalent.hpp"
+#include "../helpers/generators.hpp"
+#include "../helpers/test.hpp"
+#include <algorithm>
+#include <cstdlib>
+
+test::seed_t initialize_seed(14878);
 
 template <class X> void simple_test(X const& a)
 {
@@ -88,47 +87,76 @@ template <class X> void simple_test(X const& a)
   }
 }
 
-UNORDERED_AUTO_TEST (simple_tests) {
-  using namespace std;
-  srand(14878);
+template <class X> static void simple_set_tests(X*)
+{
+  X x;
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
-  boost::unordered_set<int> set;
-  simple_test(set);
+  simple_test(x);
 
-  set.insert(1);
-  set.insert(2);
-  set.insert(1456);
-  simple_test(set);
+  x.insert(1);
+  x.insert(2);
+  x.insert(1456);
+  simple_test(x);
+}
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-  boost::unordered_multiset<int> multiset;
-  simple_test(multiset);
+#ifndef BOOST_UNORDERED_FOA_TESTS
+template <class X> static void simple_multiset_tests(X*)
+{
+  X x;
+  simple_test(x);
 
   for (int i1 = 0; i1 < 1000; ++i1) {
     int count = rand() % 10, index = rand();
     for (int j = 0; j < count; ++j)
-      multiset.insert(index);
+      x.insert(index);
   }
-  simple_test(multiset);
+  simple_test(x);
+}
+#endif
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_map.\n";
-  boost::unordered_map<int, int> map;
+template <class X> static void simple_map_tests(X*)
+{
+  X x;
 
   for (int i2 = 0; i2 < 1000; ++i2) {
-    map.insert(std::pair<const int, int>(rand(), rand()));
+    x.insert(std::pair<const int, int>(rand(), rand()));
   }
-  simple_test(map);
+  simple_test(x);
+}
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multimap.\n";
-  boost::unordered_multimap<int, int> multimap;
+#ifndef BOOST_UNORDERED_FOA_TESTS
+template <class X> static void simple_multimap_tests(X*)
+{
+  X x;
 
   for (int i3 = 0; i3 < 1000; ++i3) {
     int count = rand() % 10, index = rand();
     for (int j = 0; j < count; ++j)
-      multimap.insert(std::pair<const int, int>(index, rand()));
+      x.insert(std::pair<const int, int>(index, rand()));
   }
-  simple_test(multimap);
+  simple_test(x);
 }
+#endif
+
+#ifdef BOOST_UNORDERED_FOA_TESTS
+static boost::unordered_flat_set<int>* flat_set;
+static boost::unordered_flat_map<int, int>* flat_map;
+static boost::unordered_node_set<int>* node_set;
+static boost::unordered_node_map<int, int>* node_map;
+
+UNORDERED_TEST(simple_map_tests, ((flat_map)(node_map)))
+UNORDERED_TEST(simple_set_tests, ((flat_set)(node_set)))
+#else
+static boost::unordered_set<int>* set;
+static boost::unordered_map<int, int>* map;
+static boost::unordered_multiset<int>* multiset;
+static boost::unordered_multimap<int, int>* multimap;
+
+UNORDERED_TEST(simple_set_tests, ((set)))
+UNORDERED_TEST(simple_map_tests, ((map)))
+UNORDERED_TEST(simple_multiset_tests, ((multiset)))
+UNORDERED_TEST(simple_multimap_tests, ((multimap)))
+
+#endif
 
 RUN_TESTS()

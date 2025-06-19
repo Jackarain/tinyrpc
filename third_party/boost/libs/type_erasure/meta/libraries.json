@@ -10,5 +10,6 @@
     ],
     "maintainers": [
         "Steven Watanabe <steven -at- providere-consulting.com>"
-    ]
+    ],
+    "cxxstd": "03"
 }

@@ -5,6 +5,11 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
+// This file was modified by Oracle on 2020-2023.
+// Modifications copyright (c) 2020-2023, Oracle and/or its affiliates.
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -15,13 +20,14 @@
 
 #include <geometry_test_common.hpp>
 
+#include <boost/geometry/algorithms/assign.hpp>
 #include <boost/geometry/algorithms/make.hpp>
-
 
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/adapted/c_array.hpp>
 #include <boost/geometry/geometries/adapted/boost_tuple.hpp>
+
 #include <test_common/test_point.hpp>
 
 BOOST_GEOMETRY_REGISTER_C_ARRAY_CS(cs::cartesian)
@@ -63,12 +69,12 @@ void test_construction()
     check_box(b2, 1,2,5,3,4,6);
 
     bg::model::box<P> b3 = bg::make_inverse<bg::model::box<P> >();
-    check_box(b3, boost::numeric::bounds<T>::highest(),
-                  boost::numeric::bounds<T>::highest(),
-                  boost::numeric::bounds<T>::highest(),
-                  boost::numeric::bounds<T>::lowest(),
-                  boost::numeric::bounds<T>::lowest(),
-                  boost::numeric::bounds<T>::lowest());
+    check_box(b3, bg::util::bounds<T>::highest(),
+                  bg::util::bounds<T>::highest(),
+                  bg::util::bounds<T>::highest(),
+                  bg::util::bounds<T>::lowest(),
+                  bg::util::bounds<T>::lowest(),
+                  bg::util::bounds<T>::lowest());
 }
 
 template <typename P>
@@ -82,6 +88,18 @@ void test_assignment()
     bg::set<1>(b.max_corner(), 50);
     bg::set<2>(b.max_corner(), 60);
     check_box(b, 10,20,30,40,50,60);
+}
+
+template <typename P>
+void test_constexpr()
+{
+    typedef bg::model::box<P> B;
+    constexpr B b = B{ {1, 2, 3}, {4, 5} };
+    constexpr auto c1 = bg::get<0, 0>(b);
+    constexpr auto c2 = bg::get<1, 2>(b);
+    BOOST_CHECK_EQUAL(c1, 1);
+    BOOST_CHECK_EQUAL(c2, 0);
+    check_box(b, 1, 2, 3, 4, 5, 0);
 }
 
 template <typename P>
@@ -100,6 +118,8 @@ int test_main(int, char* [])
     test_all<bg::model::point<int, 3, bg::cs::cartesian> >();
     test_all<bg::model::point<float, 3, bg::cs::cartesian> >();
     test_all<bg::model::point<double, 3, bg::cs::cartesian> >();
+
+    test_constexpr<bg::model::point<double, 3, bg::cs::cartesian> >();
 
     return 0;
 }

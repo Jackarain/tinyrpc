@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,9 +18,9 @@
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
 #include <boost/beast/test/yield_to.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <sstream>
 #include <array>
 #include <limits>
@@ -189,42 +189,6 @@ public:
     }
 
     void
-    doCustomParser()
-    {
-        {
-            string_view s{
-                "POST / HTTP/1.1\r\n"
-                "User-Agent: test\r\n"
-                "Content-Length: 13\r\n"
-                "\r\n"
-                "Hello, world!"
-            };
-            error_code ec;
-            custom_parser<true> p;
-            p.put(boost::asio::buffer(
-                s.data(), s.size()), ec);
-            BEAST_EXPECTS(! ec, ec.message());
-        }
-        {
-            string_view s{
-                "HTTP/1.1 200 OK\r\n"
-                "Server: test\r\n"
-                "Transfer-Encoding: chunked\r\n"
-                "\r\n"
-                "d\r\n"
-                "Hello, world!"
-                "\r\n"
-                "0\r\n\r\n"
-            };
-            error_code ec;
-            custom_parser<false> p;
-            p.put(boost::asio::buffer(
-                s.data(), s.size()), ec);
-            BEAST_EXPECTS(! ec, ec.message());
-        }
-    }
-
-    void
     doHEAD()
     {
         test::stream ts{ioc_}, tr{ioc_};
@@ -309,7 +273,7 @@ public:
         auto const buf =
             [](string_view s)
             {
-                return boost::asio::const_buffer{
+                return net::const_buffer{
                     s.data(), s.size()};
             };
         test::stream ts{ioc_}, tr{ioc_};
@@ -326,22 +290,22 @@ public:
 
         chunk_extensions exts;
 
-        boost::asio::write(ts,
+        net::write(ts,
             make_chunk(buf("First")), ec);
 
         exts.insert("quality", "1.0");
-        boost::asio::write(ts,
+        net::write(ts,
             make_chunk(buf("Hello, world!"), exts), ec);
 
         exts.clear();
         exts.insert("file", "abc.txt");
         exts.insert("quality", "0.7");
-        boost::asio::write(ts,
+        net::write(ts,
             make_chunk(buf("The Next Chunk"), std::move(exts)), ec);
 
         exts.clear();
         exts.insert("last");
-        boost::asio::write(ts,
+        net::write(ts,
             make_chunk(buf("Last one"), std::move(exts),
                 std::allocator<double>{}), ec);
 
@@ -349,7 +313,7 @@ public:
         trailers.set(field::expires, "never");
         trailers.set(field::content_md5, "f4a5c16584f03d90");
 
-        boost::asio::write(ts,
+        net::write(ts,
             make_chunk_last(
                 trailers,
                 std::allocator<double>{}
@@ -428,7 +392,6 @@ public:
         doRelay();
         doReadStdStream();
         doWriteStdStream();
-        doCustomParser();
         doHEAD();
         doDeferredBody();
         doIncrementalRead();

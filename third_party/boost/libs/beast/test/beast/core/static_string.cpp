@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,7 @@
 // Test that header file is self-contained.
 #include <boost/beast/core/static_string.hpp>
 
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 namespace boost {
 namespace beast {
@@ -569,7 +569,8 @@ public:
         //
 
         {
-            static_string<7> s1("12345");
+            // Using 7 as the size causes a miscompile in MSVC14.2 x64 Release
+            static_string<8> s1("12345");
             s1.insert(2, 2, '_');
             BEAST_EXPECT(s1 == "12__345");
             BEAST_EXPECT(*s1.end() == 0);
@@ -940,10 +941,15 @@ public:
             s3.append(s1, 1, 1);
             BEAST_EXPECT(s3 == "12Y");
             BEAST_EXPECT(*s3.end() == 0);
-            try
             {
                 static_string<3> s4("12");
                 s4.append(s1, 3);
+                BEAST_EXPECT(s4 == "12");
+            }
+            try
+            {
+                static_string<3> s4("12");
+                s4.append(s1, 4);
                 fail("", __FILE__, __LINE__);
             }
             catch(std::out_of_range const&)

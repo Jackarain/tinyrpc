@@ -1,7 +1,7 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 // Unit Test
 
-// Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2007-2019 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
@@ -19,7 +19,7 @@
 
 #include <boost/variant/variant.hpp>
 
-#include <geometry_test_common.hpp>
+#include "geometry_test_common.hpp"
 
 #include <boost/geometry/algorithms/buffer.hpp>
 #include <boost/geometry/algorithms/equals.hpp>
@@ -29,7 +29,7 @@
 
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
-#include <test_common/test_point.hpp>
+#include "test_common/test_point.hpp"
 
 
 template <typename P>
@@ -57,12 +57,14 @@ void test_all()
 
 int test_main(int, char* [])
 {
+    BoostGeometryWriteTestConfiguration();
+
+    test_all<bg::model::point<default_test_type, 2, bg::cs::cartesian> >();
+
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_TYPE)
     test_all<bg::model::point<int, 2, bg::cs::cartesian> >();
     test_all<bg::model::point<float, 2, bg::cs::cartesian> >();
-    test_all<bg::model::point<double, 2, bg::cs::cartesian> >();
-
-#ifdef HAVE_TTMATH
-    test_all<bg::model::point<ttmath_big, 2, bg::cs::cartesian> >();
 #endif
+
     return 0;
 }

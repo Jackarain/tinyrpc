@@ -1,5 +1,5 @@
 [/
-  Copyright (c) Vladimir Batov 2009-2016
+  Copyright (c) Vladimir Batov 2009-2022
   Distributed under the Boost Software License, Version 1.0.
   See copy at http://www.boost.org/LICENSE_1_0.txt.
 ]
@@ -117,14 +117,14 @@ The temporary storage `result` is initialized with `boost::make_default()` the d
 
 Consequently,
 
-[note [*By default] the `boost::cnv::cstream` and `boost::cnv::wstream` converters require the ['TypeOut] type to be [@http://en.cppreference.com/w/cpp/concept/DefaultConstructible ['Default Constructible]].]
+[note [*By default] the `boost::cnv::cstream` and `boost::cnv::wstream` converters require the ['TypeOut] type to be [@http://en.cppreference.com/w/cpp/named_req/DefaultConstructible ['Default Constructible]].]
 
 That said, a well-designed type (in my opinion, anyway) should only have meaningful and unambiguous constructors... and the default constructor is not always and necessarily one of them. Consider the following as one such example:
 
 [direction_declaration]
 [direction_stream_operators]
 
-The `direction` type has no default state. It is not [@http://en.cppreference.com/w/cpp/concept/DefaultConstructible ['Default Constructible]] and, consequently, the following does not compile:
+The `direction` type has no default state. It is not [@http://en.cppreference.com/w/cpp/named_req/DefaultConstructible ['Default Constructible]] and, consequently, the following does not compile:
 
  direction dir1 = convert<direction>(str, cnv).value(); // Does not compile
  direction dir2 = lexical_cast<direction>(str);         // Does not compile

@@ -30,7 +30,7 @@ Release notes
 
 <p>
 New functionalities can be included into future releases of Boost.Flyweight
-to meet the demands of users and to leverage upcoming C++0x features
+to meet the demands of users and to leverage upcoming C++ features
 and new Boost libraries. The following is a list of candidate additions.
 </p>
 
@@ -38,7 +38,6 @@ and new Boost libraries. The following is a list of candidate additions.
 
 <ul>
   <li><a href="#instrospection">Introspection API</a></li>
-  <li><a href="#perfect_fwd">Perfect forwarding</a></li>
   <li><a href="#rw_lock">Read/write locking policy</a></li>
   <li><a href="#new_boost_libs">Integration with new Boost libraries</a></li>
 </ul>
@@ -59,19 +58,6 @@ the following example:
 <span class=identifier>std</span><span class=special>::</span><span class=identifier>cout</span><span class=special>&lt;&lt;</span><span class=string>&quot;factory used:  &quot;</span><span class=special>&lt;&lt;</span><span class=keyword>typeid</span><span class=special>(</span><span class=identifier>fw_type</span><span class=special>::</span><span class=identifier>factory_type</span><span class=special>).</span><span class=identifier>name</span><span class=special>()&lt;&lt;</span><span class=identifier>std</span><span class=special>::</span><span class=identifier>endl</span><span class=special>;</span>
 <span class=identifier>std</span><span class=special>::</span><span class=identifier>cout</span><span class=special>&lt;&lt;</span><span class=string>&quot;values stored: &quot;</span><span class=special>&lt;&lt;</span><span class=identifier>fw_type</span><span class=special>::</span><span class=identifier>factory</span><span class=special>().</span><span class=identifier>size</span><span class=special>()&lt;&lt;</span><span class=identifier>std</span><span class=special>::</span><span class=identifier>endl</span><span class=special>;</span>
 </pre></blockquote>
-
-<h2><a name="perfect_fwd">Perfect forwarding</a></h2>
-
-<p>
-When constructing a <code>flyweight&lt;T&gt; object</code>, some spurious copies
-of objects of type <code>T</code> are incurred in the process of moving the value
-into the internal factory. So-called <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2027.html#Perfect_Forwarding"><i>perfect
-forwarding</i></a>, i.e. performing the move without generating temporary
-copies, will be solved in an optimum manner by a new
-type of <i>rvalue references</i> to be included in the next revision of the
-C++ standard. Boost.Flyweight will take advantage of this feature as
-compilers begin to provide it.
-</p>
 
 <h2><a name="rw_lock">Read/write locking policy</a></h2>
 
@@ -115,9 +101,9 @@ Release notes
 
 <br>
 
-<p>Revised September 1st 2008</p>
+<p>Revised April 24th 2019</p>
 
-<p>&copy; Copyright 2006-2008 Joaqu&iacute;n M L&oacute;pez Mu&ntilde;oz.
+<p>&copy; Copyright 2006-2019 Joaqu&iacute;n M L&oacute;pez Mu&ntilde;oz.
 Distributed under the Boost Software 
 License, Version 1.0. (See accompanying file <a href="../../../LICENSE_1_0.txt">
 LICENSE_1_0.txt</a> or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">

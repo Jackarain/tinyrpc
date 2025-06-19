@@ -1,4 +1,4 @@
-# Copyright Louis Dionne 2013-2017
+# Copyright Louis Dionne 2013-2022
 # Copyright Markus J. Weber 2015
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
@@ -8,11 +8,11 @@
 # provides friendly hints to the user.
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "3.5.0")
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "3.9.1")
         message(WARNING "
     ### You appear to be using Clang ${CMAKE_CXX_COMPILER_VERSION}, which is known
     ### to be unable to compile Hana. Consider switching to
-    ### Clang >= 3.5.0. If it is already installed on your
+    ### Clang >= 3.9.1. If it is already installed on your
     ### system, you can tell CMake about it with
     ###
     ###     cmake .. -DCMAKE_CXX_COMPILER=/path/to/clang
@@ -41,9 +41,9 @@ elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
         message(WARNING "
     ### You appear to be using Apple's Clang ${CMAKE_CXX_COMPILER_VERSION}, which is
     ### shipped with Xcode < 6.3. Unfortunately, only Apple's Clang
-    ### >= 6.1.0 (shipped with Xcode >= 6.3) is supported by Hana.
+    ### >= 6.1.0 (shipped with Xcode >= 6.3) can compile Hana.
     ### You should consider updating to Xcode >= 6.3 (requires Yosemite)
-    ### or using a non-Apple Clang >= 3.5.0, which can be installed via
+    ### or using a non-Apple Clang >= 3.9.1, which can be installed via
     ### Homebrew with
     ###
     ###     brew install llvm --with-clang

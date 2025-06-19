@@ -42,7 +42,7 @@ In Boost.Math, we call these principal branches `lambert_w0` and `lambert_wm1`; 
 [import ../../example/lambert_w_graph.cpp]
 
 [graph lambert_w_graph]
-[graph lambert_w_graph_big_w]
+[graph lambert_w_graph_big_W]
 [graph lambert_w0_prime_graph]
 [graph lambert_wm1_prime_graph]
 
@@ -157,7 +157,7 @@ generalized equation in terms of the Lambert W function:
 
 Banwell and Jakaumar equation 5
 
-[sixemspace][space] I(V) = [mu] V[sub T]/ R [sub S] [dot] W[sub 0](I[sub 0] R[sub S] / ([mu] V[sub T]))
+[expression I(V) = [mu] V[sub T]/ R [sub S] [dot] W[sub 0](I[sub 0] R[sub S] / ([mu] V[sub T]))]
 
 Using these variables
 
@@ -289,7 +289,7 @@ The domain of /W/[sub -1] is \[-/e/[super -1], 0\). Numerically,
 For example, for `double`: lambert_wm1(-2.2250738585072014e-308) = -714.96865723796634 [br]
 and for `float`: lambert_wm1(-1.17549435e-38) = -91.8567734 [br]
 
-* `z < -std::numeric_limits<T>::min()`, means that z is zero or denormalized (if `std::numeric_limits<T>::has_denorm_min == true`),
+* `z < -std::numeric_limits<T>::min()`, means that z is zero or denormalized (if `boost::math::detail::has_denorm_now<T>() == true`),
 for example: `r = lambert_wm1(-std::numeric_limits<double>::denorm_min());` and an overflow_error exception is thrown,
 and will give a message like:
 
@@ -352,7 +352,7 @@ for example, using __halley or __schroder methods.
 For C++, the most precise results possible, closest to the nearest __representable for the C++ type being used,
 it is usually necessary to use a higher precision type for intermediate computation,
 finally static-casting back to the smaller desired result type.
-This strategy is used by __Maple and WolframAlpha, for example, using arbitrary precision arithmetic,
+This strategy is used by __Maple and __WolframAlpha, for example, using arbitrary precision arithmetic,
 and some of their high-precision values are used for testing this library.
 This method is also used to provide some __boost_test values using __multiprecision,
 typically, a 50 decimal digit type like `cpp_bin_float_50`
@@ -367,7 +367,7 @@ In practical applications, the increased computation required
 (often towards a thousand-fold slower and requiring much additional code for __multiprecision)
 is not justified and the algorithms here do not implement this.
 But because the Boost.Lambert_W algorithms has been tested using __multiprecision,
-users who require this can always easily achieve the nearest representation for __fundamental
+users who require this can always easily achieve the nearest representation for __fundamental_types
 - if the application justifies the very large extra computation cost.
 
 [h5 Evolution of this implementation]
@@ -437,7 +437,7 @@ Bins for (signed) 0, 1, 2 and 3 and 4 bits proved suitable.
 
 However, though these give results within a few __epsilon of the nearest representable result,
 they do not get as close as is very often possible with further refinement,
-nrealy always to within one or two __epsilon.
+nearly always to within one or two __epsilon.
 
 More significantly, the evaluations of the sum of all signed differences using the Fukshima algorithm
 show a slight bias, being more likely to be a bit or few below the nearest representation than above;
@@ -503,7 +503,7 @@ and output as C++ arrays 37 decimal digit `long double` literals using `max_digi
   std::cout.precision(std::numeric_limits<cpp_bin_float_quad>::max_digits10);
 
 The arrays are as `const` and `constexpr` and `static` as possible (for the compiler version),
-using BOOST_STATIC_CONSTEXPR macro.
+using static constexpr macro.
 (See [@../../tools/lambert_w_lookup_table_generator.cpp  lambert_w_lookup_table_generator.cpp]
 The precision was chosen to ensure that if used as `long double` arrays,
 then the values output to
@@ -599,7 +599,7 @@ For multiprecision types, first several terms of the series are tabulated and ev
 Then our series functor is initialized "as if" it had already reached term 18,
 enough evaluation of built-in 64-bit double and float (and 80-bit `long double`) types.
 Finally the functor is called repeatedly to compute as many additional series terms
-as necessary to achive the desired precision, set from `get_epsilon`
+as necessary to achieve the desired precision, set from `get_epsilon`
 (or terminated by `evaluation_error` on reaching the set iteration limit `max_series_iterations`).
 
 A little more than one decimal digit of precision is gained by each additional series term.
@@ -636,7 +636,7 @@ by pre-computed decimal values at least 21 digits precision == `max_digits10` fo
 A macro `BOOST_MATH_TEST_VALUE` (defined in [@../../test/test_value.hpp  test_value.hpp])
 taking a decimal floating-point literal was used
 to allow testing with both built-in floating-point types like `double`
-which have contructors taking literal decimal values like `3.14`,
+which have constructors taking literal decimal values like `3.14`,
 [*and] also multiprecision and other User-defined Types that only provide full-precision construction
 from decimal digit strings like `"3.14"`.
 (Construction of multiprecision types from built-in floating-point types
@@ -669,7 +669,7 @@ whereas at the minimum (unnormalized) z
 Although the addition of the 3rd ratio term did not reduce the number of Halley iterations needed,
 it might allow return of a better low precision estimate [*without any Halley iterations].
 For the worst case near w = 64, the error in the 'guess' is 0.008, ratio 0.0001 or 1 in 10,000 digits 10 ~= 4.
-Two log evalutations are still needed, but is probably over an order of magnitude faster.
+Two log evaluations are still needed, but is probably over an order of magnitude faster.
 
 Halley's method was then used to refine the estimate of Lambert /W/[sub -1] from this guess.
 Experiments showed that although all approximations reached with __ulp of the closest representable value,
@@ -724,7 +724,7 @@ precision can be much lower, as might be expected.
 See source at:
 [@../../example/lambert_w_simple_examples.cpp lambert_w_simple_examples.cpp]
 [@../../test/test_lambert_w.cpp test_lambert_w.cpp] contains routine tests using __boost_test.
-[@../sf/lambert_w_errors_graph.cpp lambert_w_errors_graph.cpp] generating error graphs.
+[@../../tools/lambert_w_errors_graph.cpp lambert_w_errors_graph.cpp] generating error graphs.
 
 [h5:quadrature_testing  Testing with quadrature]
 
@@ -797,7 +797,7 @@ Mathematics, 244 (2013) 77-89.
 
 # T.C. Banwell and A. Jayakumar, Electronic Letter, Feb 2000, 36(4), pages 291-2.
 Exact analytical solution for current flow through diode with series resistance.
-[@http://dx.doi.org/10.1049/el:20000301]
+[@https://doi.org/10.1049/el:20000301]
 
 # Princeton Companion to Applied Mathematics,
 'The Lambert-W function', Section 1.3: Series and Generating Functions.

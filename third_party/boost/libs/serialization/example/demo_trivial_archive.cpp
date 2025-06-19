@@ -18,7 +18,7 @@ public:
     //////////////////////////////////////////////////////////
     // public interface used by programs that use the
     // serialization library
-    typedef boost::mpl::bool_<true> is_saving; 
+    typedef boost::mpl::bool_<true> is_saving;
     typedef boost::mpl::bool_<false> is_loading;
     template<class T> void register_type(){}
     template<class T> trivial_oarchive & operator<<(const T & t){
@@ -33,7 +33,7 @@ public:
 #include "demo_gps.hpp"
 
 int main(int argc, char *argv[])
-{   
+{
     // make the schedule
     bus_schedule schedule;
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         "Lincoln Memorial"
     );
 
-    // make a  routes
+    // make a route
     bus_route route0;
     route0.append(bs0);
     route0.append(bs1);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     schedule.append("bob", 9, 57, &route0);
     schedule.append("alice", 11, 02, &route0);
 
-    // make aother routes
+    // make another route
     bus_route route1;
     route1.append(bs3);
     route1.append(bs2);

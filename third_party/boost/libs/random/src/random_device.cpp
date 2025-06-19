@@ -10,7 +10,9 @@
  *
  */
 
-#define BOOST_RANDOM_SOURCE
+#ifndef BOOST_RANDOM_SOURCE
+#  define BOOST_RANDOM_SOURCE
+#endif
 
 #include <boost/random/random_device.hpp>
 #include <boost/config.hpp>
@@ -48,7 +50,7 @@ using namespace Windows::Security::Cryptography;
 #endif
 
 #define BOOST_AUTO_LINK_NOMANGLE
-#define BOOST_LIB_NAME "Advapi32"
+#define BOOST_LIB_NAME Advapi32
 #include <boost/config/auto_link.hpp>
 
 #ifdef __MINGW32__

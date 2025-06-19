@@ -7,12 +7,12 @@ Distributed under the Boost Software License, Version 1.0.
 ]
 
 [library Boost.Align
-  [quickbook 1.6]
-  [id align]
-  [copyright 2014-2017 Glen Joseph Fernandes]
-  [authors [Fernandes, Glen]]
-  [dirname align]
-  [license Distributed under the Boost Software License, Version 1.0.]]
+[quickbook 1.6]
+[id align]
+[copyright 2014-2017 Glen Joseph Fernandes]
+[authors [Fernandes, Glen]]
+[dirname align]
+[license Distributed under the Boost Software License, Version 1.0.]]
 
 [section Introduction]
 
@@ -33,13 +33,13 @@ allocation functions and allocators that respect the alignment requirements of
 a type and so are suitable for allocating memory for over-aligned types.
 
 [variablelist
-  [[`aligned_alloc(alignment, size)`]
-    [Replaces `::operator new(size, std::nothrow)`]]
-  [[`aligned_free(pointer)`]
-    [Replaces `::operator delete(pointer, std::nothrow)`]]
-  [[`aligned_allocator<T>`] [Replaces `std::allocator<T>`]]
-  [[`aligned_allocator_adaptor<Allocator>`] [Replaces use of Allocator]]
-  [[`aligned_delete`] [Replaces `std::default_delete<T>`]]]
+[[`aligned_alloc(alignment, size)`]
+[Replaces `::operator new(size, std::nothrow)`]]
+[[`aligned_free(pointer)`]
+[Replaces `::operator delete(pointer, std::nothrow)`]]
+[[`aligned_allocator<T>`][Replaces `std::allocator<T>`]]
+[[`aligned_allocator_adaptor<Allocator>`][Replaces use of Allocator]]
+[[`aligned_delete`][Replaces `std::default_delete<T>`]]]
 
 [heading Pointer alignment]
 
@@ -84,7 +84,7 @@ To dynamically allocate storage with desired alignment, you can use the
 `aligned_alloc` function:
 
 [ordered_list
-  [`void* storage = boost::alignment::aligned_alloc(alignment, size);`]]
+[`void* storage = boost::alignment::aligned_alloc(alignment, size);`]]
 
 To deallocate storage allocated with the `aligned_alloc` function, use
 the `aligned_free` function:
@@ -97,14 +97,14 @@ For C++ allocator aware code, you can use the `aligned_allocator` class
 template for an allocator that respects over-alignment:
 
 [ordered_list
-  [`std::vector<int128_t,
-    boost::alignment::aligned_allocator<int128_t> > vector;`]]
+[`std::vector<int128_t,
+boost::alignment::aligned_allocator<int128_t> > vector;`]]
 
 This template allows specifying minimum alignment for all dynamic allocations:
 
 [ordered_list
-  [`std::vector<double,
-    boost::alignment::aligned_allocator<double, 64> > vector;`]]
+[`std::vector<double,
+boost::alignment::aligned_allocator<double, 64> > vector;`]]
 
 [heading Aligned allocator adaptor]
 
@@ -112,13 +112,13 @@ To turn an allocator into an allocator that respects over-alignment, you can
 use the `aligned_allocator_adaptor` class template:
 
 [ordered_list
-  [`boost::alignment::aligned_allocator_adaptor<First> second(first);`]]
+[`boost::alignment::aligned_allocator_adaptor<First> second(first);`]]
 
 This template allows specifying minimum alignment for all dynamic
 allocations:
 
 [ordered_list
-  [`boost::alignment::aligned_allocator_adaptor<First, 64> second(first);`]]
+[`boost::alignment::aligned_allocator_adaptor<First, 64> second(first);`]]
 
 [heading Aligned deleter]
 
@@ -126,17 +126,17 @@ For a deleter that can be paired with `aligned_alloc`, you can use the
 `aligned_delete` class:
 
 [ordered_list
-  [`std::unique_ptr<double, boost::alignment::aligned_delete> pointer;`]]
+[`std::unique_ptr<double, boost::alignment::aligned_delete> pointer;`]]
 
 [heading Pointer alignment]
 
 To advance a pointer to the next address with the desired alignment:
 
 [ordered_list
-  [`void* pointer = storage;`]
-  [`std::size_t space = size;`]
-  [`void* result = boost::alignment::align(64, sizeof(double), pointer,
-    space);`]]
+[`void* pointer = storage;`]
+[`std::size_t space = size;`]
+[`void* result = boost::alignment::align(64, sizeof(double), pointer,
+space);`]]
 
 [heading Querying alignment]
 
@@ -168,108 +168,112 @@ To check alignment of a pointer you can use the `is_aligned` function:
 
 [section align]
 
-`void* align(std::size_t alignment, std::size_t size, void*& ptr,
-std::size_t& space);`
-
 [variablelist
-  [[Header] [`#include <boost/align/align.hpp>`]]
-  [[Effects]
-    [If it is possible to fit `size` bytes of storage aligned by `alignment`
-      into the buffer pointed to by `ptr` with length `space`, the function
-      updates `ptr` to point to the first possible address of such storage and
-      decreases `space` by the number of bytes used for alignment. Otherwise,
-      the function does nothing.]]
-  [[Requires]
-    [[itemized_list
-      [`alignment` shall be a power of two]
-      [`ptr` shall point to contiguous storage of at least `space` bytes]]]]
-  [[Returns]
-    [A null pointer if the requested aligned buffer would not fit into the
-      available space, otherwise the adjusted value of `ptr`.]]
-  [[Note]
-    [The function updates its `ptr` and `space` arguments so that it can be
-      called repeatedly with possibly different `alignment` and `size`
-      arguments for the same buffer.]]]
+[[`void* align(std::size_t alignment, std::size_t size, void*& ptr,
+std::size_t& space);`]
+[[variablelist
+[[Header][`#include <boost/align/align.hpp>`]]
+[[Effects]
+[If it is possible to fit `size` bytes of storage aligned by `alignment` into
+the buffer pointed to by `ptr` with length `space`, the function updates `ptr`
+to point to the first possible address of such storage and decreases `space` by
+the number of bytes used for alignment. Otherwise, the function does nothing.]]
+[[Requires]
+[[itemized_list
+[`alignment` shall be a power of two]
+[`ptr` shall point to contiguous storage of at least `space` bytes]]]]
+[[Returns]
+[A null pointer if the requested aligned buffer would not fit into the
+available space, otherwise the adjusted value of `ptr`.]]
+[[Note]
+[The function updates its `ptr` and `space` arguments so that it can be called
+repeatedly with possibly different `alignment` and `size`arguments for the same
+buffer.]]]]]]
 
 [endsect]
 
 [section align_up]
 
-`constexpr std::size_t align_up(std::size_t value, std::size_t alignment)
-noexcept;`
-
 [variablelist
-  [[Header] [`#include <boost/align/align_up.hpp>`]]
-  [[Requires] [`alignment` shall be a power of two]]
-  [[Returns]
-    [A value at or after `value` that is a multiple of `alignment`.]]]
+[[`template<class T> constexpr T align_up(T value, std::size_t alignment)
+noexcept;`]
+[[variablelist
+[[Header][`#include <boost/align/align_up.hpp>`]]
+[[Constraints][`T` is not a pointer type]]
+[[Requires][`alignment` shall be a power of two]]
+[[Returns][A value at or after `value` that is a multiple of `alignment`.]]]]]]
 
 [endsect]
 
 [section align_down]
 
-`constexpr std::size_t align_down(std::size_t value, std::size_t alignment)
-noexcept;`
-
 [variablelist
-  [[Header] [`#include <boost/align/align_down.hpp>`]]
-  [[Requires] [`alignment` shall be a power of two]]
-  [[Returns]
-    [A value at or before `value` that is a multiple of `alignment`.]]]
+[[`template<class T> constexpr T align_down(T value, std::size_t alignment)
+noexcept;`]
+[[variablelist
+[[Header][`#include <boost/align/align_down.hpp>`]]
+[[Constraints][`T` is not a pointer type]]
+[[Requires][`alignment` shall be a power of two]]
+[[Returns]
+[A value at or before `value` that is a multiple of `alignment`.]]]]]]
 
 [endsect]
 
 [section aligned_alloc]
 
-`void* aligned_alloc(std::size_t alignment, std::size_t size);`
-
 [variablelist
-  [[Header] [`#include <boost/align/aligned_alloc.hpp>`]]
-  [[Effects]
-    [Allocates space for an object whose alignment is specified by
-      `alignment`, whose size is specified by `size`, and whose value is
-      indeterminate.]]
-  [[Requires] [`alignment` shall be a power of two.]]
-  [[Returns] [A null pointer or a pointer to the allocated space.]]
-  [[Note]
-    [On certain platforms, the space allocated may be slightly larger than
-      `size` bytes, to allow for alignment.]]]
+[[`void* aligned_alloc(std::size_t alignment, std::size_t size);`]
+[[variablelist
+[[Header][`#include <boost/align/aligned_alloc.hpp>`]]
+[[Effects]
+[Allocates space for an object whose alignment is specified by `alignment`,
+whose size is specified by `size`, and whose value is indeterminate.]]
+[[Requires][`alignment` shall be a power of two.]]
+[[Returns][A null pointer or a pointer to the allocated space.]]
+[[Note]
+[On certain platforms, the space allocated may be slightly larger than
+`size` bytes, to allow for alignment.]]]]]]
 
 [endsect]
 
 [section aligned_free]
 
-`void aligned_free(void* ptr);`
-
 [variablelist
-  [[Header] [`#include <boost/align/aligned_alloc.hpp>`]]
-  [[Effects]
-    [Causes the space pointed to by `ptr` to be deallocated, that is, made
-      available for further allocation. If `ptr` is a null pointer, no action
-      occurs. Otherwise, if the argument does not match a pointer earlier
-      returned by the `aligned_alloc()` function, or if the space has been
-      deallocated by a call to `aligned_free()`, the behavior is undefined.]]
-  [[Requires]
-    [`ptr` is a null pointer or a pointer earlier returned by the
-      `aligned_alloc()` function that has not been deallocated by a call to
-      `aligned_free()`.]]
-  [[Returns] [The `aligned_free()` function returns no value.]]]
+[[`void aligned_free(void* ptr);`]
+[[variablelist
+[[Header][`#include <boost/align/aligned_alloc.hpp>`]]
+[[Effects]
+[Causes the space pointed to by `ptr` to be deallocated, that is, made
+available for further allocation. If `ptr` is a null pointer, no action occurs.
+Otherwise, if the argument does not match a pointer earlier returned by the
+`aligned_alloc()` function, or if the space has been deallocated by a call to
+`aligned_free()`, the behavior is undefined.]]
+[[Requires]
+[`ptr` is a null pointer or a pointer earlier returned by the `aligned_alloc()`
+function that has not been deallocated by a call to `aligned_free()`.]]
+[[Returns][The `aligned_free()` function returns no value.]]]]]]
 
 [endsect]
 
 [section is_aligned]
 
-`bool is_aligned(const void* ptr, std::size_t alignment) noexcept;`
-
-`constexpr bool is_aligned(std::size_t value, std::size_t alignment)
-noexcept;`
-
 [variablelist
-  [[Header] [`#include <boost/align/is_aligned.hpp>`]]
-  [[Requires] [`alignment` shall be a power of two.]]
-  [[Returns]
-    [`true` if the value of the first argument is aligned on the boundary
-      specified by `alignment`, otherwise `false`.]]]
+[[`bool is_aligned(const volatile void* ptr, std::size_t alignment) noexcept;`]
+[[variablelist
+[[Header][`#include <boost/align/is_aligned.hpp>`]]
+[[Requires][`alignment` shall be a power of two.]]
+[[Returns]
+[`true` if `ptr` is aligned on the boundary specified by `alignment`, otherwise
+`false`.]]]]]
+[[`template<class T> constexpr bool is_aligned(T value, std::size_t alignment)
+noexcept;`]
+[[variablelist
+[[Header][`#include <boost/align/is_aligned.hpp>`]]
+[[Constraints][`T` is not a pointer type]]
+[[Requires][`alignment` shall be a power of two.]]
+[[Returns]
+[`true` if the value of `value` is aligned on the boundary specified by
+`alignment`, otherwise `false`.]]]]]]
 
 [endsect]
 
@@ -279,43 +283,41 @@ noexcept;`
 
 [section aligned_allocator]
 
-`template<class T, std::size_t Alignment = 1>
-class aligned_allocator;`
-
-`template<std::size_t Alignment>
-class aligned_allocator<void, Alignment>;`
-
 [variablelist
-  [[Header] [`#include <boost/align/aligned_allocator.hpp>`]]
-  [[Note]
-    [Using the aligned allocator with a minimum Alignment value is generally
-      only useful with containers that are not node-based such as `vector`.
-      With node-based containers, such as `list`, the node object would have
-      the minimum alignment instead of the value type object.]]]
+[[`template<class T, std::size_t Alignment = 1> class aligned_allocator;`]
+[[variablelist
+[[Header][`#include <boost/align/aligned_allocator.hpp>`]]
+[[Note]
+[Using the aligned allocator with a minimum Alignment value is generally only
+useful with containers that are not node-based such as `vector`. With
+node-based containers, such as `list`, the node object would have the minimum
+alignment instead of the value type object.]]]]]]
 
 [heading Member types]
 
 [ordered_list
-  [`typedef T value_type;`]
-  [`typedef T* pointer;`]
-  [`typedef const T* const_pointer;`]
-  [`typedef void* void_pointer;`]
-  [`typedef const void* const_void_pointer;`]
-  [`typedef std::size_t size_type;`]
-  [`typedef std::ptrdiff_t difference_type;`]
-  [`typedef T& reference;`]
-  [`typedef const T& const_reference;`]
-  [`template<class U> struct rebind { typedef aligned_allocator<U,
-    Alignment> other; };`]]
+[`typedef T value_type;`]
+[`typedef T* pointer;`]
+[`typedef const T* const_pointer;`]
+[`typedef void* void_pointer;`]
+[`typedef const void* const_void_pointer;`]
+[`typedef std::add_lvalue_reference_t<T> reference;`]
+[`typedef std::add_lvalue_reference_t<const T> const_reference;`]
+[`typedef std::size_t size_type;`]
+[`typedef std::ptrdiff_t difference_type;`]
+[`typedef std::true_type propagate_on_container_move_assignment;`]
+[`typedef std::true_type is_always_equal;`]
+[`template<class U> struct rebind { typedef aligned_allocator<U, Alignment>
+other; };`]]
 
 [heading Constructors]
 
-[ordered_list
-  [`aligned_allocator() = default;`
-    [variablelist [[Effects] [Constructs the allocator.]]]]
-  [`template<class U> aligned_allocator(const aligned_allocator<U,
-    Alignment>&) noexcept;`
-    [variablelist [[Effects] [Constructs the allocator.]]]]]
+[variablelist
+[[`aligned_allocator() = default;`]
+[[variablelist [[Effects][Constructs the allocator.]]]]]
+[[`template<class U> aligned_allocator(const aligned_allocator<U, Alignment>&)
+noexcept;`]
+[[variablelist [[Effects][Constructs the allocator.]]]]]]
 
 [heading Member functions]
 
@@ -326,186 +328,165 @@ particular unit of storage shall occur in a single total order, and each such
 deallocation call shall happen before the next allocation (if any) in this
 order.
 
-[ordered_list
-  [`pointer address(reference value) const noexcept;`
-    [variablelist
-      [[Returns]
-        [The actual address of the object referenced by `value`, even in the
-          presence of an overloaded `operator&`.]]]]
-  [`const_pointer address(const_reference value) const noexcept;`
-    [variablelist
-      [[Returns]
-        [The actual address of the object referenced by `value`, even in the
-          presence of an overloaded `operator&`.]]]]
-  [`pointer allocate(size_type size, const_void_pointer = 0);`
-    [variablelist
-      [[Returns]
-        [A pointer to the initial element of an array of storage of size
-          `n * sizeof(T)`, aligned on the maximum of the minimum alignment
-          specified and the alignment of objects of type `T`.]]
-      [[Remark]
-        [The storage is obtained by calling `aligned_alloc(std::size_t,
-          std::size_t)`.]]
-      [[Throws] [`std::bad_alloc` if the storage cannot be obtained.]]]]
-  [`void deallocate(pointer ptr, size_type);`
-    [variablelist
-      [[Requires]
-        [`ptr` shall be a pointer value obtained from `allocate()`.]]
-      [[Effects] [Deallocates the storage referenced by `ptr`.]]
-      [[Remark] [Uses `aligned_free(void*)`.]]]]
-  [`size_type max_size() const noexcept;`
-    [variablelist
-      [[Returns]
-        [The largest value `N` for which the call `allocate(N)` might
-          succeed.]]]]
-  [`template<class U, class... Args> void construct(U* ptr,
-    Args&&... args);`
-    [variablelist
-      [[Effects] [`::new((void*)ptr) U(std::forward<Args>(args)...)`.]]]]
-  [`template<class U> void destroy(U* ptr);`
-    [variablelist [[Effects] [`ptr->~U()`.]]]]]
+[variablelist
+[[`pointer allocate(size_type size, const_void_pointer = 0);`]
+[[variablelist
+[[Returns]
+[A pointer to the initial element of an array of storage of size
+`n * sizeof(T)`, aligned on the maximum of the minimum alignment specified and
+the alignment of objects of type `T`.]]
+[[Remark]
+[The storage is obtained by calling `aligned_alloc(std::size_t,
+std::size_t)`.]]
+[[Throws][`std::bad_alloc` if the storage cannot be obtained.]]]]]
+[[`void deallocate(pointer ptr, size_type);`]
+[[variablelist
+[[Requires]
+[`ptr` shall be a pointer value obtained from `allocate()`.]]
+[[Effects][Deallocates the storage referenced by `ptr`.]]
+[[Remark][Uses `aligned_free(void*)`.]]]]]
+[[`size_type max_size() const noexcept;`]
+[[variablelist
+[[Returns]
+[The largest value `N` for which the call `allocate(N)` might succeed.]]]]]
+[[`template<class U, class... Args> void construct(U* ptr, Args&&... args);`]
+[[variablelist
+[[Effects][`::new((void*)ptr) U(std::forward<Args>(args)...)`.]]]]]
+[[`template<class U> void destroy(U* ptr);`]
+[[variablelist [[Effects][`ptr->~U()`.]]]]]]
 
 [heading Global operators]
 
-[ordered_list 
-  [`template<class T1, class T2, std::size_t Alignment>
-    bool operator==(const aligned_allocator<T1, Alignment>&,
-    const aligned_allocator<T2, Alignment>&) noexcept;`
-    [variablelist [[Returns] [`true`]]]]
-  [`template<class T1, class T2, std::size_t Alignment>
-    bool operator!=(const aligned_allocator<T1, Alignment>&,
-    const aligned_allocator<T2, Alignment>&) noexcept;`
-    [variablelist [[Returns] [`false`]]]]]
+[variablelist
+[[`template<class T1, class T2, std::size_t Alignment> bool operator==(const
+aligned_allocator<T1, Alignment>&, const aligned_allocator<T2, Alignment>&)
+noexcept;`]
+[[variablelist [[Returns][`true`]]]]]
+[[`template<class T1, class T2, std::size_t Alignment> bool operator!=(const
+aligned_allocator<T1, Alignment>&, const aligned_allocator<T2, Alignment>&)
+noexcept;`]
+[[variablelist [[Returns][`false`]]]]]]
 
 [endsect]
 
 [section aligned_allocator_adaptor]
 
-`template<class Allocator, std::size_t Alignment = 1>
-class aligned_allocator_adaptor;`
-
 [variablelist
-  [[Header] [`#include <boost/align/aligned_allocator_adaptor.hpp>`]]
-  [[Note]
-    [This adaptor can be used with a C++11 Allocator whose pointer type is a
-      smart pointer but the adaptor can choose to expose only raw pointer
-      types.]]]
+[[`template<class Allocator, std::size_t Alignment = 1> class
+aligned_allocator_adaptor;`]
+[[variablelist
+[[Header][`#include <boost/align/aligned_allocator_adaptor.hpp>`]]
+[[Note]
+[This adaptor can be used with a C++11 Allocator whose pointer type is a smart
+pointer but the adaptor can choose to expose only raw pointer types.]]]]]]
 
 [heading Member types]
 
 [ordered_list
-  [`typedef typename Allocator::value_type value_type;`]
-  [`typedef value_type* pointer;`]
-  [`typedef const value_type* const_pointer;`]
-  [`typedef void* void_pointer;`]
-  [`typedef const void* const_void_pointer;`]
-  [`typedef std::size_t size_type;`]
-  [`typedef std::ptrdiff_t difference_type;`]
-  [`template<class U> struct rebind { typedef
-    aligned_allocator_adaptor<typename
-    std::allocator_traits<Allocator>::template rebind_alloc<U>,
-    Alignment> other; };`]]
+[`typedef typename Allocator::value_type value_type;`]
+[`typedef value_type* pointer;`]
+[`typedef const value_type* const_pointer;`]
+[`typedef void* void_pointer;`]
+[`typedef const void* const_void_pointer;`]
+[`typedef std::size_t size_type;`]
+[`typedef std::ptrdiff_t difference_type;`]
+[`template<class U> struct rebind { typedef aligned_allocator_adaptor<typename
+std::allocator_traits<Allocator>::template rebind_alloc<U>, Alignment>
+other; };`]]
 
 [heading Constructors]
 
-[ordered_list
-  [`aligned_allocator_adaptor() = default;`
-    [variablelist
-      [[Effects] [Value-initializes the `Allocator` base class.]]]]
-  [`template<class A> aligned_allocator_adaptor(A&& alloc) noexcept;`
-    [variablelist
-      [[Requires] [`Allocator` shall be constructible from `A`.]]
-      [[Effects]
-        [Initializes the `Allocator` base class with
-          `std::forward<A>(alloc)`.]]]]
-  [`template<class U> aligned_allocator_adaptor(const
-    aligned_allocator_adaptor<U, Alignment>& other) noexcept;`
-    [variablelist
-      [[Requires] [`Allocator` shall be constructible from `A`.]]
-      [[Effects]
-        [Initializes the `Allocator` base class with `other.base()`.]]]]]
+[variablelist
+[[`aligned_allocator_adaptor() = default;`]
+[[variablelist [[Effects][Value-initializes the `Allocator` base class.]]]]]
+[[`template<class A> aligned_allocator_adaptor(A&& alloc) noexcept;`]
+[[variablelist [[Requires][`Allocator` shall be constructible from `A`.]]
+[[Effects]
+[Initializes the `Allocator` base class with `std::forward<A>(alloc)`.]]]]]
+[[`template<class U> aligned_allocator_adaptor(const
+aligned_allocator_adaptor<U, Alignment>& other) noexcept;`]
+[[variablelist
+[[Requires][`Allocator` shall be constructible from `A`.]]
+[[Effects][Initializes the `Allocator` base class with `other.base()`.]]]]]]
 
 [heading Member functions]
 
-[ordered_list
-  [`Allocator& base() noexcept;`
-    [variablelist [[Returns] [`static_cast<Allocator&>(*this)`]]]]
-  [`const Allocator& base() const noexcept;`
-    [variablelist [[Returns] [`static_cast<const Allocator&>(*this)`]]]]
-  [`pointer allocate(size_type size);`
-    [variablelist
-      [[Returns]
-        [A pointer to the initial element of an array of storage of size
-          `n * sizeof(value_type)`, aligned on the maximum of the minimum
-          alignment specified and the alignment of objects of type
-          `value_type`.]]
-      [[Remark]
-        [The storage is obtained by calling `A2::allocate()` on an object
-          `a2`, where `a2` of type `A2` is a rebind copy of `base()` where its
-          `value_type` is implementation defined.]]
-      [[Throws]
-        [Throws an exception thrown from `A2::allocate()` if the storage
-          cannot be obtained.]]]]
-  [`pointer allocate(size_type size, const_void_pointer hint);`
-    [variablelist
-      [[Requires]
-        [`hint` is a value obtained by calling `allocate()` on any equivalent
-          allocator object, or else a null pointer.]]
-      [[Returns]
-        [A pointer to the initial element of an array of storage of size
-          `n * sizeof(value_type)`, aligned on the maximum of the minimum
-          alignment specified and the alignment of objects of type
-          `value_type`.]]
-      [[Remark]
-        [The storage is obtained by calling `A2::allocate()` on an object
-          `a2`, where `a2` of type `A2` is a rebind copy of `base()` where its
-          `value_type` is an implementation defined.]]
-      [[Throws]
-        [Throws an exception thrown from `A2::allocate()` if the storage
-          cannot be obtained.]]]]
-  [`void deallocate(pointer ptr, size_type size);`
-    [variablelist
-      [[Requires]
-        [[itemized_list
-          [`ptr` shall be a pointer value obtained from `allocate()`]
-          [`size` shall equal the value passed as the first argument to the
-            invocation of `allocate()` which returned `ptr`.]]]]
-      [[Effects] [Deallocates the storage referenced by `ptr`.]]
-      [[Note]
-        [Uses `A2::deallocate()` on an object `a2`, where `a2` of type `A2` is
-          a rebound copy of `base()` where its `value_type` is implementation
-          defined.]]]]]
+[variablelist
+[[`Allocator& base() noexcept;`]
+[[variablelist [[Returns][`static_cast<Allocator&>(*this)`]]]]]
+[[`const Allocator& base() const noexcept;`]
+[[variablelist [[Returns][`static_cast<const Allocator&>(*this)`]]]]]
+[[`pointer allocate(size_type size);`]
+[[variablelist
+[[Returns]
+[A pointer to the initial element of an array of storage of size
+`n * sizeof(value_type)`, aligned on the maximum of the minimum alignment
+specified and the alignment of objects of type `value_type`.]]
+[[Remark]
+[The storage is obtained by calling `A2::allocate()` on an object `a2`, where
+`a2` of type `A2` is a rebound copy of `base()` where its `value_type` is
+implementation defined.]]
+[[Throws]
+[Throws an exception thrown from `A2::allocate()` if the storage cannot be
+obtained.]]]]]
+[[`pointer allocate(size_type size, const_void_pointer hint);`]
+[[variablelist
+[[Requires]
+[`hint` is a value obtained by calling `allocate()` on any equivalent allocator
+object, or else a null pointer.]]
+[[Returns]
+[A pointer to the initial element of an array of storage of size
+`n * sizeof(value_type)`, aligned on the maximum of the minimum alignment
+specified and the alignment of objects of type `value_type`.]]
+[[Remark]
+[The storage is obtained by calling `A2::allocate()` on an object `a2`, where
+`a2` of type `A2` is a rebound copy of `base()` where its `value_type` is an
+implementation defined.]]
+[[Throws]
+[Throws an exception thrown from `A2::allocate()` if the storage cannot be
+obtained.]]]]]
+[[`void deallocate(pointer ptr, size_type size);`]
+[[variablelist
+[[Requires]
+[[itemized_list
+[`ptr` shall be a pointer value obtained from `allocate()`]
+[`size` shall equal the value passed as the first argument to the invocation of
+`allocate()` which returned `ptr`.]]]]
+[[Effects][Deallocates the storage referenced by `ptr`.]]
+[[Note]
+[Uses `A2::deallocate()` on an object `a2`, where `a2` of type `A2` is a
+rebound copy of `base()` where its `value_type` is implementation
+defined.]]]]]]
 
 [heading Global operators]
 
-[ordered_list 
-  [`template<class A1, class A2, std::size_t Alignment> bool
-    operator==(const aligned_allocator_adaptor<A1, Alignment>& a1,
-    const aligned_allocator_adaptor<A2, Alignment>& a2) noexcept;`
-    [variablelist [[Returns] [`a1.base() == a2.base()`]]]]
-  [`template<class A1, class A2, std::size_t Alignment> bool
-    operator!=(const aligned_allocator_adaptor<A1, Alignment>& a1,
-    const aligned_allocator_adaptor<A2, Alignment>& a2) noexcept;`
-    [variablelist [[Returns] [`!(a1 == a2)`]]]]]
+[variablelist
+[[`template<class A1, class A2, std::size_t Alignment> bool operator==(const
+aligned_allocator_adaptor<A1, Alignment>& a1, const
+aligned_allocator_adaptor<A2, Alignment>& a2) noexcept;`]
+[[variablelist [[Returns][`a1.base() == a2.base()`]]]]]
+[[`template<class A1, class A2, std::size_t Alignment> bool operator!=(const
+aligned_allocator_adaptor<A1, Alignment>& a1, const
+aligned_allocator_adaptor<A2, Alignment>& a2) noexcept;`]
+[[variablelist [[Returns][`!(a1 == a2)`]]]]]]
 
 [endsect]
 
 [section aligned_delete]
 
-`class aligned_delete;`
-
-[variablelist [[Header] [`#include <boost/align/aligned_delete.hpp>`]]]
+[variablelist
+[[`class aligned_delete;`]
+[[variablelist [[Header][`#include <boost/align/aligned_delete.hpp>`]]]]]]
 
 [heading Member operators]
 
-[ordered_list
-  [`template<class T> void operator()(T* ptr)
-    noexcept(noexcept(ptr->~T()));`
-    [variablelist
-      [[Effects]
-        [Calls `~T()` on `ptr` to destroy the object and then calls
-          `aligned_free()` on `ptr` to free the allocated memory.]]
-      [[Note] [If `T` is an incomplete type, the program is ill-formed.]]]]]
+[variablelist
+[[`template<class T> void operator()(T* ptr) noexcept(noexcept(ptr->~T()));`]
+[[variablelist
+[[Effects]
+[Calls `~T()` on `ptr` to destroy the object and then calls `aligned_free()` on
+`ptr` to free the allocated memory.]]
+[[Note][If `T` is an incomplete type, the program is ill-formed.]]]]]]
 
 [endsect]
 
@@ -515,18 +496,18 @@ class aligned_allocator_adaptor;`
 
 [section alignment_of]
 
-`template<class T> struct alignment_of;`
-
 [variablelist
-  [[Header] [`#include <boost/align/alignment_of.hpp>`]]
-  [[Value]
-    [The alignment requirement of the type `T` as an integral constant of type
-      `std::size_t`. When `T` is a reference array type, the value shall be
-      the alignment of the referenced type. When `T` is an array type, the
-      value shall be the alignment of the element type.]]
-  [[Requires]
-    [`T` shall be a complete object type, or an array thereof, or a reference
-      to one of those types.]]]
+[[`template<class T> struct alignment_of;`]
+[[variablelist
+[[Header][`#include <boost/align/alignment_of.hpp>`]]
+[[Value]
+[The alignment requirement of the type `T` as an integral constant of type
+`std::size_t`. When `T` is a reference array type, the value shall be the
+alignment of the referenced type. When `T` is an array type, the value shall be
+the alignment of the element type.]]
+[[Requires]
+[`T` shall be a complete object type, or an array thereof, or a reference to
+one of those types.]]]]]]
 
 [endsect]
 
@@ -536,17 +517,16 @@ class aligned_allocator_adaptor;`
 
 [section BOOST_ALIGN_ASSUME_ALIGNED]
 
-`BOOST_ALIGN_ASSUME_ALIGNED(ptr, alignment)`
-
 [variablelist
-  [[Header] [`#include <boost/align/assume_aligned.hpp>`]]
-  [[Requires]
-    [[itemized_list
-      [`alignment` shall be a power of two]
-      [`ptr` shall be mutable]]]]
-  [[Effects]
-    [`ptr` may be modified in an implementation specific way to inform the
-      compiler of its alignment.]]]
+[[`BOOST_ALIGN_ASSUME_ALIGNED(ptr, alignment)`]
+[[variablelist
+[[Header][`#include <boost/align/assume_aligned.hpp>`]]
+[[Requires]
+[[itemized_list [`alignment` shall be a power of two]
+[`ptr` shall be mutable]]]]
+[[Effects]
+[`ptr` may be modified in an implementation specific way to inform the compiler
+of its alignment.]]]]]]
 
 [endsect]
 
@@ -572,8 +552,8 @@ might be different when it is used as the type of a complete object and when
 it is used as the type of a subobject.
 \[['Example:]
 [ordered_list
-  [`struct B { long double d; };`]
-  [`struct D : virtual B { char c; };`]]
+[`struct B { long double d; };`]
+[`struct D : virtual B { char c; };`]]
 When `D` is the type of a complete object, it will have a subobject of type
 `B`, so it must be aligned appropriately for a `long double`. If `D` appears
 as a subobject of another object that also has `B` as a virtual base class,
@@ -629,11 +609,11 @@ alignment cannot be honored shall be treated as an allocation failure.
 This library has been tested with the following C++ implementations:
 
 [variablelist
-  [[Compilers] [gcc, clang, msvc, intel]]
-  [[Libraries] [libstdc++, libc++, dinkumware]]
-  [[Systems] [linux, windows, osx]]
-  [[Platforms] [x64, x86, arm]]
-  [[Standards] [c++98, c++03, c++11, c++14]]]
+[[Compilers][gcc, clang, msvc, intel]]
+[[Libraries][libstdc++, libc++, dinkumware]]
+[[Systems][linux, windows, osx]]
+[[Platforms][x64, x86, arm]]
+[[Standards][c++98, c++03, c++11, c++14, c++17]]]
 
 [endsect]
 
@@ -651,12 +631,6 @@ documentation, including:
 * Michael Spencer
 * Paul A. Bristow
 
-Thank you to everyone who contributed a feature to the library, with code,
-tests, or documentation:
-
-* Joel Falcou
-* Charly Chevalier
-
 Thank you to Ahmed Charles for serving as the review manager for the formal
 review of the library.
 
@@ -665,12 +639,11 @@ review of the library.
 [section History]
 
 [variablelist
-  [[Boost 1.61]
-    [Functions for aligning up, down, and testing alignment of integral
-      values.]]
-  [[Boost 1.59]
-    [Joel Falcou and Charly Chevalier contributed the alignment hint macro.]]
-  [[Boost 1.56]
-    [Glen Fernandes implemented and contributed the Align library to Boost.]]]
+[[Boost 1.61]
+[Functions for aligning up, down, and testing alignment of integral values.]]
+[[Boost 1.59]
+[Joel Falcou and Charly Chevalier contributed the alignment hint macro.]]
+[[Boost 1.56]
+[Glen Fernandes implemented and contributed the Align library to Boost.]]]
 
 [endsect]

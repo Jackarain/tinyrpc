@@ -35,14 +35,14 @@ error: //Base for all exception objects we throw.
     public:
 
     char const *
-    what() const throw()
+    what() const BOOST_NOEXCEPT_OR_NOTHROW
         {
         return "example_io error";
         }
 
     protected:
 
-    ~error() throw()
+    ~error() BOOST_NOEXCEPT_OR_NOTHROW
         {
         }
     };

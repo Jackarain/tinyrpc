@@ -16,8 +16,8 @@
 #endif
 
 #include "bitset_test.hpp"
-#include "boost/dynamic_bitset/serialization.hpp"
-#include "boost/detail/workaround.hpp"
+#include <boost/dynamic_bitset/serialization.hpp>
+#include <boost/config/workaround.hpp>
 
 
 // Codewarrior 8.3 for Win fails without this.
@@ -31,6 +31,7 @@
 # define BOOST_DYNAMIC_BITSET_NO_WCHAR_T_TESTS
 #endif
 
+#include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -97,7 +98,7 @@ void run_test_cases( BOOST_EXPLICIT_TEMPLATE_TYPE(Block) )
     test_xml_archive<Block>();
 }
 
-int test_main(int, char*[])
+int main()
 {
     run_test_cases<unsigned char>();
     run_test_cases<unsigned short>();
@@ -107,5 +108,5 @@ int test_main(int, char*[])
     run_test_cases< ::boost::ulong_long_type>();
 # endif
 
-    return 0;
+    return boost::report_errors();
 }

@@ -3,9 +3,9 @@
 //  (C) Copyright Daryle Walker 2001, 2006.
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  https://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for most recent version including documentation.
+//  See https://www.boost.org for most recent version including documentation.
 
 //  Revision History
 //  01 Dec 2006  Various fixes for old compilers (Joaquin M Lopez Munoz)
@@ -23,7 +23,8 @@
 #include <boost/mpl/list.hpp>            // for boost::mpl::list
 #include <boost/operators.hpp>
 #include <boost/core/lightweight_test.hpp>
-#include <boost/random.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int.hpp>
 #include <boost/rational.hpp>
 
 #include <istream>  // for std::basic_istream
@@ -34,11 +35,7 @@
 #include <gmpxx.h>
 #endif
 
-#if (defined(BOOST_MSVC) && (BOOST_MSVC < 1500)) || \
-    (defined(__clang_major__) && (__clang_major__ == 3) && (__clang_minor__ < 2)) || \
-    (defined(BOOST_GCC) && defined(BOOST_GCC_CXX11) && BOOST_GCC < 40800)
-#define DISABLE_MP_TESTS
-#endif
+#include "multiprecision_config.hpp"
 
 #ifndef DISABLE_MP_TESTS
 #include <boost/multiprecision/cpp_int.hpp>
@@ -258,7 +255,7 @@ public:
 
 #if BOOST_WORKAROUND(BOOST_MSVC,<1300)
 // MSVC 6.0 lacks operator<< for __int64, see
-// http://support.microsoft.com/default.aspx?scid=kb;en-us;168440
+// https://support.microsoft.com/kb/168440/
 
 inline ostream& operator<<(ostream& os, __int64 i)
 {
@@ -546,6 +543,15 @@ void variadics()
    BOOST_TEST_EQ(boost::integer::gcd_range(i, i + 4).second, i + 4);
    BOOST_TEST_EQ(boost::integer::lcm_range(i, i + 4).first, 11704);
    BOOST_TEST_EQ(boost::integer::lcm_range(i, i + 4).second, i + 4);
+
+   unsigned i_gcd_unity[] = { 44, 56, 1, 88 };
+   BOOST_TEST_EQ(boost::integer::gcd_range(i_gcd_unity, i_gcd_unity + 4).first, 1);
+   BOOST_TEST_EQ(boost::integer::gcd_range(i_gcd_unity, i_gcd_unity + 4).second, i_gcd_unity + 3);
+
+   unsigned i_lcm_unity[] = { 44, 56, 0, 88 };
+   BOOST_TEST_EQ(boost::integer::lcm_range(i_lcm_unity, i_lcm_unity + 4).first, 0);
+   BOOST_TEST_EQ(boost::integer::lcm_range(i_lcm_unity, i_lcm_unity + 4).second, i_lcm_unity + 3);
+
 #ifndef BOOST_NO_CXX11_VARIADIC_TEMPLATES
    BOOST_TEST_EQ(boost::integer::gcd(i[0], i[1], i[2], i[3]), 4);
    BOOST_TEST_EQ(boost::integer::lcm(i[0], i[1], i[2], i[3]), 11704);

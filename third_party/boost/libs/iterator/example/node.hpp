@@ -24,7 +24,7 @@ struct node_base
 
     virtual void print(std::ostream& s) const = 0;
     virtual void double_me() = 0;
-        
+
     void append(node_base* p)
     {
         if (m_next)
@@ -32,7 +32,7 @@ struct node_base
         else
             m_next = p;
     }
-    
+
  private:
     node_base* m_next;
 };
@@ -52,9 +52,9 @@ struct node : node_base
 
     void print(std::ostream& s) const { s << this->m_value; }
     void double_me() { m_value += m_value; }
-    
+
  private:
     T m_value;
 };
-    
+
 #endif // NODE_DWA2004110_HPP

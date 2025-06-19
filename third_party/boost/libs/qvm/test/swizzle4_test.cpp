@@ -1,17 +1,24 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#ifdef BOOST_QVM_TEST_SINGLE_HEADER
+#   include BOOST_QVM_TEST_SINGLE_HEADER
+#   ifdef BOOST_QVM_TEST_SINGLE_HEADER_SWIZZLE
+#       include BOOST_QVM_TEST_SINGLE_HEADER_SWIZZLE
+#   endif
+#else
+#   include <boost/qvm/vec_operations.hpp>
+#   include <boost/qvm/vec_access.hpp>
+#   include <boost/qvm/vec.hpp>
+#   include <boost/qvm/swizzle.hpp>
+#endif
 
-#include <boost/qvm/vec_operations.hpp>
-#include <boost/qvm/vec_access.hpp>
-#include <boost/qvm/vec.hpp>
-#include <boost/qvm/swizzle.hpp>
 #include "test_qvm_vector.hpp"
 
 int
 main()
-    {       
+    {
     using namespace boost::qvm;
     test_qvm::vector<V1,4> v1;
     v1.a[0]=42.0f;
@@ -34,7 +41,7 @@ main()
         BOOST_TEST(v2.a[2]==0);
         BOOST_TEST(v2.a[3]==42);
         float s=42.0f;
-        BOOST_TEST(&X(X101(s))==&s);
+        BOOST_TEST(X(X101(s))==s);
         }
         {
         test_qvm::vector<V2,4> r;

@@ -1,5 +1,8 @@
 #
-# Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+# Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)
+# Copyright (c) 2021 DMitry Arkhipov (grisumbras@gmail.com)
+# Copyright (c) 2022 Alan de Freitas (alandefreitas@gmail.com)
+# Copyright (c) 2024 Mohammad Nejati
 #
 # Distributed under the Boost Software License, Version 1.0. (See accompanying
 # file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,189 +10,166 @@
 # Official repository: https://github.com/boostorg/beast
 #
 
-cmake_minimum_required (VERSION 3.5.1)
+#-------------------------------------------------
+#
+# Project
+#
+#-------------------------------------------------
+cmake_minimum_required(VERSION 3.8...3.20)
+set(BOOST_BEAST_VERSION 357)
+if (BOOST_SUPERPROJECT_VERSION)
+    set(BOOST_BEAST_VERSION ${BOOST_SUPERPROJECT_VERSION})
+endif ()
+project(boost_beast VERSION "${BOOST_BEAST_VERSION}" LANGUAGES CXX)
+set(BOOST_BEAST_IS_ROOT OFF)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(BOOST_BEAST_IS_ROOT ON)
+endif ()
+set(__ignore__ ${CMAKE_C_COMPILER})
 
-project (Beast VERSION 189)
+#-------------------------------------------------
+#
+# Options
+#
+#-------------------------------------------------
+if (BOOST_BEAST_IS_ROOT)
+    include(CTest)
+endif ()
+option(BOOST_BEAST_BUILD_TESTS "Build boost::beast tests" ${BUILD_TESTING})
+option(BOOST_BEAST_BUILD_FUZZERS "Build boost::beast fuzzers" OFF)
+option(BOOST_BEAST_BUILD_EXAMPLES "Build boost::beast examples" ${BOOST_BEAST_IS_ROOT})
+option(BOOST_BEAST_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 
-set_property (GLOBAL PROPERTY USE_FOLDERS ON)
-option (Beast_BUILD_EXAMPLES "Build examples" ON)
-option (Beast_BUILD_TESTS "Build tests" ON)
+# Check if environment variable BOOST_SRC_DIR is set
+if (NOT DEFINED BOOST_SRC_DIR AND DEFINED ENV{BOOST_SRC_DIR})
+    set(DEFAULT_BOOST_SRC_DIR "$ENV{BOOST_SRC_DIR}")
+else ()
+    set(DEFAULT_BOOST_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+endif ()
+set(BOOST_SRC_DIR ${DEFAULT_BOOST_SRC_DIR} CACHE STRING "Boost source dir to use when running CMake from this directory")
 
-if (MSVC)
-    set (CMAKE_VERBOSE_MAKEFILE FALSE)
+#-------------------------------------------------
+#
+# Boost modules
+#
+#-------------------------------------------------
+# The boost super-project requires one explicit dependency per-line.
+set(BOOST_BEAST_DEPENDENCIES
+    Boost::asio
+    Boost::assert
+    Boost::bind
+    Boost::config
+    Boost::container
+    Boost::container_hash
+    Boost::core
+    Boost::endian
+    Boost::intrusive
+    Boost::logic
+    Boost::mp11
+    Boost::optional
+    Boost::preprocessor
+    Boost::smart_ptr
+    Boost::static_assert
+    Boost::static_string
+    Boost::system
+    Boost::throw_exception
+    Boost::type_index
+    Boost::type_traits
+    Boost::winapi)
 
-    add_definitions (-D_WIN32_WINNT=0x0601)
-    add_definitions (-D_SCL_SECURE_NO_WARNINGS=1)
-    add_definitions (-D_CRT_SECURE_NO_WARNINGS=1)
-
-    add_compile_options(
-        /bigobj       # large object file format
-        /permissive-  # strict C++
-        #/wd4503      # decorated name length exceeded, name was truncated
-        /W4           # enable all warnings
-        /MP           # Multi-processor compilation
-        )
-
-    set (Boost_USE_STATIC_LIBS ON)
-    set (Boost_USE_STATIC_RUNTIME ON)
-
-    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
-    set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Oi /Ot /MT")
-
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
-    set (CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
-
-    # for RelWithDebInfo builds, disable incremental linking
-    # since CMake sets it ON by default for that build type and it
-    # causes warnings
-    #
-    string (REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" replacement_flags
-        ${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO})
-    set (CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO ${replacement_flags})
-
-else()
-    set (THREADS_PREFER_PTHREAD_FLAG ON)
-    find_package (Threads)
-
-    set( CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic -Wno-unused-parameter")
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wrange-loop-analysis")
+foreach (BOOST_BEAST_DEPENDENCY ${BOOST_BEAST_DEPENDENCIES})
+    if (BOOST_BEAST_DEPENDENCY MATCHES "^[ ]*Boost::([A-Za-z0-9_]+)[ ]*$")
+        list(APPEND BOOST_BEAST_INCLUDE_LIBRARIES ${CMAKE_MATCH_1})
     endif ()
-endif()
+endforeach ()
+# Conditional dependencies
+if (BOOST_BEAST_BUILD_TESTS)
+    set(BOOST_BEAST_UNIT_TEST_LIBRARIES filesystem)
+endif ()
+if (BOOST_BEAST_BUILD_EXAMPLES)
+    set(BOOST_BEAST_EXAMPLE_LIBRARIES json)
+endif ()
+# Complete dependency list
+set(BOOST_INCLUDE_LIBRARIES ${BOOST_BEAST_INCLUDE_LIBRARIES} ${BOOST_BEAST_UNIT_TEST_LIBRARIES} ${BOOST_BEAST_EXAMPLE_LIBRARIES})
+set(BOOST_EXCLUDE_LIBRARIES beast)
 
-# Must come before Boost includes, otherwise the
-# IDE sees the wrong file due to boost/ symlinks.
-include_directories (include)
-
-#-------------------------------------------------------------------------------
+#-------------------------------------------------
 #
-# Boost
+# Add Boost Subdirectory
 #
+#-------------------------------------------------
+if (BOOST_BEAST_IS_ROOT)
+    set(CMAKE_FOLDER Dependencies)
+    # Find absolute BOOST_SRC_DIR
+    if (NOT IS_ABSOLUTE ${BOOST_SRC_DIR})
+        set(BOOST_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${BOOST_SRC_DIR}")
+    endif ()
 
-get_filename_component (BOOST_ROOT ../../ ABSOLUTE)
+    # Validate BOOST_SRC_DIR
+    set(BOOST_SRC_DIR_IS_VALID ON)
+    foreach (F "CMakeLists.txt" "Jamroot" "boost-build.jam" "bootstrap.sh" "libs")
+        if (NOT EXISTS "${BOOST_SRC_DIR}/${F}")
+            message(STATUS "${BOOST_SRC_DIR}/${F} does not exist. Fallback to find_package.")
+            set(BOOST_SRC_DIR_IS_VALID OFF)
+            break()
+        endif ()
+    endforeach ()
 
-# VFALCO I want static but "b2 stage" builds a minimal set which excludes static
-add_definitions (-DBOOST_ALL_STATIC_LINK=1)
+    # Create Boost interface targets
+    if (BOOST_SRC_DIR_IS_VALID)
+        # From BOOST_SRC_DIR
+        if (BUILD_SHARED_LIBS)
+            set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        endif ()
+        set(BOOST_EXCLUDE_LIBRARIES ${PROJECT_NAME})
+        set(PREV_BUILD_TESTING ${BUILD_TESTING})
+        set(BUILD_TESTING OFF CACHE BOOL "Build the tests." FORCE)
+        add_subdirectory(${BOOST_SRC_DIR} Dependencies/boost EXCLUDE_FROM_ALL)
+        set(BUILD_TESTING ${PREV_BUILD_TESTING} CACHE BOOL "Build the tests." FORCE)
+        set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${BOOST_SRC_DIR}/tools/cmake/include")
+    else ()
+        # From Boost Package
+        find_package(Boost REQUIRED COMPONENTS filesystem scope json)
+        foreach (BOOST_INCLUDE_LIBRARY ${BOOST_INCLUDE_LIBRARIES})
+            if (NOT TARGET Boost::${BOOST_INCLUDE_LIBRARY})
+                add_library(Boost::${BOOST_INCLUDE_LIBRARY} ALIAS Boost::headers)
+            endif ()
+        endforeach ()
+    endif ()
+    unset(CMAKE_FOLDER)
+endif ()
 
-# Some of the tests use deprecated APIs
-#add_definitions (-DBOOST_ASIO_NO_DEPRECATED=1)
-
-add_definitions (-DBOOST_ASIO_DISABLE_BOOST_ARRAY=1)
-add_definitions (-DBOOST_ASIO_DISABLE_BOOST_BIND=1)
-add_definitions (-DBOOST_ASIO_DISABLE_BOOST_DATE_TIME=1)
-add_definitions (-DBOOST_ASIO_DISABLE_BOOST_REGEX=1)
-add_definitions (-DBOOST_COROUTINES_NO_DEPRECATION_WARNING=1)
-
-include_directories (${BOOST_ROOT})
-
-link_directories(${BOOST_ROOT}/stage/lib)
-
-if (MINGW)
-    link_libraries(ws2_32 mswsock)
-endif()
-
-#-------------------------------------------------------------------------------
+#-------------------------------------------------
 #
-# OpenSSL
+# Library
 #
+#-------------------------------------------------
+add_library(boost_beast INTERFACE)
+add_library(Boost::beast ALIAS boost_beast)
+target_include_directories(boost_beast INTERFACE include)
+target_link_libraries(boost_beast INTERFACE ${BOOST_BEAST_DEPENDENCIES})
+target_compile_features(boost_beast INTERFACE cxx_std_11)
 
-if (APPLE AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
-  find_program(HOMEBREW brew)
-  if (NOT HOMEBREW STREQUAL "HOMEBREW-NOTFOUND")
-    execute_process(COMMAND brew --prefix openssl
-      OUTPUT_VARIABLE OPENSSL_ROOT_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-  endif()
-endif()
-
-find_package(OpenSSL)
-
-if (OPENSSL_FOUND)
-    add_definitions (-DBOOST_BEAST_USE_OPENSSL=1)
-
-else()
-    add_definitions (-DBOOST_BEAST_USE_OPENSSL=0)
-    message("OpenSSL not found.")
-endif()
-
+if (BOOST_BEAST_IS_ROOT)
+    file(GLOB_RECURSE BOOST_BEAST_HEADERS CONFIGURE_DEPENDS include/boost/*.hpp)
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/boost PREFIX "" FILES ${BOOST_BEAST_HEADERS})
+    target_sources(boost_beast PRIVATE ${BOOST_BEAST_HEADERS} build.jam)
+endif ()
+#-------------------------------------------------
 #
-#-------------------------------------------------------------------------------
-
-function (DoGroupSources curdir rootdir folder)
-    file (GLOB children RELATIVE ${PROJECT_SOURCE_DIR}/${curdir} ${PROJECT_SOURCE_DIR}/${curdir}/*)
-    foreach (child ${children})
-        if (IS_DIRECTORY ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-            DoGroupSources (${curdir}/${child} ${rootdir} ${folder})
-        elseif (${child} STREQUAL "CMakeLists.txt")
-            source_group("" FILES ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-        else()
-            string (REGEX REPLACE ^${rootdir} ${folder} groupname ${curdir})
-            string (REPLACE "/" "\\" groupname ${groupname})
-            source_group (${groupname} FILES ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-        endif()
-    endforeach()
-endfunction()
-
-function (GroupSources curdir folder)
-    DoGroupSources (${curdir} ${curdir} ${folder})
-endfunction()
-
-#-------------------------------------------------------------------------------
-
-if ("${VARIANT}" STREQUAL "coverage")
-    if (MSVC)
-    else()
-        set (CMAKE_BUILD_TYPE DEBUG)
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 --coverage")
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-    endif()
-
-elseif ("${VARIANT}" STREQUAL "ubasan")
-    if (MSVC)
-    else()
-        set (CMAKE_BUILD_TYPE RELWITHDEBINFO)
-        set (CMAKE_CXX_FLAGS
-          "${CMAKE_CXX_FLAGS} -DBOOST_BEAST_NO_SLOW_TESTS=1 -msse4.2 -funsigned-char -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=address,undefined -fsanitize-blacklist=${PROJECT_SOURCE_DIR}/tools/blacklist.supp")
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined -fno-sanitize-recover=address,undefined")
-    endif()
-
-elseif ("${VARIANT}" STREQUAL "debug")
-    set (CMAKE_BUILD_TYPE DEBUG)
-
-elseif ("${VARIANT}" STREQUAL "release")
-    set (CMAKE_BUILD_TYPE RELEASE)
-
-endif()
-
-#-------------------------------------------------------------------------------
+# Tests
 #
-# Tests and examples
+#-------------------------------------------------
+if (BOOST_BEAST_BUILD_TESTS)
+    add_subdirectory(test)
+endif ()
+
+#-------------------------------------------------
 #
-
-include_directories (.)
-
-if (OPENSSL_FOUND)
-    include_directories (${OPENSSL_INCLUDE_DIR})
-endif()
-
-file (GLOB_RECURSE BOOST_BEAST_FILES
-    ${PROJECT_SOURCE_DIR}/include/boost/beast/*.hpp
-    ${PROJECT_SOURCE_DIR}/include/boost/beast/*.ipp
-)
-
-file (GLOB_RECURSE COMMON_FILES
-    ${PROJECT_SOURCE_DIR}/example/common/*.hpp
-  )
-
-if (Beast_BUILD_EXAMPLES AND
-    (NOT "${VARIANT}" STREQUAL "coverage") AND
-    (NOT "${VARIANT}" STREQUAL "ubasan"))
-    add_subdirectory (example)
-endif()
-
-if (Beast_BUILD_TESTS)
-    add_subdirectory (test)
-endif()
+# Examples
+#
+#-------------------------------------------------
+if (BOOST_BEAST_BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif ()

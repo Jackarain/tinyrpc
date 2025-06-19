@@ -5,6 +5,7 @@
 
 #include <boost/python/detail/prefix.hpp>
 #include <boost/mpl/lambda.hpp> // #including this first is an intel6 workaround
+#include <boost/cstdint.hpp>
 
 #include <boost/python/object/class.hpp>
 #include <boost/python/object/instance.hpp>
@@ -208,7 +209,7 @@ namespace objects
   {
       if (static_data_object.tp_dict == 0)
       {
-          Py_TYPE(&static_data_object) = &PyType_Type;
+          Py_SET_TYPE(&static_data_object, &PyType_Type);
           static_data_object.tp_base = &PyProperty_Type;
           if (PyType_Ready(&static_data_object))
               return 0;
@@ -316,7 +317,7 @@ namespace objects
   {
       if (class_metatype_object.tp_dict == 0)
       {
-          Py_TYPE(&class_metatype_object) = &PyType_Type;
+          Py_SET_TYPE(&class_metatype_object, &PyType_Type);
           class_metatype_object.tp_base = &PyType_Type;
           if (PyType_Ready(&class_metatype_object))
               return type_handle();
@@ -332,8 +333,9 @@ namespace objects
           for (instance_holder* p = kill_me->objects, *next; p != 0; p = next)
           {
               next = p->next();
+              void* q = dynamic_cast<void*>(p);
               p->~instance_holder();
-              instance_holder::deallocate(inst, dynamic_cast<void*>(p));
+              instance_holder::deallocate(inst, q);
           }
         
           // Python 2.2.1 won't add weak references automatically when
@@ -374,12 +376,7 @@ namespace objects
               // like, so we'll store the total size of the object
               // there. A negative number indicates that the extra
               // instance memory is not yet allocated to any holders.
-#if PY_VERSION_HEX >= 0x02060000
-              Py_SIZE(result) =
-#else
-              result->ob_size =
-#endif
-                  -(static_cast<int>(offsetof(instance<>,storage) + instance_size));
+              Py_SET_SIZE(result,-static_cast<int>(offsetof(instance<>,storage) + instance_size));
           }
           return (PyObject*)result;
       }
@@ -470,7 +467,7 @@ namespace objects
   {
       if (class_type_object.tp_dict == 0)
       {
-          Py_TYPE(&class_type_object) = incref(class_metatype().get());
+          Py_SET_TYPE(&class_type_object, incref(class_metatype().get()));
           class_type_object.tp_base = &PyBaseObject_Type;
           if (PyType_Ready(&class_type_object))
               return type_handle();
@@ -504,6 +501,16 @@ namespace objects
           ? object(scope().attr("__name__"))
           : api::getattr(scope(), "__module__", str())
           );
+  }
+
+  object qualname(const char *name)
+  {
+#if PY_VERSION_HEX >= 0x03030000
+      if (PyObject_HasAttrString(scope().ptr(), "__qualname__")) {
+          return str("%s.%s" % make_tuple(scope().attr("__qualname__"), name));
+      }
+#endif
+      return str(name);
   }
 
   namespace
@@ -568,6 +575,9 @@ namespace objects
    
       object m = module_prefix();
       if (m) d["__module__"] = m;
+#if PY_VERSION_HEX >= 0x03030000
+      d["__qualname__"] = qualname(name);
+#endif
 
       if (doc != 0)
           d["__doc__"] = doc;
@@ -726,28 +736,46 @@ namespace objects
 } // namespace objects
 
 
-void* instance_holder::allocate(PyObject* self_, std::size_t holder_offset, std::size_t holder_size)
+typedef unsigned int alignment_marker_t;
+
+void* instance_holder::allocate(PyObject* self_, std::size_t holder_offset, std::size_t holder_size, std::size_t alignment)
 {
     assert(PyType_IsSubtype(Py_TYPE(Py_TYPE(self_)), &class_metatype_object));
     objects::instance<>* self = (objects::instance<>*)self_;
     
-    int total_size_needed = holder_offset + holder_size;
+    int total_size_needed = holder_offset + holder_size + alignment - 1;
     
     if (-Py_SIZE(self) >= total_size_needed)
     {
         // holder_offset should at least point into the variable-sized part
         assert(holder_offset >= offsetof(objects::instance<>,storage));
 
+        size_t allocated = holder_size + alignment;
+        void* storage = (char*)self + holder_offset;
+        void* aligned_storage = ::boost::alignment::align(alignment, holder_size, storage, allocated);
+
         // Record the fact that the storage is occupied, noting where it starts
-        Py_SIZE(self) = holder_offset;
-        return (char*)self + holder_offset;
+        const size_t offset = reinterpret_cast<uintptr_t>(aligned_storage) - reinterpret_cast<uintptr_t>(storage) + holder_offset;
+        Py_SET_SIZE(self, offset);
+        return (char*)self + offset;
     }
     else
     {
-        void* const result = PyMem_Malloc(holder_size);
-        if (result == 0)
+        const size_t base_allocation = sizeof(alignment_marker_t) + holder_size + alignment - 1;
+        void* const base_storage = PyMem_Malloc(base_allocation);
+        if (base_storage == 0)
             throw std::bad_alloc();
-        return result;
+
+        const uintptr_t x = reinterpret_cast<uintptr_t>(base_storage) + sizeof(alignment_marker_t);
+        // Padding required to align the start of a data structure is: (alignment - (x % alignment)) % alignment
+        // Since the alignment is a power of two, the formula can be simplified with bitwise AND operator as follow:
+        const uintptr_t padding = (alignment - (x & (alignment - 1))) & (alignment - 1);
+        const size_t aligned_offset = sizeof(alignment_marker_t) + padding;
+        void* const aligned_storage = (char *)base_storage + aligned_offset;
+        BOOST_ASSERT((char *) aligned_storage + holder_size <= (char *)base_storage + base_allocation);
+        alignment_marker_t* const marker_storage = reinterpret_cast<alignment_marker_t *>((char *)aligned_storage - sizeof(alignment_marker_t));
+        *marker_storage = static_cast<alignment_marker_t>(padding);
+        return aligned_storage;
     }
 }
 
@@ -757,7 +785,9 @@ void instance_holder::deallocate(PyObject* self_, void* storage) throw()
     objects::instance<>* self = (objects::instance<>*)self_;
     if (storage != (char*)self + Py_SIZE(self))
     {
-        PyMem_Free(storage);
+        alignment_marker_t* marker_storage = reinterpret_cast<alignment_marker_t *>((char *)storage - sizeof(alignment_marker_t));
+        void *malloced_storage = (char *) storage - sizeof(alignment_marker_t) - (*marker_storage);
+        PyMem_Free(malloced_storage);
     }
 }
 

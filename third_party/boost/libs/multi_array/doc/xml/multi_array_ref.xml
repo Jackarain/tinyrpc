@@ -17,7 +17,7 @@ of the constructors.
 <link linkend="MultiArray">MultiArray</link>,
 <ulink url="../../../libs/utility/CopyConstructible.html">CopyConstructible</ulink>.
 and depending on the element type, it may also model
-<ulink url="http://www.sgi.com/tech/stl/EqualityComparable.html">EqualityComparable</ulink> and <ulink url="http://www.sgi.com/tech/stl/LessThanComparable.html">LessThanComparable</ulink>. 
+<ulink url="https://www.boost.org/sgi/stl/EqualityComparable.html">EqualityComparable</ulink> and <ulink url="https://www.boost.org/sgi/stl/LessThanComparable.html">LessThanComparable</ulink>. 
 Detailed descriptions are provided here only for operations that are
 not described in the <literal>multi_array</literal> reference.
 </para>

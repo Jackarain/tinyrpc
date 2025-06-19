@@ -8,8 +8,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/detail/atomic_count.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/smart_ptr/detail/atomic_count.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 int main()
 {

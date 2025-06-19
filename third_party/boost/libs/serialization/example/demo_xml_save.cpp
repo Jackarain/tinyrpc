@@ -24,7 +24,7 @@ void save_schedule(const bus_schedule &s, const char * filename){
 }
 
 int main(int argc, char *argv[])
-{   
+{
     // make the schedule
     bus_schedule original_schedule;
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
         "Lincoln Memorial"
     );
 
-    // make a  routes
+    // make a route
     bus_route route0;
     route0.append(bs0);
     route0.append(bs1);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     original_schedule.append("bob", 9, 57, &route0);
     original_schedule.append("alice", 11, 02, &route0);
 
-    // make aother routes
+    // make an other route
     bus_route route1;
     route1.append(bs3);
     route1.append(bs2);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     // display the complete schedule
     std::cout << "original schedule";
     std::cout << original_schedule;
-    
+
     std::string filename(boost::archive::tmpdir());
     filename += "/demo_save.xml";
 

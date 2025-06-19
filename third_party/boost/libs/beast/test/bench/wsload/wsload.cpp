@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,11 +15,9 @@
 //
 //------------------------------------------------------------------------------
 
-#include <example/common/session_alloc.hpp>
-
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <boost/beast/unit_test/dstream.hpp>
+#include <boost/beast/_experimental/unit_test/dstream.hpp>
 #include <boost/asio.hpp>
 #include <atomic>
 #include <chrono>
@@ -32,23 +30,22 @@
 #include <thread>
 #include <vector>
 
-namespace asio = boost::asio;
-namespace ip = boost::asio::ip;
-using tcp = boost::asio::ip::tcp;
-namespace ws = boost::beast::websocket;
-namespace ph = std::placeholders;
-using error_code = boost::beast::error_code;
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 class test_buffer
 {
     char data_[4096];
-    boost::asio::const_buffer b_;
+    net::const_buffer b_;
 
 public:
     using const_iterator =
-        boost::asio::const_buffer const*;
+        net::const_buffer const*;
 
-    using value_type = boost::asio::const_buffer;
+    using value_type = net::const_buffer;
 
     test_buffer()
         : b_(data_, sizeof(data_))
@@ -101,7 +98,7 @@ public:
 };
 
 void
-fail(boost::system::error_code ec, char const* what)
+fail(beast::error_code ec, char const* what)
 {
     std::cerr << what << ": " << ec.message() << "\n";
 }
@@ -109,22 +106,21 @@ fail(boost::system::error_code ec, char const* what)
 class connection
     : public std::enable_shared_from_this<connection>
 {
-    ws::stream<tcp::socket> ws_;
+    websocket::stream<tcp::socket> ws_;
     tcp::endpoint ep_;
     std::size_t messages_;
     report& rep_;
     test_buffer const& tb_;
-    asio::strand<
-        asio::io_context::executor_type> strand_;
-    boost::beast::multi_buffer buffer_;
+    net::strand<
+        net::io_context::executor_type> strand_;
+    beast::flat_buffer buffer_;
     std::mt19937_64 rng_;
     std::size_t count_ = 0;
     std::size_t bytes_ = 0;
-    session_alloc<char> alloc_;
 
 public:
     connection(
-        asio::io_context& ioc,
+        net::io_context& ioc,
         tcp::endpoint const& ep,
         std::size_t messages,
         bool deflate,
@@ -137,12 +133,12 @@ public:
         , tb_(tb)
         , strand_(ioc.get_executor())
     {
-        ws::permessage_deflate pmd;
+        websocket::permessage_deflate pmd;
         pmd.client_enable = deflate;
         ws_.set_option(pmd);
         ws_.binary(true);
         ws_.auto_fragment(false);
-        ws_.write_buffer_size(64 * 1024);
+        ws_.write_buffer_bytes(64 * 1024);
     }
 
     ~connection()
@@ -154,15 +150,14 @@ public:
     run()
     {
         ws_.next_layer().async_connect(ep_,
-            alloc_.wrap(std::bind(
+            beast::bind_front_handler(
                 &connection::on_connect,
-                shared_from_this(),
-                ph::_1)));
+                this->shared_from_this()));
     }
 
 private:
     void
-    on_connect(error_code ec)
+    on_connect(beast::error_code ec)
     {
         if(ec)
             return fail(ec, "on_connect");
@@ -170,14 +165,13 @@ private:
         ws_.async_handshake(
             ep_.address().to_string() + ":" + std::to_string(ep_.port()),
             "/",
-            alloc_.wrap(std::bind(
+            beast::bind_front_handler(
                 &connection::on_handshake,
-                shared_from_this(),
-                ph::_1)));
+                this->shared_from_this()));
     }
 
     void
-    on_handshake(error_code ec)
+    on_handshake(beast::error_code ec)
     {
         if(ec)
             return fail(ec, "handshake");
@@ -189,17 +183,16 @@ private:
     do_write()
     {
         std::geometric_distribution<std::size_t> dist{
-            double(4) / boost::asio::buffer_size(tb_)};
+            double(4) / beast::buffer_bytes(tb_)};
         ws_.async_write_some(true,
-            boost::beast::buffers_prefix(dist(rng_), tb_),
-            alloc_.wrap(std::bind(
+            beast::buffers_prefix(dist(rng_), tb_),
+            beast::bind_front_handler(
                 &connection::on_write,
-                shared_from_this(),
-                ph::_1)));
+                this->shared_from_this()));
     }
 
     void
-    on_write(error_code ec)
+    on_write(beast::error_code ec, std::size_t)
     {
         if(ec)
             return fail(ec, "write");
@@ -208,24 +201,22 @@ private:
             return do_read();
 
         ws_.async_close({},
-            alloc_.wrap(std::bind(
+            beast::bind_front_handler(
                 &connection::on_close,
-                shared_from_this(),
-                ph::_1)));
+                this->shared_from_this()));
     }
 
     void
     do_read()
     {
         ws_.async_read(buffer_,
-            alloc_.wrap(std::bind(
+            beast::bind_front_handler(
                 &connection::on_read,
-                shared_from_this(),
-                ph::_1)));
+                this->shared_from_this()));
     }
 
     void
-    on_read(error_code ec)
+    on_read(beast::error_code ec, std::size_t)
     {
         if(ec)
             return fail(ec, "read");
@@ -237,7 +228,7 @@ private:
     }
 
     void
-    on_close(error_code ec)
+    on_close(beast::error_code ec)
     {
         if(ec)
             return fail(ec, "close");
@@ -281,7 +272,7 @@ throughput(
 int
 main(int argc, char** argv)
 {
-    boost::beast::unit_test::dstream dout(std::cerr);
+    beast::unit_test::dstream dout(std::cerr);
 
     try
     {
@@ -293,7 +284,7 @@ main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        auto const address = boost::asio::ip::make_address(argv[1]);
+        auto const address = net::ip::make_address(argv[1]);
         auto const port    = static_cast<unsigned short>(std::atoi(argv[2]));
         auto const trials  = static_cast<std::size_t>(std::atoi(argv[3]));
         auto const messages= static_cast<std::size_t>(std::atoi(argv[4]));
@@ -305,7 +296,7 @@ main(int argc, char** argv)
         for(auto i = trials; i != 0; --i)
         {
             report rep;
-            boost::asio::io_context ioc{1};
+            net::io_context ioc{1};
             for(auto j = workers; j; --j)
             {
                 auto sp =

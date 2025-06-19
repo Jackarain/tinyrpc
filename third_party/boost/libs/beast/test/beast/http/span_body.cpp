@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,8 +10,10 @@
 // Test that header file is self-contained.
 #include <boost/beast/http/span_body.hpp>
 
+#include <boost/beast/_experimental/unit_test/suite.hpp>
+#include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/http/message.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/http/type_traits.hpp>
 
 namespace boost {
 namespace beast {
@@ -42,11 +44,11 @@ struct span_body_test
             BEAST_EXPECTS(! ec, ec.message());
             if(! BEAST_EXPECT(buf != boost::none))
                 return;
-            BEAST_EXPECT(boost::asio::buffer_size(buf->first) == 3);
+            BEAST_EXPECT(buffer_bytes(buf->first) == 3);
             BEAST_EXPECT(! buf->second);
         }
         {
-            char buf[5];
+            char buf[5] = {};
             using B = span_body<char>;
             request<B> req;
             req.body() = span<char>{buf, sizeof(buf)};
@@ -54,13 +56,13 @@ struct span_body_test
             error_code ec;
             w.init(boost::none, ec);
             BEAST_EXPECTS(! ec, ec.message());
-            w.put(boost::asio::const_buffer{
+            w.put(net::const_buffer{
                 "123", 3}, ec);
             BEAST_EXPECTS(! ec, ec.message());
             BEAST_EXPECT(buf[0] == '1');
             BEAST_EXPECT(buf[1] == '2');
             BEAST_EXPECT(buf[2] == '3');
-            w.put(boost::asio::const_buffer{
+            w.put(net::const_buffer{
                 "456", 3}, ec);
             BEAST_EXPECTS(ec == error::buffer_overflow, ec.message());
         }

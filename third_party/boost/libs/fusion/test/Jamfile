@@ -156,6 +156,7 @@ project
         : <define>BOOST_FUSION_DISABLE_VARIADIC_VECTOR
         : tuple_traits__no_variadic ]
     [ run sequence/transform_view.cpp ]
+    [ run sequence/identity_view.cpp ]
     [ run sequence/vector_comparison.cpp ]
     [ run sequence/vector_construction.cpp ]
     [ run sequence/vector_conversion.cpp ]
@@ -270,6 +271,11 @@ project
         : [ requires cxx11_variadic_templates ] ]
     [ compile support/tag_of.cpp ]
     [ compile support/unused.cpp ]
+    [ compile support/detail/tag_of_fallback.cpp ]
+
+    [ compile-fail support/make_pair_r-value.cpp ]
+    [ compile support/make_pair_r-value.cpp
+        : [ requires cxx11_rvalue_references ] ]
 
 #   [ compile-fail xxx.cpp  ]
 

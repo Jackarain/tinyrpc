@@ -379,7 +379,7 @@ main()
     convertible_to_archetype<FT> value(dummy_cons);
     std::replace_if(fi, fi, pred, value);
   }
-#if !defined(BOOST_MSVC) || BOOST_WORKAROUND(BOOST_MSVC, > 1900)
+#if (!defined(BOOST_MSVC) || BOOST_WORKAROUND(BOOST_MSVC, > 1900)) && !defined(BOOST_EMBTC)
   // fails on MSVC 2015 and earlier
   {
     // Issue, the use of ?: inside replace_copy() complicates things
@@ -548,9 +548,10 @@ main()
     unary_predicate_archetype<PredArg> pred(dummy_cons);
     bi = std::partition(bi, bi, pred);
   }
-#ifndef BOOST_MSVC
+#if !defined(BOOST_MSVC) && !defined(BOOST_EMBTC) && !defined(_MSC_VER)
   {
-    // fails on MSVC
+    // fails on MSVC and clang-win; stl headers come from Visual Studio and
+    // they attempt to reverse the iterator
     typedef null_archetype<> PredArg;
     typedef sgi_assignable_archetype<convertible_to_archetype<PredArg> > FT;
     mutable_forward_iterator_archetype<FT> fi;

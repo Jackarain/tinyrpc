@@ -7,7 +7,8 @@
 // See http://www.boost.org/libs/container for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/container/detail/config_begin.hpp>
+#include <vector>
+
 #include <boost/container/flat_map.hpp>
 #include <boost/container/allocator.hpp>
 #include <boost/container/detail/container_or_allocator_rebind.hpp>
@@ -15,13 +16,15 @@
 #include "print_container.hpp"
 #include "dummy_test_allocator.hpp"
 #include "movable_int.hpp"
-#include "map_test.hpp"
+#include "flat_map_test.hpp"
 #include "propagate_allocator_test.hpp"
 #include "container_common_tests.hpp"
 #include "emplace_test.hpp"
 #include "../../intrusive/test/iterator_test.hpp"
+#include "flat_map_test.hpp"
 
 #include <map>
+#include <utility>
 
 
 using namespace boost::container;
@@ -30,17 +33,15 @@ class recursive_flat_map
 {
    public:
    recursive_flat_map(const recursive_flat_map &c)
-      : id_(c.id_), map_(c.map_)
+      : map_(c.map_)
    {}
 
    recursive_flat_map & operator =(const recursive_flat_map &c)
    {
-      id_ = c.id_;
       map_= c.map_;
       return *this;
    }
 
-   int id_;
    flat_map<recursive_flat_map, recursive_flat_map> map_;
    flat_map<recursive_flat_map, recursive_flat_map>::iterator it_;
    flat_map<recursive_flat_map, recursive_flat_map>::const_iterator cit_;
@@ -48,7 +49,7 @@ class recursive_flat_map
    flat_map<recursive_flat_map, recursive_flat_map>::const_reverse_iterator crit_;
 
    friend bool operator< (const recursive_flat_map &a, const recursive_flat_map &b)
-   {  return a.id_ < b.id_;   }
+   {  return a.map_ < b.map_;   }
 };
 
 
@@ -56,16 +57,14 @@ class recursive_flat_multimap
 {
 public:
    recursive_flat_multimap(const recursive_flat_multimap &c)
-      : id_(c.id_), map_(c.map_)
+      : map_(c.map_)
    {}
 
    recursive_flat_multimap & operator =(const recursive_flat_multimap &c)
    {
-      id_ = c.id_;
       map_= c.map_;
       return *this;
    }
-   int id_;
    flat_multimap<recursive_flat_multimap, recursive_flat_multimap> map_;
    flat_multimap<recursive_flat_multimap, recursive_flat_multimap>::iterator it_;
    flat_multimap<recursive_flat_multimap, recursive_flat_multimap>::const_iterator cit_;
@@ -73,7 +72,7 @@ public:
    flat_multimap<recursive_flat_multimap, recursive_flat_multimap>::const_reverse_iterator crit_;
 
    friend bool operator< (const recursive_flat_multimap &a, const recursive_flat_multimap &b)
-   {  return a.id_ < b.id_;   }
+   {  return a.map_ < b.map_;   }
 };
 
 template<class C>
@@ -91,90 +90,6 @@ void test_move()
 namespace boost{
 namespace container {
 namespace test{
-
-bool flat_tree_ordered_insertion_test()
-{
-   using namespace boost::container;
-   const std::size_t NumElements = 100;
-
-   //Ordered insertion multimap
-   {
-      std::multimap<int, int> int_mmap;
-      for(std::size_t i = 0; i != NumElements; ++i){
-         int_mmap.insert(std::multimap<int, int>::value_type(static_cast<int>(i), static_cast<int>(i)));
-      }
-      //Construction insertion
-      flat_multimap<int, int> fmmap(ordered_range, int_mmap.begin(), int_mmap.end());
-      if(!CheckEqualContainers(int_mmap, fmmap))
-         return false;
-      //Insertion when empty
-      fmmap.clear();
-      fmmap.insert(ordered_range, int_mmap.begin(), int_mmap.end());
-      if(!CheckEqualContainers(int_mmap, fmmap))
-         return false;
-      //Re-insertion
-      fmmap.insert(ordered_range, int_mmap.begin(), int_mmap.end());
-      std::multimap<int, int> int_mmap2(int_mmap);
-      int_mmap2.insert(int_mmap.begin(), int_mmap.end());
-      if(!CheckEqualContainers(int_mmap2, fmmap))
-         return false;
-      //Re-re-insertion
-      fmmap.insert(ordered_range, int_mmap2.begin(), int_mmap2.end());
-      std::multimap<int, int> int_mmap4(int_mmap2);
-      int_mmap4.insert(int_mmap2.begin(), int_mmap2.end());
-      if(!CheckEqualContainers(int_mmap4, fmmap))
-         return false;
-      //Re-re-insertion of even
-      std::multimap<int, int> int_even_mmap;
-      for(std::size_t i = 0; i < NumElements; i+=2){
-         int_mmap.insert(std::multimap<int, int>::value_type(static_cast<int>(i), static_cast<int>(i)));
-      }
-      fmmap.insert(ordered_range, int_even_mmap.begin(), int_even_mmap.end());
-      int_mmap4.insert(int_even_mmap.begin(), int_even_mmap.end());
-      if(!CheckEqualContainers(int_mmap4, fmmap))
-         return false;
-   }
-
-   //Ordered insertion map
-   {
-      std::map<int, int> int_map;
-      for(std::size_t i = 0; i != NumElements; ++i){
-         int_map.insert(std::map<int, int>::value_type(static_cast<int>(i), static_cast<int>(i)));
-      }
-      //Construction insertion
-      flat_map<int, int> fmap(ordered_unique_range, int_map.begin(), int_map.end());
-      if(!CheckEqualContainers(int_map, fmap))
-         return false;
-      //Insertion when empty
-      fmap.clear();
-      fmap.insert(ordered_unique_range, int_map.begin(), int_map.end());
-      if(!CheckEqualContainers(int_map, fmap))
-         return false;
-      //Re-insertion
-      fmap.insert(ordered_unique_range, int_map.begin(), int_map.end());
-      std::map<int, int> int_map2(int_map);
-      int_map2.insert(int_map.begin(), int_map.end());
-      if(!CheckEqualContainers(int_map2, fmap))
-         return false;
-      //Re-re-insertion
-      fmap.insert(ordered_unique_range, int_map2.begin(), int_map2.end());
-      std::map<int, int> int_map4(int_map2);
-      int_map4.insert(int_map2.begin(), int_map2.end());
-      if(!CheckEqualContainers(int_map4, fmap))
-         return false;
-      //Re-re-insertion of even
-      std::map<int, int> int_even_map;
-      for(std::size_t i = 0; i < NumElements; i+=2){
-         int_map.insert(std::map<int, int>::value_type(static_cast<int>(i), static_cast<int>(i)));
-      }
-      fmap.insert(ordered_unique_range, int_even_map.begin(), int_even_map.end());
-      int_map4.insert(int_even_map.begin(), int_even_map.end());
-      if(!CheckEqualContainers(int_map4, fmap))
-         return false;
-   }
-
-   return true;
-}
 
 bool constructor_template_auto_deduction_test()
 {
@@ -276,116 +191,6 @@ bool constructor_template_auto_deduction_test()
    return true;
 }
 
-template< class RandomIt >
-void random_shuffle( RandomIt first, RandomIt last )
-{
-   typedef typename boost::container::iterator_traits<RandomIt>::difference_type difference_type;
-   difference_type n = last - first;
-   for (difference_type i = n-1; i > 0; --i) {
-      difference_type j = std::rand() % (i+1);
-      if(j != i) {
-         boost::adl_move_swap(first[i], first[j]);
-      }
-   }
-}
-
-bool flat_tree_extract_adopt_test()
-{
-   using namespace boost::container;
-   const std::size_t NumElements = 100;
-
-   //extract/adopt map
-   {
-      //Construction insertion
-      flat_map<int, int> fmap;
-
-      for(std::size_t i = 0; i != NumElements; ++i){
-         fmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-      }
-
-      flat_map<int, int> fmap_copy(fmap);
-      flat_map<int, int>::sequence_type seq(fmap.extract_sequence());
-      if(!fmap.empty())
-         return false;
-      if(!CheckEqualContainers(seq, fmap_copy))
-         return false;
-
-      seq.insert(seq.end(), fmap_copy.begin(), fmap_copy.end());
-      boost::container::test::random_shuffle(seq.begin(), seq.end());
-      fmap.adopt_sequence(boost::move(seq));
-      if(!CheckEqualContainers(fmap, fmap_copy))
-         return false;
-   }
-
-   //extract/adopt map, ordered_unique_range
-   {
-      //Construction insertion
-      flat_map<int, int> fmap;
-
-      for(std::size_t i = 0; i != NumElements; ++i){
-         fmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-      }
-
-      flat_map<int, int> fmap_copy(fmap);
-      flat_map<int, int>::sequence_type seq(fmap.extract_sequence());
-      if(!fmap.empty())
-         return false;
-      if(!CheckEqualContainers(seq, fmap_copy))
-         return false;
-
-      fmap.adopt_sequence(ordered_unique_range, boost::move(seq));
-      if(!CheckEqualContainers(fmap, fmap_copy))
-         return false;
-   }
-
-   //extract/adopt multimap
-   {
-      //Construction insertion
-      flat_multimap<int, int> fmmap;
-
-      for(std::size_t i = 0; i != NumElements; ++i){
-         fmmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-         fmmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-      }
-
-      flat_multimap<int, int> fmmap_copy(fmmap);
-      flat_multimap<int, int>::sequence_type seq(fmmap.extract_sequence());
-      if(!fmmap.empty())
-         return false;
-      if(!CheckEqualContainers(seq, fmmap_copy))
-         return false;
-
-      boost::container::test::random_shuffle(seq.begin(), seq.end());
-      fmmap.adopt_sequence(boost::move(seq));
-      if(!CheckEqualContainers(fmmap, fmmap_copy))
-         return false;
-   }
-
-   //extract/adopt multimap, ordered_range
-   {
-      //Construction insertion
-      flat_multimap<int, int> fmmap;
-
-      for(std::size_t i = 0; i != NumElements; ++i){
-         fmmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-         fmmap.emplace(static_cast<int>(i), -static_cast<int>(i));
-      }
-
-      flat_multimap<int, int> fmmap_copy(fmmap);
-      flat_multimap<int, int>::sequence_type seq(fmmap.extract_sequence());
-      if(!fmmap.empty())
-         return false;
-      if(!CheckEqualContainers(seq, fmmap_copy))
-         return false;
-
-      fmmap.adopt_sequence(ordered_range, boost::move(seq));
-      if(!CheckEqualContainers(fmmap, fmmap_copy))
-         return false;
-   }
-
-   return true;
-}
-
 }}}
 
 template<class VoidAllocatorOrContainer>
@@ -408,6 +213,25 @@ struct GetMapContainer
                  > multimap_type;
    };
 };
+
+//To test default parameters
+template<>
+struct GetMapContainer<void>
+{
+   template<class ValueType>
+   struct apply
+   {
+      typedef std::pair<ValueType, ValueType> type_t;
+      typedef flat_map< ValueType
+         , ValueType
+      > map_type;
+
+      typedef flat_multimap< ValueType
+         , ValueType
+      > multimap_type;
+   };
+};
+
 
 struct boost_container_flat_map;
 struct boost_container_flat_multimap;
@@ -452,8 +276,8 @@ struct get_real_stored_allocator<flat_multimap<Key, T, Compare, Allocator> >
 
 bool test_heterogeneous_lookups()
 {
-   BOOST_STATIC_ASSERT((dtl::is_transparent<less_transparent>::value));
-   BOOST_STATIC_ASSERT(!(dtl::is_transparent<std::less<int> >::value));
+   BOOST_CONTAINER_STATIC_ASSERT((dtl::is_transparent<less_transparent>::value));
+   BOOST_CONTAINER_STATIC_ASSERT(!(dtl::is_transparent<std::less<int> >::value));
    typedef flat_map<int, char, less_transparent> map_t;
    typedef flat_multimap<int, char, less_transparent> mmap_t;
    typedef map_t::value_type value_type;
@@ -464,11 +288,27 @@ bool test_heterogeneous_lookups()
    const map_t &cmap1 = map1;
    const mmap_t &cmmap1 = mmap1;
 
-   map1.insert_or_assign(1, 'a');
-   map1.insert_or_assign(1, 'b');
-   map1.insert_or_assign(2, 'c');
-   map1.insert_or_assign(2, 'd');
-   map1.insert_or_assign(3, 'e');
+   if(!map1.insert_or_assign(1, 'a').second)
+      return false;
+   if( map1.insert_or_assign(1, 'b').second)
+      return false;
+   if(!map1.insert_or_assign(2, 'c').second)
+      return false;
+   if( map1.insert_or_assign(2, 'd').second)
+      return false;
+   if(!map1.insert_or_assign(3, 'e').second)
+      return false;
+
+   if(map1.insert_or_assign(1, 'a').second)
+      return false;
+   if(map1.insert_or_assign(1, 'b').second)
+      return false;
+   if(map1.insert_or_assign(2, 'c').second)
+      return false;
+   if(map1.insert_or_assign(2, 'd').second)
+      return false;
+   if(map1.insert_or_assign(3, 'e').second)
+      return false;
 
    mmap1.insert(value_type(1, 'a'));
    mmap1.insert(value_type(1, 'b'));
@@ -538,6 +378,51 @@ bool test_heterogeneous_lookups()
    if(cmmap1.equal_range(find_me).second->second != 'e')
       return false;
 
+   //erase
+   if (map1.erase(find_me) != 1)
+      return false;
+   if (map1.erase(find_me) != 0)
+      return false;
+   if (mmap1.erase(find_me) != 2)
+      return false;
+   if (mmap1.erase(find_me) != 0)
+      return false;
+   return true;
+}
+
+// An ordered sequence of std:pair is also ordered by std::pair::first.
+struct with_lookup_by_first
+{
+   typedef void is_transparent;
+   inline bool operator()(std::pair<int, int> a, std::pair<int, int> b) const
+   {
+      return a < b;
+   }
+   inline bool operator()(std::pair<int, int> a, int first) const
+   {
+      return a.first < first;
+   }
+   inline bool operator()(int first, std::pair<int, int> b) const
+   {
+      return first < b.first;
+   }
+};
+
+bool test_heterogeneous_lookup_by_partial_key()
+{
+   typedef flat_map<std::pair<int, int>,int, with_lookup_by_first> map_t;
+
+   map_t map1;
+   map1[std::pair<int, int>(0, 1)] = 3;
+   map1[std::pair<int, int>(0, 2)] = 3;
+
+   std::pair<map_t::iterator, map_t::iterator> const first_0_range = map1.equal_range(0);
+
+   if(2 != (first_0_range.second - first_0_range.first))
+      return false;
+
+   if(2 != map1.count(0))
+      return false;
    return true;
 }
 
@@ -575,30 +460,16 @@ int main()
    }
 
    ////////////////////////////////////
-   //    Ordered insertion test
-   ////////////////////////////////////
-   if(!flat_tree_ordered_insertion_test()){
-      return 1;
-   }
-
-   ////////////////////////////////////
    //    Constructor Template Auto Deduction test
    ////////////////////////////////////
    if(!constructor_template_auto_deduction_test()){
       return 1;
    }
 
-   ////////////////////////////////////
-   //    Extract/Adopt test
-   ////////////////////////////////////
-   if(!flat_tree_extract_adopt_test()){
-      return 1;
-   }
-
-   if (!boost::container::test::instantiate_constructors<flat_map<int, int>, flat_multimap<int, int> >())
-      return 1;
-
    if (!test_heterogeneous_lookups())
+      return 1;
+
+   if (!test_heterogeneous_lookup_by_partial_key())
       return 1;
 
    ////////////////////////////////////
@@ -608,48 +479,66 @@ int main()
       typedef std::map<int, int>                                     MyStdMap;
       typedef std::multimap<int, int>                                MyStdMultiMap;
 
-      if (0 != test::map_test
+      if (0 != test::flat_map_test
+         < GetMapContainer<void>::apply<int>::map_type
+         , MyStdMap
+         , GetMapContainer<void>::apply<int>::multimap_type
+         , MyStdMultiMap>()) {
+         std::cout << "Error in flat_map_test<std::allocator<void> >" << std::endl;
+         return 1;
+      }
+
+      if (0 != test::flat_map_test
          < GetMapContainer<std::allocator<void> >::apply<int>::map_type
          , MyStdMap
          , GetMapContainer<std::allocator<void> >::apply<int>::multimap_type
          , MyStdMultiMap>()) {
-         std::cout << "Error in map_test<std::allocator<void> >" << std::endl;
+         std::cout << "Error in flat_map_test<std::allocator<void> >" << std::endl;
          return 1;
       }
 
-      if (0 != test::map_test
+      if (0 != test::flat_map_test
+         < GetMapContainer<void>::apply<int>::map_type
+         , MyStdMap
+         , GetMapContainer<void>::apply<int>::multimap_type
+         , MyStdMultiMap>()) {
+         std::cout << "Error in flat_map_test<new_allocator<void> >" << std::endl;
+         return 1;
+      }
+
+      if (0 != test::flat_map_test
          < GetMapContainer<new_allocator<void> >::apply<int>::map_type
          , MyStdMap
          , GetMapContainer<new_allocator<void> >::apply<int>::multimap_type
          , MyStdMultiMap>()) {
-         std::cout << "Error in map_test<new_allocator<void> >" << std::endl;
+         std::cout << "Error in flat_map_test<new_allocator<void> >" << std::endl;
          return 1;
       }
 
-      if (0 != test::map_test
+      if (0 != test::flat_map_test
          < GetMapContainer<new_allocator<void> >::apply<test::movable_int>::map_type
          , MyStdMap
          , GetMapContainer<new_allocator<void> >::apply<test::movable_int>::multimap_type
          , MyStdMultiMap>()) {
-         std::cout << "Error in map_test<new_allocator<void> >" << std::endl;
+         std::cout << "Error in flat_map_test<new_allocator<void> >" << std::endl;
          return 1;
       }
 
-      if (0 != test::map_test
+      if (0 != test::flat_map_test
          < GetMapContainer<new_allocator<void> >::apply<test::copyable_int>::map_type
          , MyStdMap
          , GetMapContainer<new_allocator<void> >::apply<test::copyable_int>::multimap_type
          , MyStdMultiMap>()) {
-         std::cout << "Error in map_test<new_allocator<void> >" << std::endl;
+         std::cout << "Error in flat_map_test<new_allocator<void> >" << std::endl;
          return 1;
       }
 
-      if (0 != test::map_test
+      if (0 != test::flat_map_test
          < GetMapContainer<new_allocator<void> >::apply<test::movable_and_copyable_int>::map_type
          , MyStdMap
          , GetMapContainer<new_allocator<void> >::apply<test::movable_and_copyable_int>::multimap_type
          , MyStdMultiMap>()) {
-         std::cout << "Error in map_test<new_allocator<void> >" << std::endl;
+         std::cout << "Error in flat_map_test<new_allocator<void> >" << std::endl;
          return 1;
       }
    }
@@ -699,7 +588,73 @@ int main()
       }
    }
 
+   ////////////////////////////////////
+   //    has_trivial_destructor_after_move testing
+   ////////////////////////////////////
+   {
+      typedef boost::container::dtl::pair<int, int> value_t;
+      typedef boost::container::dtl::select1st<int> key_of_value_t;
+      // flat_map, default
+      {
+         typedef boost::container::new_allocator<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_map<int, int> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG( boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                , "has_trivial_destructor_after_move(flat_map, default) test failed");
+      }
+      // flat_map, vector
+      {
+         typedef boost::container::vector<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_map<int, int, std::less<int>, alloc_or_cont_t> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG( boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                , "has_trivial_destructor_after_move(flat_map, vector) test failed");
+      }
+      //Old GCCs have problems (compiler bugs) with std::vector and flat_xxx
+      #if !defined(BOOST_GCC) || (BOOST_GCC >= 50000)
+      // flat_map, std::vector
+      {
+         typedef std::vector<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_map<int, int, std::less<int>, alloc_or_cont_t> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG( boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                , "has_trivial_destructor_after_move(flat_map, std::vector) test failed");
+      }
+      #endif
+      // flat_multimap, default
+      {
+         typedef boost::container::new_allocator<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_multimap<int, int> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG( boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                , "has_trivial_destructor_after_move(flat_multimap, default) test failed");
+      }
+      // flat_multimap, vector
+      {
+         typedef boost::container::vector<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_multimap<int, int, std::less<int>, alloc_or_cont_t> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG( boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                , "has_trivial_destructor_after_move(flat_multimap, vector) test failed");
+      }
+      //Old GCCs have problems (compiler bugs) with std::vector and flat_xxx
+      #if !defined(BOOST_GCC) || (BOOST_GCC >= 50000)
+      // flat_multimap, std::vector
+      {
+         typedef std::vector<value_t> alloc_or_cont_t;
+         typedef boost::container::flat_multimap<int, int, std::less<int>, alloc_or_cont_t> cont;
+         typedef boost::container::dtl::flat_tree<value_t, key_of_value_t, std::less<int>, alloc_or_cont_t> tree;
+         BOOST_CONTAINER_STATIC_ASSERT_MSG (boost::has_trivial_destructor_after_move<cont>::value ==
+                                  boost::has_trivial_destructor_after_move<tree>::value
+                                 , "has_trivial_destructor_after_move(flat_multimap, std::vector) test failed");
+      }
+      #endif
+   }
+
    return 0;
 }
-
-#include <boost/container/detail/config_end.hpp>

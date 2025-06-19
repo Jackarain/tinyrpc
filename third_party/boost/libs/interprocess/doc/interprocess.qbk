@@ -6,9 +6,9 @@
  /]
 
 [library Boost.Interprocess
-    [quickbook 1.5]
+    [quickbook 1.7]
     [authors [Gaztanaga, Ion]]
-    [copyright 2005-2015 Ion Gaztanaga]
+    [copyright 2005-2024 Ion Gaztanaga]
     [id interprocess]
     [dirname interprocess]
     [purpose Interprocess communication utilities]
@@ -18,6 +18,16 @@
         [@http://www.boost.org/LICENSE_1_0.txt])
     ]
 ]
+
+[def BOOST_INTERPROCESS_TRY try ]
+[def BOOST_INTERPROCESS_CATCH catch]
+[def BOOST_INTERPROCESS_RETHROW throw;]
+[def BOOST_INTERPROCESS_CATCH_END]
+
+[def test::get_process_id_name() "MyName"]
+[def argv[2] "MyName"]
+
+
 
 [section:intro Introduction]
 
@@ -1383,7 +1393,7 @@ All the mutex types from [*Boost.Interprocess] implement the following operation
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template<class TimePoint> bool timed_lock(const TimePoint &abs_time)]]]
 
 [*Effects:] The calling thread will try to obtain exclusive ownership of the mutex if it can do so in until the specified time is reached. If the mutex supports recursive locking, the mutex must be unlocked the same number of times it is locked.
 
@@ -1399,8 +1409,8 @@ All the mutex types from [*Boost.Interprocess] implement the following operation
 
 [*Throws:] An exception derived from *interprocess_exception* on error.
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization mechanisms support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints. Additionally Interprocess' mutexes meet standard C++ `TimedLockable` requirements for std-compatibility]
 
 [endsect]
 
@@ -1499,8 +1509,8 @@ try_lock, timed_lock a mutex or not to lock it at all.
 For more information, check the
 [classref boost::interprocess::scoped_lock scoped_lock's reference].
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization operations support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints]
 
 [endsect]
 
@@ -1605,7 +1615,7 @@ Boost.Interprocess offers the following condition types:
 
    #include <boost/interprocess/sync/named_condition_any.hpp>
 
-* [classref boost::interprocess::named_condition named_condition]: A named
+* [classref boost::interprocess::named_condition_any named_condition_any]: A named
   condition variable to be used with any lock type.
 
 Named conditions are similar to anonymous conditions, but they are used in
@@ -1857,7 +1867,7 @@ If it has to wait, returns false.
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template<class TimePoint> bool timed_lock(const TimePoint &abs_time)]]]
 
 [*Effects:]
 The calling thread tries to acquire exclusive ownership of the mutex
@@ -1902,7 +1912,7 @@ If it has to wait, returns false.
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock_sharable(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template <class TimePoint> bool timed_lock_sharable(const TimePoint &abs_time)]]]
 
 [*Effects:]
 The calling thread tries to acquire sharable ownership of the mutex
@@ -1947,7 +1957,7 @@ If it has to wait, returns false.
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock_upgradable(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template <class TimePoint> bool timed_lock_upgradable(const TimePoint &abs_time)]]]
 
 [*Effects:]
 The calling thread tries to acquire upgradable ownership of the mutex
@@ -2019,7 +2029,9 @@ it will maintain upgradable ownership.
 [*Returns:] If acquires exclusive ownership, returns true. Otherwise
 returns false.
 
-[*Throws:] An exception derived from *interprocess_exception* on error.[blurb ['[*bool timed_unlock_upgradable_and_lock(const boost::posix_time::ptime &abs_time)]]]
+[*Throws:] An exception derived from *interprocess_exception* on error.
+
+[blurb ['[*template <class TimePoint> bool timed_unlock_upgradable_and_lock(const TimePoint &abs_time)]]]
 
 [*Precondition:] The thread must have upgradable ownership of the mutex.
 
@@ -2042,7 +2054,9 @@ but it will maintain sharable ownership.
 [*Returns:] If acquires exclusive ownership, returns true. Otherwise
 returns false.
 
-[*Throws:] An exception derived from *interprocess_exception* on error.[blurb ['[*bool try_unlock_sharable_and_lock_upgradable()]]]
+[*Throws:] An exception derived from *interprocess_exception* on error.
+
+[blurb ['[*bool try_unlock_sharable_and_lock_upgradable()]]]
 
 [*Precondition:] The thread must have sharable ownership of the mutex.
 
@@ -2055,8 +2069,8 @@ returns false.
 
 [*Throws:] An exception derived from *interprocess_exception* on error.
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization mechanisms support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints.]
 
 [endsect]
 
@@ -2095,6 +2109,8 @@ Boost.Interprocess offers the following upgradable mutex types:
 
 * [classref boost::interprocess::named_upgradable_mutex named_upgradable_mutex]: A non-recursive,
   named upgradable mutex.
+
+[important Interprocess shared mutexes meet standard C++ `SharedTimedMutex` requirements for std-compatibility]
 
 [endsect]
 
@@ -2234,8 +2250,8 @@ upgradable mutex is always unlocked when an exception occurs.
 [classref boost::interprocess::sharable_lock sharable_lock] offer
 more features and operations, see their reference for more informations
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization mechanisms support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints.]
 
 [endsect]
 
@@ -2380,10 +2396,11 @@ is permitted:
       scoped_lock<Mutex>      e_lock(move(u_lock, try_to_lock));
    }
    {
-      boost::posix_time::ptime t = test::delay(100);
+      using namespace boost::posix_time;
       upgradable_lock<Mutex>  u_lock(mut);
+      ptime t = boost::date_time::microsec_clock<ptime>::universal_time() + milliseconds(100);
       //This calls timed_unlock_upgradable_and_lock()
-      scoped_lock<Mutex>      e_lock(move(u_lock));
+      scoped_lock<Mutex>      e_lock(move(u_lock), t);
    }
    {
       sharable_lock<Mutex>    s_lock(mut);
@@ -2391,8 +2408,8 @@ is permitted:
       scoped_lock<Mutex>      e_lock(move(s_lock, try_to_lock));
    }
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization mechanisms support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints.]
 
 [endsect]
 
@@ -2586,9 +2603,13 @@ Generally speaking, we can have two file locking capabilities:
    that the operation can be performed according to the acquired lock. Reads and writes
    block until the lock is released.
 
-[*Boost.Interprocess] implements [*advisory blocking] because of portability reasons.
-This means that every process accessing to a file concurrently, must cooperate using
-file locks to synchronize the access.
+[*Boost.Interprocess] uses the widely used native capability in each OS, which means:
+
+*   On Unix systems the widly available and tested POSIX `fcntl`-based advisory locking
+    is used. Moreover, [@https://man7.org/linux/man-pages/man2/fcntl.2.html some mandatory locking
+    implementations (e.g. Linux) are not reliable].
+
+*   On Windows systems native Mandatory Locking (using `FileLockEx`) is used.
 
 In some systems file locking can be even further refined, leading to [*record locking],
 where a user can specify a [*byte range] within the file where the lock is applied.
@@ -2653,7 +2674,7 @@ If it has to wait, returns false.
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template <class TimePoint> bool timed_lock(const TimePoint &abs_time)]]]
 
 [*Effects:]
 The calling thread tries to acquire exclusive ownership of the file lock
@@ -2694,7 +2715,7 @@ If it has to wait, returns false.
 
 [*Throws:] *interprocess_exception* on error.
 
-[blurb ['[*bool timed_lock_sharable(const boost::posix_time::ptime &abs_time)]]]
+[blurb ['[*template <class TimePoint> bool timed_lock_sharable(const TimePoint &abs_time)]]]
 
 [*Effects:]
 The calling thread tries to acquire sharable ownership of the file lock
@@ -2717,8 +2738,8 @@ returns false.
 For more file locking methods, please
 [classref boost::interprocess::file_lock file_lock reference].
 
-[important `boost::posix_time::ptime` absolute time points used by Boost.Interprocess synchronization mechanisms
-are UTC time points, not local time points]
+[important Boost.Interprocess timed synchronization mechanisms support several timepoints: `boost::posix_time::ptime` absolute UTC time points,
+    `boost::chrono` and `std::chrono` timepoints.]
 
 [endsect]
 
@@ -3176,7 +3197,7 @@ To use a managed shared memory, you must include the following header:
 [c++]
 
    //1.  Creates a new shared memory object
-   //    called "MySharedMemory".
+   //    called "MyName".
    //2.  Maps the whole object to this
    //    process' address space.
    //3.  Constructs some objects in shared memory
@@ -3184,21 +3205,21 @@ To use a managed shared memory, you must include the following header:
    //!!  If anything fails, throws interprocess_exception
    //
    managed_shared_memory segment      ( create_only
-                                      , "MySharedMemory" //Shared memory object name
-                                      , 65536);          //Shared memory object size in bytes
+                                      , "MyName"    //Shared memory object name
+                                      , 65536);     //Shared memory object size in bytes
 
 
 [c++]
 
    //1.  Opens a shared memory object
-   //    called "MySharedMemory".
+   //    called "MyName".
    //2.  Maps the whole object to this
    //    process' address space.
    //3.  Obtains pointers to constructed internal objects
    //    to implement managed features.
    //!!  If anything fails, throws interprocess_exception
    //
-   managed_shared_memory segment      (open_only,       "MySharedMemory");//Shared memory object name
+   managed_shared_memory segment (open_only, "MyName"); //Shared memory object name
 
 
 [c++]
@@ -3209,8 +3230,8 @@ To use a managed shared memory, you must include the following header:
    //!!  If anything fails, throws interprocess_exception
    //
    managed_shared_memory segment      ( open_or_create
-                                      , "MySharedMemory" //Shared memory object name
-                                      , 65536);          //Shared memory object size in bytes
+                                      , "MyName"    //Shared memory object name
+                                      , 65536);     //Shared memory object size in bytes
 
 
 When the `managed_shared_memory` object is destroyed, the shared memory
@@ -3644,8 +3665,7 @@ just must specify [boost::interprocess::map_index map_index] as a template param
             ,  boost::interprocess::map_index
             >  my_managed_shared_memory;
 
-[*Boost.Interprocess] plans to offer an *unordered_map* based index as soon as this
-container is included in Boost. If these indexes are not enough for you, you can define
+If these indexes are not enough for you, you can define
 your own index type. To know how to do this, go to
 [link interprocess.customizing_interprocess.custom_indexes Building custom indexes] section.
 
@@ -4278,6 +4298,10 @@ be also useful to build small databases for embedded systems limiting the size o
 the used memory to a predefined memory chunk, instead of letting the database
 fragment the heap memory.
 
+[*Note:] The external memory supplied by the user shall be aligned to the maximum value between
+`alignof(max_align_t)` and the alignment of the strictest over-aligned type to be built inside
+that memory.
+
 [endsect]
 
 [section:managed_heap_memory Managed Heap Memory: Boost.Interprocess machinery in heap memory]
@@ -4345,6 +4369,18 @@ Otherwise, the result is undefined. Here is an example:
 [import ../example/doc_managed_heap_memory.cpp]
 [doc_managed_heap_memory]
 
+[*Note:] Heap memory is not guaranteed to be compatible with over-aligned types so it is
+not supported to use memory allocation algorithms or construct objects that need over-aligned memory:
+
+[c++]
+
+    // 64 byte aligned memory might not be supported
+    typedef basic_managed_heap_memory<
+        char,
+        rbtree_best_fit<mutex_family, offset_ptr<void, long, unsigned long, 64>, 64>,
+        iset_index
+    > managed_heap_with_overalignment_t;
+
 [endsect]
 
 [section:managed_heap_memory_external_buffer_diff Differences between managed memory segments]
@@ -4384,7 +4420,7 @@ through a message queue and duplicated in another buffer:
 
 [endsect]
 
-[section:allocators_containers Allocators, containers and memory allocation algorithms]
+[section:allocators_containers Allocators and memory allocation algorithms]
 
 [section:allocator_introduction Introduction to Interprocess allocators]
 
@@ -4395,7 +4431,7 @@ To achieve this, [*Boost.Interprocess] makes use of managed memory segment's
 memory allocation algorithms to build several memory allocation schemes, including
 general purpose and node allocators.
 
-[*Boost.Interprocess] STL compatible allocators are configurable via template parameters.
+[*Boost.Interprocess] allocators are configurable via template parameters.
 Allocators define their `pointer` typedef based on the `void_pointer` typedef of the segment manager
 passed as template argument. When this `segment_manager::void_pointer` is a relative pointer,
 (for example, `offset_ptr<void>`) the user can place these allocators in
@@ -4974,7 +5010,9 @@ An example using [classref boost::interprocess::cached_adaptive_pool cached_adap
 
 [endsect]
 
-[section:containers_explained Interprocess and containers in managed memory segments]
+[endsect]
+
+[section:containers_explained Containers in managed memory segments]
 
 [section:stl_container_requirements Container requirements for Boost.Interprocess allocators]
 
@@ -4983,7 +5021,8 @@ interface and if they define their internal *pointer* typedef as a relative poin
 they can be used to place STL containers in shared memory, memory mapped files or
 in a user defined memory segment.
 
-However, as Scott Meyers mentions in his Effective STL
+Originally, in C++98 and C++03, this *pointer* typedef was useless.
+As Scott Meyers mentions in his Effective STL
 book, Item 10, ['"Be aware of allocator conventions and
 restrictions"]:
 
@@ -5015,94 +5054,47 @@ mapped files with [*Boost.Interprocess] can't make any of these assumptions, so:
 * Containers' internal pointers should be of the type allocator::pointer
   and containers may not assume allocator::pointer is a raw pointer.
 
-* All objects must be constructed-destroyed via
-  allocator::construct and allocator::destroy functions.
+This was in theory fixed in C++11, when `std::pointer_traits` utilities were introduced
+and standard library containers added support for them. However, due to ABI
+concerns and low user demand, some implementations still
+don't fully support ['fancy pointer] types like
+`boost::interprocess:offset_ptr`. Those implementations still use raw pointers
+in some containers for internal data or iterator implementations.
+
+This non-portable situation is described in 
+[@https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0773r0.html ['"P0773R0: Towards meaningful fancy pointers"] ]
+
+[:['Can we use offset fancy pointer types to enable safe sharing of memory regions?]]
+[:['Yes; but the requirements on vendors are unclear, and there are pitfalls for the programmer.]]
+[:['Scenario (A), offset pointers, has only one tenable solution, "continue to partly support."]]
+
 
 [endsect]
 
-[section:containers STL containers in managed memory segments]
+[section:containers Portable containers in managed memory segments]
 
-Unfortunately, many STL implementations use raw pointers
-for internal data and ignore allocator pointer typedefs
-and others suppose at some point that the allocator::typedef
-is T*. This is because in practice,
-there wasn't need of allocators with a pointer typedef
-different from T* for pooled/node memory
-allocators.
+[important Since [*Boost.Container] was created from [*Boost.Interprocess] in 2011, this library has mantained
+ several <boost/interprocess/containers/.hpp> headers for backwards compatibility. Those headers are now deprecated 
+ and will be removed in a future Boost version. Users should directly use [*Boost.Container] headers]
 
-Until STL implementations handle allocator::pointer typedefs
-in a generic way, [*Boost.Interprocess] offers the following classes:
+Due to the described partial support from Standard Library implementations [*Boost.Interprocess]
+highly recommends using [*Boost.Container] containers, which are guaranteed to work with [*Boost.Interprocess]
 
-*  [*boost:interprocess::vector] is the implementation of `std::vector` ready
-   to be used in managed memory segments like shared memory. To use it include:
+The following [*Boost.Container] containers are compatible with [*Boost.Interprocess]:
 
-[c++]
-
-   #include <boost/interprocess/containers/vector.hpp>
-
-*  [*boost:interprocess::deque] is the implementation of `std::deque` ready
-   to be used in managed memory segments like shared memory. To use it include:
-
-[c++]
-
-   #include <boost/interprocess/containers/deque.hpp>
-
-*  [classref boost::interprocess::list list] is the implementation of `std::list` ready
-   to be used in managed memory segments like shared memory. To use it include:
-
-[c++]
-
-   #include <boost/interprocess/containers/list.hpp>
-
-*  [classref boost::interprocess::slist slist] is the implementation of SGI's `slist` container (singly linked list) ready
-   to be used in managed memory segments like shared memory. To use it include:
-
-[c++]
-
-   #include <boost/interprocess/containers/slist.hpp>
-
-*  [classref boost::interprocess::set set]/
-   [classref boost::interprocess::multiset multiset]/
-   [classref boost::interprocess::map map]/
-   [classref boost::interprocess::multimap multimap] family is the implementation of
-   std::set/multiset/map/multimap family ready
-   to be used in managed memory segments like shared memory. To use them include:
-
-[c++]
-
-   #include <boost/interprocess/containers/set.hpp>
-   #include <boost/interprocess/containers/map.hpp>
-
-*  [classref boost::interprocess::flat_set flat_set]/
-   [classref boost::interprocess::flat_multiset flat_multiset]/
-   [classref boost::interprocess::flat_map flat_map]/
-   [classref boost::interprocess::flat_multimap flat_multimap] classes are the
-   adaptation and extension of Andrei Alexandrescu's famous AssocVector class
-   from Loki library, ready for the shared memory. These classes offer the same
-   functionality as `std::set/multiset/map/multimap` implemented with an ordered vector,
-   which has faster lookups than the standard ordered associative containers
-   based on red-black trees, but slower insertions. To use it include:
-
-[c++]
-
-   #include <boost/interprocess/containers/flat_set.hpp>
-   #include <boost/interprocess/containers/flat_map.hpp>
-
-*  [classref boost::interprocess::basic_string basic_string]
-   is the implementation of `std::basic_string` ready
-   to be used in managed memory segments like shared memory.
-   It's implemented using a vector-like contiguous storage, so
-   it has fast c string conversion and can be used with the
-   [link interprocess.streams.vectorstream vectorstream] iostream formatting classes.
-   To use it include:
-
-[c++]
-
-   #include <boost/interprocess/containers/string.hpp>
-
-All these containers have the same default arguments as standard
-containers and they can be used with other, non [*Boost.Interprocess]
-allocators (std::allocator, or boost::pool_allocator, for example).
+* `deque`
+* `devector`
+* `flat_map/multimap`
+* `flat_set/multiset`
+* `list`
+* `map/multimap`
+* `set/multiset`
+* `slist`
+* `small_vector`
+* `stable_vector`
+* `static_vector`
+* `string`
+* `vector`
 
 To place any of these containers in managed memory segments, we must
 define the allocator template parameter with a [*Boost.Interprocess] allocator
@@ -5150,27 +5142,6 @@ Let's see an example:
 
 [import ../example/doc_where_allocate.cpp]
 [doc_where_allocate]
-
-[endsect]
-
-[section:containers_and_move Move semantics in Interprocess containers]
-
-[*Boost.Interprocess] containers support move semantics, which means that the contents
-of a container can be moved from a container two another one, without any copying. The
-contents of the source container are transferred to the target container and the source
-container is left in default-constructed state.
-
-When using containers of containers, we can also use move-semantics to insert
-objects in the container, avoiding unnecessary copies.
-
-
-To transfer the contents of a container to another one, use
-`boost::move()` function, as shown in the example. For more details
-about functions supporting move-semantics, see the reference section of
-Boost.Interprocess containers:
-
-[import ../example/doc_move_containers.cpp]
-[doc_move_containers]
 
 [endsect]
 
@@ -5224,12 +5195,10 @@ Here is an example that shows how to put a multi index container in shared memor
 
 [endsect]
 
-Programmers can place [*Boost.CircularBuffer] containers in sharecd memory provided
+Programmers can place [*Boost.CircularBuffer] containers in shared memory provided
 they disable debugging facilities with defines `BOOST_CB_DISABLE_DEBUG` or the more
 general `NDEBUG`. The reason is that those debugging facilities are only compatible
 with raw pointers.
-
-[endsect]
 
 [endsect]
 
@@ -5293,7 +5262,7 @@ the performance of this algorithm suffers when the memory is fragmented. This
 algorithm has linear allocation and deallocation time, so when the number
 of allocations is high, the user should use a more performance-friendly algorithm.
 
-In most 32 systems, with 8 byte alignment, "basic_size" is 8 bytes.
+In most 32 bit systems, with 8 byte alignment, "basic_size" is 8 bytes.
 This means that an allocation request of 1 byte leads to
 the creation of a 16 byte block, where 8 bytes are available to the user.
 The allocation of 8 bytes leads also to the same 16 byte block.
@@ -5330,7 +5299,7 @@ segments and big number of allocations. To form a block a minimum memory size is
 the sum of the doubly linked list and the red-black tree control data.
 The size of a block is measured in multiples of the most restrictive alignment value.
 
-In most 32 systems with 8 byte alignment the minimum size of a block is 24 byte.
+In most 32 bit systems with 8 byte alignment the minimum size of a block is 24 byte.
 When a block is allocated the control data related to the red black tree
 is overwritten by the user (because it's only needed for free blocks).
 
@@ -5776,7 +5745,7 @@ implementation. Here is the declaration of the unique pointer class:
 *  D is the deleter that will erase the object type of the object pointed by
    the unique_ptr when the unique pointer
    is destroyed (and if still has the ownership of the object). If the deleter defines
-   an internal `pointer` typedef, `unique_ptr`]
+   an internal `pointer` typedef, `unique_ptr`
    will use an internal pointer of the same type. So if `D::pointer` is `offset_ptr<T>`
    the unique pointer will store a relative pointer instead of a raw one. This
    allows placing `unique_ptr` in shared
@@ -6364,7 +6333,7 @@ that boost::interprocess::rbtree_best_fit class offers:
       the offset `sizeof(my_algorithm)` that [*my_algorithm] can't use at all. This extra
       bytes will be used to store additional data that should not be overwritten.
       So, [*my_algorithm] will be placed at address XXX of the memory segment, and will
-      manage the [*[XXX + sizeof(my_algorithm) + extra_hdr_bytes, XXX + size)] range of
+      manage the [*(XXX + sizeof(my_algorithm) + extra_hdr_bytes, XXX + size)] range of
       the segment.
 
 *  The [*get_min_size()] function should return the minimum space the algorithm
@@ -6390,7 +6359,7 @@ that boost::interprocess::rbtree_best_fit class offers:
 *  The [*grow()] function will expand the managed memory by [*my_algorithm] in [*extra_size]
    bytes. So [*size()] function should return the updated size,
    and the new managed memory range will be (if the address where the algorithm is
-   constructed is XXX): [*[XXX + sizeof(my_algorithm) + extra_hdr_bytes, XXX + old_size + extra_size)].
+   constructed is XXX): [*(XXX + sizeof(my_algorithm) + extra_hdr_bytes, XXX + old_size + extra_size)].
    This function should offer the same synchronization as `allocate()`.
 
 That's it. Now we can create new managed shared memory that uses our new algorithm:
@@ -6559,7 +6528,7 @@ will manage the index. `segment_manager` will define interesting internal types 
 For example, the index type `flat_map_index` based in `boost::interprocess::flat_map`
 is just defined as:
 
-[import ../../../boost/interprocess/indexes/flat_map_index.hpp]
+[import ../include/boost/interprocess/indexes/flat_map_index.hpp]
 [flat_map_index]
 
 
@@ -6637,31 +6606,28 @@ want [*Boost.Interprocess] to initialize the COM library with another model, def
 
 Shared memory (`shared_memory_object`) is implemented in Windows using memory mapped files, placed in a
 shared directory in the shared documents folder (`SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders\Common AppData`).
-This directory name is the last bootup time obtained via COM calls (if `BOOST_INTERPROCESS_BOOTSTAMP_IS_LASTBOOTUPTIME`) defined
-or searching the system log for a startup event (the default implementation), so that each bootup shared memory is created in a new
-folder obtaining kernel persistence shared memory.
+This directory name is the last bootup time obtained via Registry values of the Session Manager. This behaviour is the default
+since Boost 1.74.
 
-If using `BOOST_INTERPROCESS_BOOTSTAMP_IS_LASTBOOTUPTIME`, due to COM implementation related errors,
-in Boost 1.48 & Boost 1.49 the bootup-time folder was dumped and files
-were directly created in shared documents folder, reverting to filesystem persistence shared memory. Boost 1.50 fixed those issues
-and recovered bootup time directory and kernel persistence. If you need to reproduce Boost 1.48 & Boost 1.49 behaviour to communicate
-with applications compiled with that version, comment `#define BOOST_INTERPROCESS_HAS_KERNEL_BOOTTIME` directive
-in the Windows configuration part of `boost/interprocess/detail/workaround.hpp`.
+Old [*Boost.Interprocess] versions (until Boost 1.48 ) used COM calls (via macro `BOOST_INTERPROCESS_BOOTSTAMP_IS_LASTBOOTUPTIME`)
+but that timestamp was unreliable in Virtual Machines and time adjustements. Next versions until (Boost 1.74) used EventLog startup event
+as timestamp, but several users discovered this event could be absent in the Event Log if the system was up for a long time. You
+can force this Event Log based timestamp defining BOOST_INTERPROCESS_BOOTSTAMP_IS_EVENTLOG_BASED.
 
-If using the default implementation, (`BOOST_INTERPROCESS_BOOTSTAMP_IS_LASTBOOTUPTIME` undefined) and the Startup Event is not
-found, this might be due to some buggy software that floods or erases the event log.
-
-In any error case (shared documents folder is not defined or bootup time could not be obtained, the library throws an error. You still
+In any error case (shared documents folder is not defined or bootup time could not be obtained), the library throws an error. You still
 can use [*Boost.Interprocess] defining your own directory as the shared directory. When your shared directory is a compile-time constant,
-define `BOOST_INTERPROCESS_SHARED_DIR_PATH` when using the library and that path will be used to place shared memory files. When you have 
-to determine the shared directory at runtime, define `BOOST_INTERPROCESS_SHARED_DIR_FUNC` and implement the function 
+define `BOOST_INTERPROCESS_SHARED_DIR_PATH` (and BOOST_INTERPROCESS_SHARED_DIR_WPATH in Windows systems) when using the library and that
+path will be used to place shared memory files. When you have to determine the shared directory at runtime,
+define `BOOST_INTERPROCESS_SHARED_DIR_FUNC` and implement the following functions
 
 [c++]
 
-   namespace boost { 
-       namespace interprocess { 
+   namespace boost {
+       namespace interprocess {
            namespace ipcdetail {
                void get_shared_dir(std::string &shared_dir);
+               //wstring overload is only needed for Windows systems
+               void get_shared_dir(std::wstring &shared_dir);
            }
        }
    }
@@ -6685,13 +6651,13 @@ those heavy headers.
 On systems without POSIX shared memory support, shared memory objects are implemented as memory mapped files, using a directory
 placed in "/tmp" that can include (if `BOOST_INTERPROCESS_HAS_KERNEL_BOOTTIME` is defined) the last bootup time (if the OS supports it).
 As in Windows, in any error case obtaining this directory the library throws an error . When your shared directory is a compile-time constant,
-define `BOOST_INTERPROCESS_SHARED_DIR_PATH` when using the library and that path will be used to place shared memory files. When you have 
-to determine the shared directory at runtime, define `BOOST_INTERPROCESS_SHARED_DIR_FUNC` and implement the function 
+define `BOOST_INTERPROCESS_SHARED_DIR_PATH` when using the library and that path will be used to place shared memory files. When you have
+to determine the shared directory at runtime, define `BOOST_INTERPROCESS_SHARED_DIR_FUNC` and implement the function
 
 [c++]
 
-   namespace boost { 
-       namespace interprocess { 
+   namespace boost {
+       namespace interprocess {
            namespace ipcdetail {
                void get_shared_dir(std::string &shared_dir);
            }
@@ -6717,6 +6683,42 @@ the OOM (Out Of Memory)-killer picks some processes to kill in order to recover 
 According to the [@http://www.kernel.org/doc/Documentation/vm/overcommit-accounting Kernel documentation], the
 Linux kernel supports several overcommit modes. If you need non-kill guarantees in your application, you should
 change this overcommit behaviour.
+
+[endsect]
+
+[endsect]
+
+[section:notes_freebsd Notes for FreeBSD users]
+
+[section:notes_freebsd_umtx_vnode_persistent Process-shared synchronization primitives and ['kern.ipc.umtx_vnode_persistent]]
+
+Starting from FreeBSD 11, declares the macro _POSIX_THREAD_PROCESS_SHARED. However, the default behavior is different from the one on Linux.
+If you want to use this feature, according to the man page of libthr(3), you should check sysctl's ['kern.ipc.umtx_vnode_persistent]:
+
+* ['kern.ipc.umtx_vnode_persistent]: By default, a shared lock backed by a mapped file in memory is automatically destroyed on the last
+   unmap of the corresponding file's page, which is allowed by POSIX. Setting the sysctl to 1 makes such a shared lock object persist until
+   the vnode is recycled by the Virtual File System. Note that in case file is not opened and not mapped, the kernel might recycle it at
+   any moment, making this sysctl less useful than it sounds.
+
+If you want mapped files to remain useful after the last handle is closed, set this variable to 1.
+
+[endsect]
+
+[endsect]
+
+[section:notes_freebsd Notes for MacOs users]
+
+[section:notes_macos_sandboxed Limitations for sandboxed applications]
+
+[*Boost.Interprocess] uses POSIX shared memory in MacOS to implement shared memory classes in MacOS.
+
+But sandboxed apps cannot use System V (XSI) semaphores and POSIX semaphores and shared memory can't
+be used by default. However, by specifying an entitlement that requests membership in an application group,
+an app can use these technologies to communicate with other members of that application group.
+
+Please see Apple documentation
+[@https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AppSandboxInDepth/AppSandboxInDepth.html#//apple_ref/doc/uid/TP40011183-CH3-SW24
+ for limitations and guide on how to use interprocess communications on sandboxed applications].
 
 [endsect]
 
@@ -6763,6 +6765,207 @@ thank them:
 
 [section:release_notes Release Notes]
 
+[section:release_notes_boost_1_87_00 Boost 1.87 Release]
+
+* Decreased number of Boost dependencies from 11 (in total) to 7.
+
+* Deprecated `<boost/interprocess/containers/*.hpp>` headers. They were the original source of [*Boost.Container] in 2011, but no longer maintained.
+  As a long transition, Boost.Interprocess has maintained those headers for compatibility. They will be removed in a future Boost release.
+
+* Some workarounds for Cygwin were added. Regression tests now work on Cygwin64.
+
+* [*ABI breaking]: `segment_manager` nows uses a new implementation that supports overaligned types and fixes some existing bugs.
+  You can obtain the pre-Boost 1.87 ABI #defining `BOOST_INTERPROCESS_SEGMENT_MANAGER_ABI` to `1` before including Boost.Interprocess headers.
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/152   GitHub #152 (['"Handle EINTR in shared_memory_object"])].
+   * [@https://github.com/boostorg/interprocess/issues/173   GitHub #173 (['"Managed shared memory segment value not aligned"])].
+   * [@https://github.com/boostorg/interprocess/issues/192   GitHub #192 (['"managed_windows_shared_memory crash on destruction"])].
+   * [@https://github.com/boostorg/interprocess/issues/199   GitHub #199 (['"missing/misused m_is_wide in char_wchar_holder assignment operators"])].
+   * [@https://github.com/boostorg/interprocess/issues/210   GitHub #210 (['"Bug in boost::interprocess::ipcdetail::sync_handles::obtain_mutex"])].
+   * [@https://github.com/boostorg/interprocess/issues/215   GitHub #215 (['"Alignment problem with boost/interprocess/segment_manager on SPARC 32Bit"])].
+   * [@https://github.com/boostorg/interprocess/issues/217   GitHub #217 (['"managed_map_file find_or_construct does not return Cache aligned memory"])].
+   * [@https://github.com/boostorg/interprocess/issues/230   GitHub #230 (['"`interprocess::ipcdetail::intermodule_singleton` not working on MinGW"])].
+   * [@https://github.com/boostorg/interprocess/issues/236   GitHub #236 (['"` Floating point inaccuracies in `get_current_process_creation_time` lead to `intermodule_singleton` failures"])].
+
+[endsect]
+
+[section:release_notes_boost_1_86_00 Boost 1.86 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/pull/191   GitHub #191 (['"vectorstream: support file sizes larger than INT_MAX"])].
+   * [@https://github.com/boostorg/interprocess/pull/198   GitHub #198 (['"Minor fixes for documentation of offset_ptr"])].
+   * [@https://github.com/boostorg/interprocess/pull/202   GitHub #202 (['"Allow to map message_queue in anonymous memory"])].
+   * [@https://github.com/boostorg/interprocess/pull/207   GitHub #207 (['"cmake: link system libraries"])].
+   * [@https://github.com/boostorg/interprocess/pull/214   GitHub #214 (['"Doc: Fix github links"])].
+
+* Added natvis definition for `offset_ptr`. Many thanks to Braden Ganetsky.
+
+[endsect]
+
+[section:release_notes_boost_1_85_00 Boost 1.85 Release]
+
+*  Remove broken `unordered_map_index` class.
+*  Fix broken C+03 support due to several Boost libraries moving to C++11.
+
+[endsect]
+
+[section:release_notes_boost_1_83_00 Boost 1.83 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/pull/188   GitHub #188 (['"Fix: emscripten doesn't support shm"])].
+
+[endsect]
+
+[section:release_notes_boost_1_82_00 Boost 1.82 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/195   GitHub #195 (['"namespace conflict on constructing objects in segment manager with named proxy in combination with boost geometry"])].
+
+[endsect]
+
+[section:release_notes_boost_1_80_00 Boost 1.80 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/174   GitHub #174 (['"shared_memory_object constructor may fail on macOS"])].
+   * [@https://github.com/boostorg/interprocess/issues/177   GitHub #177 (['"check_sanity() scoped mutex locked after assertion"])].
+   * [@https://github.com/boostorg/interprocess/issues/181   GitHub #181 (['"clang-8 warning: result of comparison of constant 'K' with expression of type 'std::size_t' (...) is always false"])].
+
+[endsect]
+
+[section:release_notes_boost_1_79_00 Boost 1.79 Release]
+
+*  The library now compiles without warnings with GCC's -Wcast-align=strict
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/160   GitHub #160 (['"More GCC suggest-override warnings"])].
+   * [@https://github.com/boostorg/interprocess/pull/162     GitHub #162 (['"Fix missing sys/stat.h include on musl-based systems"])].
+   * [@https://github.com/boostorg/interprocess/issues/166   GitHub #166 (['"Bad error handling in shared_memory_object::truncate"])].
+   * [@https://github.com/boostorg/interprocess/pull/171     GitHub #171 (['"Fixing windows_shared_memory::get_name()"])].
+
+[endsect]
+
+[section:release_notes_boost_1_78_00 Boost 1.78 Release]
+
+*  Mutexes and condition variables now additionally offer a standard C++-like interface to allow reusing code that
+   is already working with standard thread utilities. E.g.: mutexes meet `TimedLockable` requirements and condition
+   variables implement `wait_until/wait_for` operations.
+
+*  Timeout support for managed memory segments: there are situations with concurrent creation and opening situations, half-initialized
+   tries, corruption, etc. where the implementation has to loop, retrying the operation or just waiting another process to complete
+   the initialization. This can lead to deadlocks, so the implementation was refactored to include retry and timeout limits.
+
+   *    BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_INITIALIZE_MAX_TRIES (20 by default) limits the amount of times the implementation
+        will try to perform the following steps:
+        *   Try to create the resource (shared memory, mapped file, ...) and receive an "already existing" error
+        *   Then try to open the resource but obtaining an "non existing resource" error.
+
+   *    BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_INITIALIZE_TIMEOUT_SEC (300 by default) limits the amount of times the implementation
+        will wait another thread to initialize (truncate the file/shared memory, initialize managed headers...) the resource while
+        trying to open it concurrently.
+
+    *   BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_INITIALIZE_MAX_TRIES/BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_INITIALIZE_TIMEOUT_SEC
+        can be defined by the user before including Boost.Interprocess headers to tune the default values.
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/65   GitHub #65 (['"Robustness of the interprocess mutex"])].
+   * [@https://github.com/boostorg/interprocess/pull/67     GitHub #67 (['"Changed to use posix robust mutex"])].
+   * [@https://github.com/boostorg/interprocess/issues/103  GitHub #103 (['"Use interprocess headers without exception handling"])].
+   * [@https://github.com/boostorg/interprocess/issues/128  GitHub #128 (['"Infinite loop in managed_open_or_create_impl.hpp"])].
+   * [@https://github.com/boostorg/interprocess/issues/130  GitHub #130 (['"infinite loop in managed_open_or_create_impl.hpp if filesize is 0"])].
+   * [@https://github.com/boostorg/interprocess/issues/142  GitHub #142 (['"File lock documentation about advisory locking is inaccurate on Windows"])].
+   * [@https://github.com/boostorg/interprocess/issues/149  GitHub #149 (['"interprocess_condition_any::timed_wait update"])].
+   * [@https://github.com/boostorg/interprocess/issues/145  GitHub #145 (['"1.76 now requires unicode paths on windows"])].
+   * [@https://github.com/boostorg/interprocess/issues/154  GitHub #154 (['"shared_memory_object::truncate() fails on AIX"])].
+   * [@https://github.com/boostorg/interprocess/pull/155    GitHub #155 (['"properly initilize enable_shared_from_this if the type is const"])].
+   * [@https://github.com/boostorg/interprocess/issues/157  GitHub #157 (['"Set sticky bit on shared interprocess folder"])].
+   * [@https://github.com/boostorg/interprocess/pull/158    GitHub #158 (['"atomic.hpp: adapt headers to AIX assembler"])].
+
+[endsect]
+
+
+[section:release_notes_boost_1_77_00 Boost 1.77 Release]
+
+*  Interprocess no longer depends on Boost.DateTime. Instead, all timed
+   functions were templated to take a TimePoint. This time point can be `boost::date_time::ptime`,
+   `std::time_point` or `boost::chrono::time_point`.
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/50  GitHub #50 (['"64-byte alignment causes assertion in rbtree_best_fit"])].
+
+[endsect]
+
+[section:release_notes_boost_1_76_00 Boost 1.76 Release]
+
+*  Added `wchar_t` API support for named resources in operating systems that offer native wide character API (e.g. Windows).
+    The following classes were updated with `wchar_t` name support:
+    * `file_mapping`
+    * `managed_mapped_file`
+    * `managed_shared_memory`
+    * `managed_windows_shared_memory`
+    * `shared_memory_object`
+    * `windows_shared_memory_object`
+    * `file_lock`
+    * `named_condition`
+    * `named_condition_any`
+    * `named_mutex`
+    * `named_recursive_mutex`
+    * `named_semaphore`
+    * `named_sharable_mutex`
+    * `named_upgradable_mutex`
+    * `message_queue`
+
+*  Added `BOOST_INTERPROCESS_FORCE_NATIVE_EMULATION` macro option to disable the use of generic emulation code for process
+   shared synchronization primitives instead of native POSIX or Winapi functions.
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/76  GitHub #76  (['"Cygwin compilation errors"])].
+   * [@https://github.com/boostorg/interprocess/pull/83    GitHub #83  (['"Add BOOST_INTERPROCESS_FORCE_NATIVE_EMULATION option"])].
+   * [@https://github.com/boostorg/interprocess/pull/92    GitHub #92  (['"bufferstream: Correct MSVC compilation warning"])].
+   * [@https://github.com/boostorg/interprocess/pull/106   GitHub #106 (['"Use fallocate on truncate_file"])].
+   * [@https://github.com/boostorg/interprocess/issues/120 GitHub #120 (['"segment_manager customization"])].
+   * [@https://github.com/boostorg/interprocess/issues/122 GitHub #122 (['"Mark constructors/assignment/swap noexcept where possible"])].
+   * [@https://github.com/boostorg/interprocess/issues/126 GitHub #126 (['"_ReadWriteBarrier is deprecated warning when compiling with clang-cl.exe"])].
+
+[endsect]
+
+[section:release_notes_boost_1_75_00 Boost 1.75 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/127 GitHub #127 (['"static assertion failure with boost interprocess 1.74 and basic_managed_shared_memory"])].
+
+[endsect]
+
+[section:release_notes_boost_1_74_00 Boost 1.74 Release]
+
+* [*ABI breaking]: Option `BOOST_INTERPROCESS_BOOTSTAMP_IS_SESSION_MANAGER_BASED` is now the default value.
+  You can obtain the pre-Boost 1.73 behaviour defining `BOOST_INTERPROCESS_BOOTSTAMP_IS_EVENTLOG_BASED`.
+  The old and broken pre-Boost 1.54 behaviour (`BOOST_INTERPROCESS_BOOTSTAMP_IS_LASTBOOTUPTIME`) is no
+  longer available.
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/89 GitHub #89 (['"priv_size_from_mapping_size() calculates wrong value"])].
+   * [@https://github.com/boostorg/interprocess/issues/99 GitHub #99 (['"Error in win32_api.hpp"])].
+   * [@https://github.com/boostorg/interprocess/issues/105 GitHub #105 (['"Build failure with clang on Windows"])].
+   * [@https://github.com/boostorg/interprocess/pull/119 GitHub #119 (['"Fix mingw compile error"])].
+
+[endsect]
+
+[section:release_notes_boost_1_71_00 Boost 1.71 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/issues/85 GitHub #85 (['"warning: Implicit conversion loses integer precision"])].
+   * [@https://github.com/boostorg/interprocess/issues/86 GitHub #86 (['"warning: Possible misuse of comma operator"])].
+
+[endsect]
+
+[section:release_notes_boost_1_70_00 Boost 1.70 Release]
+
+*  Fixed bugs:
+   * [@https://github.com/boostorg/interprocess/pull/51 GitHub Pull #51 (['"United handling of wait_for_single_object"])].
+   * [@https://github.com/boostorg/interprocess/pull/78 GitHub Pull #78 (['"Fix -Wextra-semi clang warnings"])].
+
+[endsect]
+
 [section:release_notes_boost_1_69_00 Boost 1.69 Release]
 
 * Deprecated GCC < 4.3 and MSVC < 9.0 (Visual 2008) compilers.
@@ -6773,6 +6976,7 @@ thank them:
    * [@https://github.com/boostorg/interprocess/issues/61 GitHub Issue #61 (['"warning: struct winapi::*_BIPC has virtual functions and accessible non-virtual destructor"])].
    * [@https://github.com/boostorg/interprocess/issues/64 GitHub Issue #64 (['"UBSan: runtime error: load of value 4294967295, (...) for type 'boost::interprocess::mode_t'"])].
    * [@https://github.com/boostorg/interprocess/pull/68   GitHub Pull #68 (['"Prepare for C++20 and remove "throw()" usage"])].
+   * [@https://github.com/boostorg/interprocess/pull/70   GitHub Pull #70 (['"Fix deadlock in named_condition::notify_one"])].
 
 [endsect]
 
@@ -6792,7 +6996,7 @@ thank them:
 
 [section:release_notes_boost_1_66_00 Boost 1.66 Release]
 *  Fixed bugs:
-   * [@https://github.com/boostorg/interprocess/pull/41 GitHub Pull #41 (['"Data race in boost::interprocess::rbtree_best_fit"])].
+   * [@https://github.com/boostorg/interprocess/issues/41 GitHub Issue #41 (['"Data race in boost::interprocess::rbtree_best_fit"])].
 
 [endsect]
 
@@ -6869,7 +7073,7 @@ thank them:
    * [@https://svn.boost.org/trac/boost/ticket/10229 Trac #10229 (['"Compiling errors in interprocess\detail\os_file_functions.hpp"])].
    * [@https://svn.boost.org/trac/boost/ticket/10506 Trac #10506 (['"Infinite loop in create_or_open_file"])].
    * [@https://github.com/boostorg/interprocess/pull/11 GitHub Pull #11 (['"Compile fix for BOOST_USE_WINDOWS_H"])].
- 
+
 *  Reorganized Doxygen marks to obtain a better header reference.
 
 [endsect]
@@ -6882,8 +7086,8 @@ thank them:
    * [@https://svn.boost.org/trac/boost/ticket/9284 Trac #9284 (['"WaitForSingleObject(mutex) must handle WAIT_ABANDONED"])].
    * [@https://svn.boost.org/trac/boost/ticket/9285 Trac #9285 (['"CreateMutex returns NULL if fails"])].
    * [@https://svn.boost.org/trac/boost/ticket/9288 Trac #9288 (['"timed_wait does not check if it has expired"])].
-   * [@https://svn.boost.org/trac/boost/ticket/9408 Trac #9408 (['"Android does not support XSI_SHARED_MEMORY_OBJECTS"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/9729 Trac #9729 (['"crash on managed_external_buffer object construction"]]).
+   * [@https://svn.boost.org/trac/boost/ticket/9408 Trac #9408 (['"Android does not support XSI_SHARED_MEMORY_OBJECTS"])].
+   * [@https://svn.boost.org/trac/boost/ticket/9729 Trac #9729 (['"crash on managed_external_buffer object construction"])].
    * [@https://svn.boost.org/trac/boost/ticket/9767 Trac #9767 (['"bootstamp generation causes error in case of corrupt Windows Event Log"])].
    * [@https://svn.boost.org/trac/boost/ticket/9835 Trac #9835 (['"Boost Interprocess fails to compile with Android NDK GCC 4.8, -Werror=unused-variable"])].
    * [@https://svn.boost.org/trac/boost/ticket/9911 Trac #9911 (['"get_tmp_base_dir(...) failure"])].
@@ -6891,8 +7095,8 @@ thank them:
    * [@https://svn.boost.org/trac/boost/ticket/10011 Trac #10011 (['"segment_manager::find( unique_instance_t* ) fails to compile"])].
    * [@https://svn.boost.org/trac/boost/ticket/10021 Trac #10021 (['"Interprocess and BOOST_USE_WINDOWS_H"])].
    * [@https://svn.boost.org/trac/boost/ticket/10230 Trac #10230 (['"No Sleep in interprocess::winapi"])].
-   * [@https://github.com/boostorg/interprocess/pull/2 GitHub Pull #2] (['"Provide support for the Cray C++ compiler. The Cray compiler defines __GNUC__"]]).
-   * [@https://github.com/boostorg/interprocess/pull/3 GitHub Pull #3] (['"Fix/mingw interprocess_exception throw in file_wrapper::priv_open_or_create"]]).
+   * [@https://github.com/boostorg/interprocess/pull/2 GitHub Pull #2 (['"Provide support for the Cray C++ compiler. The Cray compiler defines __GNUC__"])].
+   * [@https://github.com/boostorg/interprocess/pull/3 GitHub Pull #3 (['"Fix/mingw interprocess_exception throw in file_wrapper::priv_open_or_create"])].
 
 *  [*ABI breaking]: [@https://svn.boost.org/trac/boost/ticket/9221 #9221] showed
    that `BOOST_INTERPROCESS_MSG_QUEUE_CIRCULAR_INDEX` option of message queue,
@@ -6918,14 +7122,14 @@ thank them:
 [section:release_notes_boost_1_55_00 Boost 1.55 Release]
 
 *  Fixed bugs:
-   * [@https://svn.boost.org/trac/boost/ticket/7156 #7156] (['"interprocess buffer streams leak memory on construction"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/7164 #7164] (['"Two potential bugs with b::int::vector of b::i::weak_ptr"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/7860 #7860] (['"smart_ptr's yield_k and spinlock utilities can improve spinlock-based sychronization primitives"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/8277 #8277] (['"docs for named_mutex erroneously refer to interprocess_mutex"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/8976 #8976] (['"shared_ptr fails to compile if used with a scoped_allocator"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/9008 #9008] (['"conditions variables fast enough only when opening a multiprocess browser"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/9065 #9065] (['"atomic_cas32 inline assembly wrong on ppc32"]]).
-   * [@https://svn.boost.org/trac/boost/ticket/9073 #9073] (['"Conflict names 'realloc'"]]).
+   * [@https://svn.boost.org/trac/boost/ticket/7156 #7156 (['"interprocess buffer streams leak memory on construction"])].
+   * [@https://svn.boost.org/trac/boost/ticket/7164 #7164 (['"Two potential bugs with b::int::vector of b::i::weak_ptr"])].
+   * [@https://svn.boost.org/trac/boost/ticket/7860 #7860 (['"smart_ptr's yield_k and spinlock utilities can improve spinlock-based sychronization primitives"])].
+   * [@https://svn.boost.org/trac/boost/ticket/8277 #8277 (['"docs for named_mutex erroneously refer to interprocess_mutex"])].
+   * [@https://svn.boost.org/trac/boost/ticket/8976 #8976 (['"shared_ptr fails to compile if used with a scoped_allocator"])].
+   * [@https://svn.boost.org/trac/boost/ticket/9008 #9008 (['"conditions variables fast enough only when opening a multiprocess browser"])].
+   * [@https://svn.boost.org/trac/boost/ticket/9065 #9065 (['"atomic_cas32 inline assembly wrong on ppc32"])].
+   * [@https://svn.boost.org/trac/boost/ticket/9073 #9073 (['"Conflict names 'realloc'"])].
 
 [endsect]
 
@@ -7409,7 +7613,7 @@ shared memory, allocators and containers used to design [*Boost.Interprocess].
 
 * Instantiating C++ objects in shared memory: [@http://www.cs.ubc.ca/local/reading/proceedings/cascon94/htm/english/abs/hon.htm ['"Using objects in shared memory for C++ application"] ].
 
-* A shared memory allocator and relative pointer: [@http://home.earthlink.net/~joshwalker1/writing/SharedMemory.html ['"Taming Shared Memory"] ].
+* A shared memory allocator and relative pointer: [@https://web.archive.org/web/20050313052229/https://home.earthlink.net/~joshwalker1/writing/SharedMemory.html  ['"Taming Shared Memory"] ].
 
 [endsect]
 
@@ -7478,7 +7682,7 @@ But the work to implement PF_UNIX-like sockets and doors would be huge
 
 [section:index Indexes]
 
-[include auto_index_helpers.qbk]
+[import ../../../tools/auto_index/include/auto_index_helpers.qbk]
 
 [named_index class_name Class Index]
 [named_index typedef_name Typedef Index]

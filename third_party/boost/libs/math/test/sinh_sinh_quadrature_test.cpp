@@ -9,10 +9,12 @@
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <boost/math/concepts/real_concept.hpp>
 #include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/quadrature/sinh_sinh.hpp>
 #include <boost/math/special_functions/sinc.hpp>
+#include <boost/math/tools/test_value.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <boost/type_index.hpp>
 
 #if !BOOST_WORKAROUND(BOOST_MSVC, < 1900)
 // MSVC-12 has problems if we include 2 different multiprecision types in the same program,
@@ -145,7 +147,7 @@ void test_nr_examples()
     Real Q_expected;
     Real L1;
     Real error;
-    sinh_sinh<Real> integrator(10);
+    const sinh_sinh<Real> integrator(10);
 
     auto f0 = [](Real)->Real { return (Real) 0; };
     Q = integrator.integrate(f0, integration_limit, &error, &L1);
@@ -201,7 +203,7 @@ void test_crc()
     Real Q_expected;
     Real L1;
     Real error;
-    sinh_sinh<Real> integrator(10);
+    const sinh_sinh<Real> integrator(10);
 
     // CRC Definite integral 698:
     auto f0 = [](Real x)->Real {
@@ -237,7 +239,7 @@ void test_dirichlet_eta()
   std::cout << "Testing Dirichlet eta function on type " << boost::typeindex::type_id<Real>().pretty_name() << "\n";
   Real tol = 10 * boost::math::tools::epsilon<Real>();
   Complex Q;
-  sinh_sinh<Real> integrator(10);
+  const sinh_sinh<Real> integrator(10);
 
   //https://en.wikipedia.org/wiki/Dirichlet_eta_function, integral representations:
   Complex z = {1,1};
@@ -253,11 +255,12 @@ void test_dirichlet_eta()
   };
   Q = integrator.integrate(eta);
   // N[DirichletEta[1 + I], 150]
-  Complex Q_expected = {boost::lexical_cast<Real>("0.726559775062463263201495728547241386311129502735725787103568290594808442332084045617744978600192784188182345866652233650512117834307254514480657408096"),
-                        boost::lexical_cast<Real>("0.158095863901207324355426285544321998253687969756843115763682522207208309489794631247865357375538028170751576870244296106203144195376645765556607038775")};
+  {
+    Complex Q_expected = { BOOST_MATH_TEST_VALUE(Real, 0.7265597750624632632014957285472413863111295027357257871), BOOST_MATH_TEST_VALUE(Real, 0.158095863901207324355426285544321998253687969756843115) };
 
-  BOOST_CHECK_CLOSE_FRACTION(Q.real(), Q_expected.real(), tol);
-  BOOST_CHECK_CLOSE_FRACTION(Q.imag(), Q_expected.imag(), tol);
+    BOOST_CHECK_CLOSE_FRACTION(Q.real(), Q_expected.real(), tol);
+    BOOST_CHECK_CLOSE_FRACTION(Q.imag(), Q_expected.imag(), tol);
+  }
 }
 
 
@@ -280,10 +283,10 @@ BOOST_AUTO_TEST_CASE(sinh_sinh_quadrature_test)
     test_nr_examples<long double>();
 #endif
     test_nr_examples<cpp_bin_float_quad>();
-#ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
+#if !defined(BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
     test_nr_examples<boost::math::concepts::real_concept>();
 #endif
-#if !BOOST_WORKAROUND(BOOST_MSVC, < 1900)
+#if !BOOST_WORKAROUND(BOOST_MSVC, < 1900) && defined(BOOST_MATH_RUN_MP_TESTS)
     test_nr_examples<boost::multiprecision::cpp_dec_float_50>();
 #endif
 
@@ -294,12 +297,14 @@ BOOST_AUTO_TEST_CASE(sinh_sinh_quadrature_test)
     test_crc<long double>();
     test_dirichlet_eta<std::complex<long double>>();
 #endif
+#ifdef BOOST_MATH_RUN_MP_TESTS
     test_crc<cpp_bin_float_quad>();
     test_dirichlet_eta<boost::multiprecision::cpp_complex_quad>();
-#ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
+#endif
+#if !defined(BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
     test_crc<boost::math::concepts::real_concept>();
 #endif
-#if !BOOST_WORKAROUND(BOOST_MSVC, < 1900)
+#if !BOOST_WORKAROUND(BOOST_MSVC, < 1900) && defined(BOOST_MATH_RUN_MP_TESTS)
     test_crc<boost::multiprecision::cpp_dec_float_50>();
 #endif
 

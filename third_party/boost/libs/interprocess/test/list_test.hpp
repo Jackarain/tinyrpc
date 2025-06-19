@@ -98,18 +98,18 @@ int list_test (bool copied_allocators_equal = true)
 {
    typedef std::list<int> MyStdList;
    typedef typename MyShmList::value_type IntType;
-   const int memsize = 65536;
+   const int Memsize = 128u * 1024u;
    const char *const shMemName = test::get_process_id_name();
    const int max = 100;
    typedef push_data_function<DoublyLinked> push_data_t;
 
-   try{
+   BOOST_INTERPROCESS_TRY{
       //Named new capable shared mem allocator
       //Create shared memory
       shared_memory_object::remove(shMemName);
-      ManagedSharedMemory segment(create_only, shMemName, memsize);
+      ManagedSharedMemory segment(create_only, shMemName, Memsize);
 
-      segment.reserve_named_objects(100);
+      segment.reserve_named_objects(10);
 
       //Shared memory allocator must be always be initialized
       //since it has no default constructor
@@ -264,10 +264,10 @@ int list_test (bool copied_allocators_equal = true)
       if(!segment.all_memory_deallocated())
          return 1;
    }
-   catch(...){
+   BOOST_INTERPROCESS_CATCH(...){
       shared_memory_object::remove(shMemName);
-      throw;
-   }
+      BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
    shared_memory_object::remove(shMemName);
    return 0;
 }

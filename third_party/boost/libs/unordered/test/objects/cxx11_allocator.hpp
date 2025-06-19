@@ -1,5 +1,6 @@
 
 // Copyright 2006-2011 Daniel James.
+// Copyright 2022 Christian Mazakas
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -13,7 +14,8 @@
 #include "../helpers/fwd.hpp"
 #include "../helpers/memory.hpp"
 
-namespace test {
+namespace test
+{
   struct allocator_false
   {
     enum
@@ -180,6 +182,8 @@ namespace test {
 
     ~cxx11_allocator_base() { detail::tracker.allocator_unref(); }
 
+    cxx11_allocator_base& operator=(cxx11_allocator_base const& x) = default;
+
     pointer address(reference r) { return pointer(&r); }
 
     const_pointer address(const_reference r) { return const_pointer(&r); }
@@ -208,25 +212,18 @@ namespace test {
       ::operator delete((void*)p);
     }
 
-    void construct(T* p, T const& t)
+    template <class U, typename... Args>
+    void construct(U* p, Args&&... args)
     {
-      detail::tracker.track_construct((void*)p, sizeof(T), tag_);
-      new (p) T(t);
+      detail::tracker.track_construct((void*)p, sizeof(U), tag_);
+      new (p) U(std::forward<Args>(args)...);
     }
 
-#if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
-    template <typename... Args>
-    void construct(T* p, BOOST_FWD_REF(Args)... args)
+    template <class U>
+    void destroy(U* p)
     {
-      detail::tracker.track_construct((void*)p, sizeof(T), tag_);
-      new (p) T(boost::forward<Args>(args)...);
-    }
-#endif
-
-    void destroy(T* p)
-    {
-      detail::tracker.track_destroy((void*)p, sizeof(T), tag_);
-      p->~T();
+      detail::tracker.track_destroy((void*)p, sizeof(U), tag_);
+      p->~U();
     }
 
     size_type max_size() const
@@ -263,6 +260,8 @@ namespace test {
     }
 
     cxx11_allocator(cxx11_allocator const& x) : cxx11_allocator_base<T>(x) {}
+
+    cxx11_allocator& operator=(cxx11_allocator const& x) = default;
 
     // When not propagating swap, allocators are always equal
     // to avoid undefined behaviour.
@@ -306,6 +305,8 @@ namespace test {
     }
 
     cxx11_allocator(cxx11_allocator const& x) : cxx11_allocator_base<T>(x) {}
+
+    cxx11_allocator& operator=(cxx11_allocator const& x) = default;
 
     // When not propagating swap, allocators are always equal
     // to avoid undefined behaviour.

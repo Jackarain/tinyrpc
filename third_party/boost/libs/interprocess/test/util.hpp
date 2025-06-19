@@ -24,38 +24,118 @@
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/detail/os_thread_functions.hpp>
+#include <boost/interprocess/timed_utils.hpp>
 
+#if defined(BOOST_CLANG) || (defined(BOOST_GCC) && (BOOST_GCC >= 40600))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#  if (BOOST_GCC >= 100000)
+#pragma GCC diagnostic ignored "-Warith-conversion"
+#  endif
+#endif
+
+#if (BOOST_CXX_VERSION >= 201103L) && (!defined(BOOST_GCC) || (BOOST_GCC >= 40800))
+//boost.System is not tested under GCC <= 4.8 and has compilation errors
+//due to incomplete language support in older compilers
+#define BOOST_INTERPROCESS_BOOST_CHRONO_AVAILABLE
+#endif
+
+#if (BOOST_CXX_VERSION >= 201103L)
+#define BOOST_INTERPROCESS_DATE_TIME_AVAILABLE
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#endif
+
+#ifdef BOOST_INTERPROCESS_BOOST_CHRONO_AVAILABLE
+#define BOOST_CHRONO_HEADER_ONLY
+#include <boost/chrono/system_clocks.hpp>
+#endif
+
 #include <boost/version.hpp>
+
+#if !defined(BOOST_NO_CXX11_HDR_CHRONO)
+#include <chrono>
+#endif
+
+#if defined(BOOST_GCC) && (BOOST_GCC >= 40600)
+#pragma GCC diagnostic pop
+#endif
 
 namespace boost {
 namespace interprocess {
 namespace test {
 
-inline void sleep(const boost::posix_time::ptime &xt)
-{
-   boost::interprocess::ipcdetail::thread_sleep
-      ((xt - microsec_clock::universal_time()).total_milliseconds());
-}
+// ptime_delay_ms + ptime_ms
 
-inline boost::posix_time::ptime delay(int secs, int msecs=0, int nsecs = 0)
+#if defined(BOOST_INTERPROCESS_DATE_TIME_AVAILABLE)
+inline boost::posix_time::ptime ptime_delay_ms(unsigned msecs)
 {
-   (void)msecs;
    using namespace boost::posix_time;
-   int count = static_cast<int>(double(nsecs)*
-               (double(time_duration::ticks_per_second())/double(1000000000.0)));
-   count += static_cast<int>(double(msecs)*
-               (double(time_duration::ticks_per_second())/double(1000.0)));
-   boost::posix_time::ptime cur = microsec_clock::universal_time();
-   return cur +=  boost::posix_time::time_duration(0, 0, secs, count);
+   int count = static_cast<int>(double(msecs) *
+      (double(time_duration::ticks_per_second()) / double(1000.0)));
+   return microsec_clock::universal_time() + time_duration(0, 0, 0, count);
 }
 
-inline bool in_range(const boost::posix_time::ptime& xt, int secs=1)
+inline boost::posix_time::time_duration ptime_ms(unsigned msecs)
 {
-    boost::posix_time::ptime min = delay(-secs);
-    boost::posix_time::ptime max = delay(0);
-    return (xt > min) && (max > xt);
+   using namespace boost::posix_time;
+   int count = static_cast<int>(double(msecs) *
+      (double(time_duration::ticks_per_second()) / double(1000.0)));
+   return time_duration(0, 0, 0, count);
 }
+#else
+   inline ustime ptime_delay_ms(unsigned msecs)
+   {  return ustime_delay_milliseconds(msecs); }
+
+   inline usduration ptime_ms(unsigned msecs)
+   {  return usduration_from_milliseconds(msecs); }
+#endif
+
+// boost_systemclock_delay_ms + boost_systemclock_ms
+
+#if defined(BOOST_INTERPROCESS_BOOST_CHRONO_AVAILABLE)
+   inline boost::chrono::system_clock::time_point boost_systemclock_delay_ms(unsigned msecs)
+   {  return boost::chrono::system_clock::now() + boost::chrono::milliseconds(msecs);  }
+
+   inline boost::chrono::milliseconds boost_systemclock_ms(unsigned msecs)
+   {  return boost::chrono::milliseconds(msecs);  }
+#else
+   inline ustime boost_systemclock_delay_ms(unsigned msecs)
+   {  return ustime_delay_milliseconds(msecs); }
+
+   inline usduration boost_systemclock_ms(unsigned msecs)
+   {  return usduration_from_milliseconds(msecs); }
+#endif 
+
+// std_systemclock_delay_ms + std_systemclock_ms
+
+#if !defined(BOOST_NO_CXX11_HDR_CHRONO)
+   //Use std chrono if available
+   inline std::chrono::system_clock::time_point std_systemclock_delay_ms(unsigned msecs)
+   {  return std::chrono::system_clock::now() + std::chrono::milliseconds(msecs);  }
+
+   inline std::chrono::milliseconds std_systemclock_ms(unsigned msecs)
+   {  return std::chrono::milliseconds(msecs);  }
+
+#elif defined(BOOST_INTERPROCESS_BOOST_CHRONO_AVAILABLE)
+   //Otherwise use boost chrono
+   inline boost::chrono::system_clock::time_point std_systemclock_delay_ms(unsigned msecs)
+   {  return boost_systemclock_delay_ms(msecs);  }
+
+   inline boost::chrono::milliseconds std_systemclock_ms(unsigned msecs)
+   {  return boost_systemclock_ms(msecs);  }
+#else
+   inline ustime std_systemclock_delay_ms(unsigned msecs)
+   {  return ustime_delay_milliseconds(msecs); }
+
+   inline usduration std_systemclock_ms(unsigned msecs)
+   {  return usduration_from_milliseconds(msecs); }
+#endif
+
+// thread_adapter + data
 
 template <typename P>
 class thread_adapter
@@ -74,17 +154,20 @@ class thread_adapter
 template <typename P>
 struct data
 {
-   explicit data(int id, int secs=0)
-      : m_id(id), m_value(-1), m_secs(secs), m_error(no_error)
+   explicit data(int id, int msecs=0, int flags = 0, bool block = false)
+      : m_id(id), m_value(-1), m_msecs(msecs), m_error(no_error), m_flags(flags), m_block(block)
    {}
+
    int            m_id;
    int            m_value;
-   int            m_secs;
+   int            m_msecs;
    error_code_t   m_error;
+   int            m_flags;
+   bool           m_block;
 };
 
-static int shared_val = 0;
-static const int BaseSeconds = 1;
+int shared_val = 0;
+static const unsigned BaseMs = 1000;
 
 }  //namespace test {
 }  //namespace interprocess {

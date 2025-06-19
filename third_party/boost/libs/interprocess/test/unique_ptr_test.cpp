@@ -8,14 +8,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/containers/list.hpp>
-#include <boost/interprocess/containers/set.hpp>
-#include <boost/interprocess/containers/vector.hpp>
+#include <boost/container/list.hpp>
+#include <boost/container/set.hpp>
+#include <boost/container/vector.hpp>
 #include <boost/interprocess/smart_ptr/deleter.hpp>
 #include <stdio.h>
 #include <string>
@@ -31,18 +30,18 @@ class MyClass
 };
 
 typedef managed_unique_ptr<MyClass, managed_shared_memory>::type my_unique_ptr_class;
-typedef set <my_unique_ptr_class
+typedef boost::container::set <my_unique_ptr_class
             ,std::less<my_unique_ptr_class>
             ,allocator  <my_unique_ptr_class
                         ,managed_shared_memory::segment_manager>
             > MySet;
 
-typedef list<my_unique_ptr_class
+typedef boost::container::list<my_unique_ptr_class
             ,allocator  <my_unique_ptr_class
                         ,managed_shared_memory::segment_manager>
             > MyList;
 
-typedef vector <my_unique_ptr_class
+typedef boost::container::vector <my_unique_ptr_class
                ,allocator  <my_unique_ptr_class
                            ,managed_shared_memory::segment_manager>
             > MyVector;
@@ -138,5 +137,3 @@ int main()
    shared_memory_object::remove(process_name.c_str());
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

@@ -19,7 +19,6 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio.hpp>
-#include <boost/filesystem.hpp>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -28,20 +27,21 @@
 #include <memory>
 #include <string>
 
-namespace ip = boost::asio::ip;         // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio.hpp>
-namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace net = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 // Return a reasonable mime type based on the extension of a file.
-boost::beast::string_view
-mime_type(boost::beast::string_view path)
+beast::string_view
+mime_type(beast::string_view path)
 {
-    using boost::beast::iequals;
+    using beast::iequals;
     auto const ext = [&path]
     {
         auto const pos = path.rfind(".");
-        if(pos == boost::beast::string_view::npos)
-            return boost::beast::string_view{};
+        if(pos == beast::string_view::npos)
+            return beast::string_view{};
         return path.substr(pos);
     }();
     if(iequals(ext, ".htm"))  return "text/html";
@@ -88,7 +88,7 @@ public:
 
 private:
     using alloc_t = fields_alloc<char>;
-    //using request_body_t = http::basic_dynamic_body<boost::beast::flat_static_buffer<1024 * 1024>>;
+    //using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
     using request_body_t = http::string_body;
 
     // The acceptor used to listen for incoming connections.
@@ -98,10 +98,10 @@ private:
     std::string doc_root_;
 
     // The socket for the currently connected client.
-    tcp::socket socket_{acceptor_.get_executor().context()};
+    tcp::socket socket_{acceptor_.get_executor()};
 
     // The buffer for performing reads
-    boost::beast::flat_static_buffer<8192> buffer_;
+    beast::flat_static_buffer<8192> buffer_;
 
     // The allocator used for the fields in the request and reply.
     alloc_t alloc_{8192};
@@ -110,8 +110,8 @@ private:
     boost::optional<http::request_parser<request_body_t, alloc_t>> parser_;
 
     // The timer putting a time limit on requests.
-    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline_{
-        acceptor_.get_executor().context(), (std::chrono::steady_clock::time_point::max)()};
+    net::steady_timer request_deadline_{
+        acceptor_.get_executor(), (std::chrono::steady_clock::time_point::max)()};
 
     // The string-based response message.
     boost::optional<http::response<http::string_body, http::basic_fields<alloc_t>>> string_response_;
@@ -128,13 +128,13 @@ private:
     void accept()
     {
         // Clean up any previous connection.
-        boost::beast::error_code ec;
+        beast::error_code ec;
         socket_.close(ec);
         buffer_.consume(buffer_.size());
 
         acceptor_.async_accept(
             socket_,
-            [this](boost::beast::error_code ec)
+            [this](beast::error_code ec)
             {
                 if (ec)
                 {
@@ -173,7 +173,7 @@ private:
             socket_,
             buffer_,
             *parser_,
-            [this](boost::beast::error_code ec, std::size_t)
+            [this](beast::error_code ec, std::size_t)
             {
                 if (ec)
                     accept();
@@ -195,7 +195,7 @@ private:
             // we do not recognize the request method.
             send_bad_response(
                 http::status::bad_request,
-                "Invalid request-method '" + req.method_string().to_string() + "'\r\n");
+                "Invalid request-method '" + std::string(req.method_string()) + "'\r\n");
             break;
         }
     }
@@ -221,7 +221,7 @@ private:
         http::async_write(
             socket_,
             *string_serializer_,
-            [this](boost::beast::error_code ec, std::size_t)
+            [this](beast::error_code ec, std::size_t)
             {
                 socket_.shutdown(tcp::socket::shutdown_send, ec);
                 string_serializer_.reset();
@@ -230,7 +230,7 @@ private:
             });
     }
 
-    void send_file(boost::beast::string_view target)
+    void send_file(beast::string_view target)
     {
         // Request path must be absolute and not contain "..".
         if (target.empty() || target[0] != '/' || target.find("..") != std::string::npos)
@@ -247,10 +247,10 @@ private:
             target.size());
 
         http::file_body::value_type file;
-        boost::beast::error_code ec;
+        beast::error_code ec;
         file.open(
             full_path.c_str(),
-            boost::beast::file_mode::read,
+            beast::file_mode::read,
             ec);
         if(ec)
         {
@@ -268,7 +268,7 @@ private:
         file_response_->result(http::status::ok);
         file_response_->keep_alive(false);
         file_response_->set(http::field::server, "Beast");
-        file_response_->set(http::field::content_type, mime_type(target.to_string()));
+        file_response_->set(http::field::content_type, mime_type(std::string(target)));
         file_response_->body() = std::move(file);
         file_response_->prepare_payload();
 
@@ -277,7 +277,7 @@ private:
         http::async_write(
             socket_,
             *file_serializer_,
-            [this](boost::beast::error_code ec, std::size_t)
+            [this](beast::error_code ec, std::size_t)
             {
                 socket_.shutdown(tcp::socket::shutdown_send, ec);
                 file_serializer_.reset();
@@ -292,16 +292,15 @@ private:
         if (request_deadline_.expiry() <= std::chrono::steady_clock::now())
         {
             // Close socket to cancel any outstanding operation.
-            boost::beast::error_code ec;
             socket_.close();
 
             // Sleep indefinitely until we're given a new deadline.
             request_deadline_.expires_at(
-                std::chrono::steady_clock::time_point::max());
+                (std::chrono::steady_clock::time_point::max)());
         }
 
         request_deadline_.async_wait(
-            [this](boost::beast::error_code)
+            [this](beast::error_code)
             {
                 check_deadline();
             });
@@ -323,13 +322,13 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        auto const address = boost::asio::ip::make_address(argv[1]);
+        auto const address = net::ip::make_address(argv[1]);
         unsigned short port = static_cast<unsigned short>(std::atoi(argv[2]));
         std::string doc_root = argv[3];
         int num_workers = std::atoi(argv[4]);
         bool spin = (std::strcmp(argv[5], "spin") == 0);
 
-        boost::asio::io_context ioc{1};
+        net::io_context ioc{1};
         tcp::acceptor acceptor{ioc, {address, port}};
 
         std::list<http_worker> workers;

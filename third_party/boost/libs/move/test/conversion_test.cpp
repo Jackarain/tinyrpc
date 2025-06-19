@@ -13,6 +13,7 @@
 #include <cassert>
 #include <new>
 #include <boost/move/detail/move_helpers.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 
 enum ConstructionType { Copied, Moved, Other };
@@ -188,42 +189,42 @@ int main()
       {
          conversion_target x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          const conversion_target x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(conversion_target());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), conversion_target());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          const conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
    }
 
@@ -232,42 +233,42 @@ int main()
       {
          conversion_target_copymovable x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          const conversion_target_copymovable x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(conversion_target_copymovable());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), conversion_target_copymovable());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          const conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          c.push_back(conversion_source());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), conversion_source());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
    }
    {
@@ -276,38 +277,38 @@ int main()
       //{
       //   conversion_target_movable x;
       //   c.push_back(x);
-      //   assert(c.construction_type() == Copied);
+      //   BOOST_TEST(c.construction_type() == Copied);
       //}
       //{
       //   const conversion_target_movable x;
       //   c.push_back(x);
-      //   assert(c.construction_type() == Copied);
+      //   BOOST_TEST(c.construction_type() == Copied);
       //}
       {
          c.push_back(conversion_target_movable());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), conversion_target_movable());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          const conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
       {
          c.push_back(conversion_source());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
          c.insert(c.begin(), conversion_source());
-         assert(c.construction_type() == Moved);
+         BOOST_TEST(c.construction_type() == Moved);
       }
    }
    {
@@ -315,43 +316,43 @@ int main()
       {
          int x = 0;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), c.construction_type());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          const int x = 0;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(int(0));
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), int(0));
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
 
       {
          const conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       //c.insert(c.begin(), c.begin());
    }
@@ -361,43 +362,43 @@ int main()
       {
          int x = 0;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), c.construction_type());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          const int x = 0;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(int(0));
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), int(0));
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
 
       {
          const conversion_source x;
          c.push_back(x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), x);
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       {
          c.push_back(conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
          c.insert(c.begin(), conversion_source());
-         assert(c.construction_type() == Copied);
+         BOOST_TEST(c.construction_type() == Copied);
       }
       c.insert(c.begin(), c.begin());
    }
@@ -410,5 +411,5 @@ int main()
       c.container_.insert(c.container_.begin(), c.container_.begin());
    }
 
-   return 0;
+   return boost::report_errors();
 }

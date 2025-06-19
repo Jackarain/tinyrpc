@@ -15,7 +15,7 @@
 # if !defined __cplusplus
 #include <wchar.h>
 #endif
-# include <libs/preprocessor/test/test.h>
+# include "test.h"
 
 #define VDATA 1,2,3,4
 #define NDATA
@@ -32,7 +32,5 @@ BEGIN sizeof(BOOST_PP_STRINGIZE(FDATA(9))) / sizeof(char) == 3 END
 BEGIN sizeof(BOOST_PP_WSTRINGIZE(DATA)) / sizeof(wchar_t) == 5 END
 BEGIN sizeof(BOOST_PP_WSTRINGIZE(FDATA(1))) / sizeof(wchar_t) == 2 END
 BEGIN sizeof(BOOST_PP_WSTRINGIZE(FDATA(9))) / sizeof(wchar_t) == 3 END
-#if BOOST_PP_VARIADICS
 BEGIN sizeof(BOOST_PP_STRINGIZE(VDATA)) / sizeof(char) == 8 END
 BEGIN sizeof(BOOST_PP_WSTRINGIZE(VDATA)) / sizeof(wchar_t) == 8 END
-#endif

@@ -22,13 +22,13 @@
 #include <boost/numeric/odeint/util/resize.hpp>
 #include <boost/numeric/odeint/util/same_size.hpp>
 
-#include <boost/array.hpp>
-
+#include <array>
+#include <type_traits>
 
 
 // Mario: velocity verlet tests need arrays of size 2
 // some ugly detailed dependency, maybe this can be improved?
-class test_array_type : public boost::array< double , 2 > { };
+class test_array_type : public std::array< double , 2 > { };
 
 size_t adjust_size_count;
 
@@ -39,7 +39,7 @@ namespace odeint {
     template<>
     struct is_resizeable< test_array_type >
     {
-        typedef boost::true_type type;
+        typedef std::true_type type;
         const static bool value = type::value;
     };
 

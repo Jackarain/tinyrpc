@@ -15,6 +15,7 @@
 #include <string>    //std::string
 #include <sstream>   //std::stringstream
 #include <boost/interprocess/detail/os_thread_functions.hpp>
+#include <boost/interprocess/detail/os_file_functions.hpp>
 
 namespace boost{
 namespace interprocess{
@@ -36,35 +37,98 @@ inline void get_process_id_ptr_name(std::string &str, const void *ptr)
 
 inline const char *get_process_id_name()
 {
+   static bool done = false;
    static std::string str;
-   get_process_id_name(str);
+   if(!done)
+      get_process_id_name(str);
    return str.c_str();
 }
 
 inline const char *get_process_id_ptr_name(void *ptr)
 {
+   static bool done = false;
    static std::string str;
-   get_process_id_ptr_name(str, ptr);
+   if(!done)
+      get_process_id_ptr_name(str, ptr);
    return str.c_str();
 }
 
 inline const char *add_to_process_id_name(const char *name)
 {
+   static bool done = false;
    static std::string str;
-   get_process_id_name(str);
-   str += name;
+   if(!done){
+      get_process_id_name(str);
+      str += name;
+   }
    return str.c_str();
 }
 
 inline const char *add_to_process_id_ptr_name(const char *name, void *ptr)
 {
+   static bool done = false;
    static std::string str;
-   get_process_id_ptr_name(str, ptr);
-   str += name;
+   if(!done){
+      get_process_id_ptr_name(str, ptr);
+      str += name;
+   }
    return str.c_str();
 }
 
 }  //namespace test{
+
+inline std::string get_filename()
+{
+   std::string ret (ipcdetail::get_temporary_path());
+   ret += "/";
+   ret += test::get_process_id_name();
+   return ret;
+}
+
+#ifdef BOOST_INTERPROCESS_WCHAR_NAMED_RESOURCES
+
+namespace test {
+
+inline void get_process_id_wname(std::wstring &str)
+{
+   std::wstringstream sstr;
+   sstr << L"process_" << boost::interprocess::ipcdetail::get_current_process_id() << std::ends;
+   str = sstr.str().c_str();
+}
+
+inline const wchar_t *get_process_id_wname()
+{
+   static bool done = false;
+   static std::wstring str;
+   if(!done)
+      get_process_id_wname(str);
+
+   return str.c_str();
+}
+
+inline const wchar_t *add_to_process_id_name(const wchar_t *name)
+{
+   static bool done = false;
+   static std::wstring str;
+   if(!done){
+      get_process_id_wname(str);
+      str += name;
+   }
+   return str.c_str();
+}
+
+}  //namespace test {
+
+inline std::wstring get_wfilename()
+{
+   std::wstring ret (ipcdetail::get_temporary_wpath());
+   ret += L"/";
+   ret += test::get_process_id_wname();
+   return ret;
+}
+
+#endif
+
 }  //namespace interprocess{
 }  //namespace boost{
 

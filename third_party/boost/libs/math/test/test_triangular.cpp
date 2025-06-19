@@ -8,21 +8,28 @@
 
 // test_triangular.cpp
 
+#ifndef SYCL_LANGUAGE_VERSION
 #include <pch.hpp>
+#endif
 
 #ifdef _MSC_VER
 #  pragma warning(disable: 4127) // conditional expression is constant.
 #  pragma warning(disable: 4305) // truncation from 'long double' to 'float'
 #endif
 
+#include <boost/math/tools/config.hpp>
+
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
+#endif
+
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <boost/math/distributions/triangular.hpp>
 using boost::math::triangular_distribution;
-#include <boost/math/tools/test.hpp>
+#include "../include_private/boost/math/tools/test.hpp"
 #include <boost/math/special_functions/fpclassify.hpp>
 #include "test_out_of_range.hpp"
 
@@ -463,8 +470,11 @@ void test_spots(RealType)
     BOOST_CHECK_CLOSE_FRACTION(
       mode(tridef), static_cast<RealType>(0), tolerance);
     // skewness:
+    // On device the result does not get flushed exactly to zero so the eps difference is by default huge
+    #ifndef BOOST_MATH_HAS_GPU_SUPPORT
     BOOST_CHECK_CLOSE_FRACTION(
       median(tridef), static_cast<RealType>(0), tolerance);
+    #endif
     // https://reference.wolfram.com/language/ref/Skewness.html  skewness{-1, 0, +1} = 0
     // skewness[triangulardistribution{-1, 0, +1}] does not compute a result.
     // skewness[triangulardistribution{0, +1}] result == 0
@@ -478,6 +488,9 @@ void test_spots(RealType)
     // kurtosis excess = kurtosis - 3;
     BOOST_CHECK_CLOSE_FRACTION(
       kurtosis_excess(tridef), static_cast<RealType>(-0.6), tolerance); // Constant value of -3/5 for all distributions.
+
+    BOOST_CHECK_CLOSE_FRACTION(
+      entropy(tridef), static_cast<RealType>(1)/2, tolerance);
 
   {
     triangular_distribution<RealType> tri01(0, 1, 1); //  Asymmetric 0, 1, 1 distribution.
@@ -722,7 +735,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double. OK at decdigits 7, tolerance = 1e07 %
   #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
     test_spots(0.0L); // Test long double.
-  #if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x0582))
+  #if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x0582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
     test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
   #endif
   #else

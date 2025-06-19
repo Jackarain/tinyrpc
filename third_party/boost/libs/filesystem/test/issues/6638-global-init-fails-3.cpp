@@ -9,16 +9,16 @@ using namespace boost::filesystem;
 //     path r(p / "narrow");
 //  That code now works, but ...
 
-//  Nils Gladitz has provided this example ... 
+//  Nils Gladitz has provided this example ...
 
 class Test
 {
 public:
-	~Test()
-	{
-		path p(L"C:\\TEMP\\");
-		path r(p / "narrow");    
-	}
+    ~Test()
+    {
+        path p(L"C:\\TEMP\\");
+        path r(p / "narrow");
+    }
 };
 
 //  path p("narrow");
@@ -30,7 +30,7 @@ public:
 Test test1;
 Test test2;
 
-int cpp_main(int, char* [])
+int cpp_main(int, char*[])
 {
-  return 0;
+    return 0;
 }

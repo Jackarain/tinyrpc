@@ -1,6 +1,6 @@
-//  boost::compressed_pair test program   
-    
-//  (C) Copyright John Maddock 2000. 
+//  boost::compressed_pair test program
+
+//  (C) Copyright John Maddock 2000.
 //  Use, modification and distribution are subject to the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt).
@@ -45,7 +45,7 @@ struct contained
 
    // stored value:
    value_type v_;
-   
+
    // constructors:
    contained() {}
    contained(param_type p) : v_(p){}
@@ -197,11 +197,11 @@ struct comparible_UDT
    comparible_UDT() : i_(2){}
    comparible_UDT(const comparible_UDT& other) : i_(other.i_){}
    comparible_UDT& operator=(const comparible_UDT& other)
-   { 
+   {
       i_ = other.i_;
       return *this;
    }
-   bool operator == (const comparible_UDT& v){ return v.i_ == i_; }
+   bool operator == (const comparible_UDT& v) const { return v.i_ == i_; }
 };
 
 int main()
@@ -339,7 +339,7 @@ void call_traits_test<T, isarray>::assert_construct(typename call_traits_test<T,
    param_type p2(v);
    param_type p3(r);
    param_type p4(p);
-   
+
    unused_variable(v2);
    unused_variable(v3);
    unused_variable(v4);
@@ -376,7 +376,7 @@ void call_traits_test<T, true>::assert_construct(typename boost::call_traits<T>:
    reference r = t;
    const_reference cr = t;
    reference r2 = r;
-   #ifndef __BORLANDC__
+   #ifndef BOOST_BORLANDC
    // C++ Builder buglet:
    const_reference cr2 = r;
    #endif
@@ -388,12 +388,12 @@ void call_traits_test<T, true>::assert_construct(typename boost::call_traits<T>:
    param_type p2(v);
    param_type p3(r);
    param_type p4(p);
-   
+
    unused_variable(v2);
    unused_variable(v3);
    unused_variable(v4);
    unused_variable(v5);
-#ifndef __BORLANDC__
+#ifndef BOOST_BORLANDC
    unused_variable(r2);
    unused_variable(cr2);
 #endif

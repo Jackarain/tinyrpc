@@ -126,8 +126,9 @@ void interval_less_4_integral_types()
     BOOST_CHECK_EQUAL(icl::interval<T>::open(v2,v3) < icl::interval<T>::right_open(v7,v7), false);
     BOOST_CHECK_EQUAL(icl::interval<T>::left_open(v3,v3) < icl::interval<T>::closed(v7,v3), false);
 
-    BOOST_CHECK_EQUAL(IntervalT() < IntervalT(v3,v4), true);
-    BOOST_CHECK_EQUAL(icl::interval<T>::open(v2,v3) < icl::interval<T>::right_open(v7,v8), true);
+    BOOST_CHECK_EQUAL(IntervalT() < IntervalT(v3,v4), false);
+    BOOST_CHECK_EQUAL(icl::interval<T>::open(v2,v3) < icl::interval<T>::right_open(v7,v8), false);
+    BOOST_CHECK_NE   (icl::interval<T>::open(v2,v3), icl::interval<T>::right_open(v7,v8));
 
     //I: (I)nside  = closed bound
     //C: left open bound

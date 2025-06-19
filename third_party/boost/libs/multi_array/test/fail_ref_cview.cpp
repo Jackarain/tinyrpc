@@ -15,15 +15,15 @@
 //   ensure const_array_view doesn't allow element assignment.
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/array.hpp"
-#include "boost/type.hpp"
+#include <boost/array.hpp>
+#include <boost/type.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   const int ndims=3;
   typedef boost::multi_array_ref<int,ndims> array_ref;
@@ -51,7 +51,7 @@ test_main(int,char*[])
 
   csma2(elmt) = 5; // FAIL! csma is read only
   
-  return boost::exit_success;
+  return boost::report_errors();
 }
 
 

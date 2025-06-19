@@ -6,8 +6,8 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //
 
-#include <boost/generator_iterator.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/iterator/generator_iterator.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <algorithm>
 
 class X

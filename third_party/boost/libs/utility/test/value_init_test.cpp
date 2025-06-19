@@ -17,11 +17,13 @@
 
 #include "boost/utility/value_init.hpp"
 
-#ifdef __BORLANDC__
+#ifdef BOOST_BORLANDC
 #pragma hdrstop
 #endif
 
+#include <boost/core/invoke_swap.hpp>
 #include <boost/core/lightweight_test.hpp>
+#include <boost/config/workaround.hpp>
 
 //
 // Sample POD type
@@ -217,8 +219,8 @@ void check_initialized_value ( T const& y )
   BOOST_TEST ( y == initializedValue ) ;
 }
 
-#ifdef  __BORLANDC__
-#if __BORLANDC__ == 0x582
+#ifdef  BOOST_BORLANDC
+#if BOOST_BORLANDC == 0x582
 void check_initialized_value( NonPOD const& )
 {
   // The initialized_value check is skipped for Borland 5.82
@@ -359,7 +361,7 @@ int main()
   boost::value_initialized<SwapFunctionCallTester> swapFunctionCallTester2;
   get(swapFunctionCallTester1).data = 1;
   get(swapFunctionCallTester2).data = 2;
-  boost::swap(swapFunctionCallTester1, swapFunctionCallTester2);
+  boost::core::invoke_swap(swapFunctionCallTester1, swapFunctionCallTester2);
   BOOST_TEST( get(swapFunctionCallTester1).data == 2 );
   BOOST_TEST( get(swapFunctionCallTester2).data == 1 );
   BOOST_TEST( get(swapFunctionCallTester1).is_custom_swap_called );

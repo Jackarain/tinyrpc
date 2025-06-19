@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -50,11 +50,11 @@ int main() {
     // members of the pair are not default-constructible
     {
         using Pair1 = hana::pair<NoDefault, NoDefault>;
-        Pair1 p1{NoDefault{1}, NoDefault{2}};
+        Pair1 p1{NoDefault{1}, NoDefault{2}}; (void)p1;
         static_assert(!std::is_default_constructible<Pair1>{}, "");
 
         using Pair2 = hana::pair<NoDefault_nonempty, NoDefault_nonempty>;
-        Pair2 p2{NoDefault_nonempty{1}, NoDefault_nonempty{2}};
+        Pair2 p2{NoDefault_nonempty{1}, NoDefault_nonempty{2}}; (void)p2;
         static_assert(!std::is_default_constructible<Pair2>{}, "");
     }
 

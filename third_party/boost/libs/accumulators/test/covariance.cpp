@@ -6,11 +6,14 @@
 #define BOOST_NUMERIC_FUNCTIONAL_STD_VECTOR_SUPPORT
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/variates/covariate.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/covariance.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
@@ -89,6 +92,36 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    // "persistent" storage
+    std::stringstream ss;
+    // tolerance
+    double epsilon = 1e-6;
+    {
+
+        accumulator_set<double, stats<tag::covariance<double, tag::covariate1> > > acc;
+        acc(1., covariate1 = 2.);
+        acc(1., covariate1 = 4.);
+        acc(2., covariate1 = 3.);
+        acc(6., covariate1 = 1.);
+
+
+        BOOST_CHECK_CLOSE((covariance(acc)), -1.75, epsilon);
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_set<double, stats<tag::covariance<double, tag::covariate1> > > acc;
+    BOOST_CHECK_CLOSE((covariance(acc)), 0., epsilon);
+    boost::archive::text_iarchive ia(ss);
+    acc.serialize(ia, 0);
+    BOOST_CHECK_CLOSE((covariance(acc)), -1.75, epsilon);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -96,6 +129,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("covariance test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

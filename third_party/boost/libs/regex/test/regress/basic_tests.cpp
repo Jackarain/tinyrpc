@@ -16,14 +16,6 @@
   *   DESCRIPTION: main regex test declarations.
   */
 
-#include <boost/detail/workaround.hpp>
-
-#if BOOST_WORKAROUND(__BORLANDC__, < 0x560)
-// we get unresolved externals from basic_string
-// unless we do this, a well known Borland bug:
-#define _RWSTD_COMPILE_INSTANTIATE
-#endif
-
 #include "test.hpp"
 
 #ifdef BOOST_MSVC

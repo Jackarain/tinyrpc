@@ -33,11 +33,23 @@ the list.
 using L1 = mp_list_c<int, 2, 3>; // mp_list<mp_int<2>, mp_int<3>>
 ```
 
+## mp_list_v<A...>
+
+    template<auto... A> struct mp_list_v {};
+
+The standard value list type of Mp11. Requires {cpp}17.
+
 ## mp_is_list<L>
 
     template<class L> using mp_is_list = /*...*/;
 
 `mp_is_list<L>` is `mp_true` if `L` is a list (an instantiation of a class template whose template parameters are types), `mp_false` otherwise.
+
+## mp_is_value_list<L>
+
+    template<class L> using mp_is_value_list = /*...*/;
+
+`mp_is_value_list<L>` is `mp_true` under {cpp}17 if `L` is a value list (an instantiation of a class template whose template parameters are all values), `mp_false` otherwise.
 
 ## mp_size<L>
 
@@ -45,6 +57,8 @@ using L1 = mp_list_c<int, 2, 3>; // mp_list<mp_int<2>, mp_int<3>>
 
 `mp_size<L>` returns the number of elements in the list `L`, as a `mp_size_t`. In other words, `mp_size<L<T...>>` is an alias for
 `mp_size_t<sizeof...(T)>`.
+
+Supports value lists as `L` under {cpp}17.
 
 .Using mp_size with mp_list
 ```
@@ -64,11 +78,19 @@ using L3 = std::tuple<float>;
 using R3 = mp_size<L3>; // mp_size_t\<1>
 ```
 
+.Using mp_size with mp_list_v
+```
+using L4 = mp_list_v<1, false, 8ull>;
+using R4 = mp_size<L4>; // mp_size_t\<3>
+```
+
 ## mp_empty<L>
 
     template<class L> using mp_empty = mp_bool<mp_size<L>::value == 0>;
 
 `mp_empty<L>` is an alias for `mp_true` if the list `L` is empty, for `mp_false` otherwise.
+
+Supports value lists as `L` under {cpp}17.
 
 .Using mp_empty with std::tuple
 ```
@@ -84,6 +106,9 @@ using R2 = mp_empty<L2>; // mp_true
     template<class L1, class L2> using mp_assign = /*...*/;
 
 `mp_assign<L1<T1...>, L2<T2...>>` is an alias for `L1<T2...>`. That is, it replaces the elements of `L1` with those of `L2`.
+
+Supports value lists as `L1` or `L2` under {cpp}17. When assigning values to types, wraps them in `mp_value`. When assigning
+types to values, unwraps them by using `T::value`.
 
 .Using mp_assign with mp_list and std::tuple
 ```
@@ -101,11 +126,21 @@ using L2 = mp_list<int, float>;
 using R1 = mp_assign<L1, L2>; // std::pair<int, float>
 ```
 
+.Using mp_assign with value lists
+```
+using L1 = mp_list<int, float>;
+using L2 = mp_list_v<0, false>;
+
+using R1 = mp_assign<L1, L2>; // mp_list<mp_int<0>, mp_false>
+```
+
 ## mp_clear<L>
 
     template<class L> using mp_clear = mp_assign<L, mp_list<>>;
 
 `mp_clear<L<T...>>` is an alias for `L<>`, that is, it removes the elements of `L`.
+
+Supports value lists as `L` under {cpp}17.
 
 .Using mp_clear with std::tuple
 ```
@@ -113,11 +148,19 @@ using L1 = std::tuple<int, float>;
 using R1 = mp_clear<L1>; // std::tuple<>
 ```
 
+.Using mp_clear with mp_list_v
+```
+using L1 = mp_list_v<0, true>;
+using R1 = mp_clear<L1>; // mp_list_v<>
+```
+
 ## mp_front<L>
 
     template<class L> using mp_front = /*...*/;
 
 `mp_front<L>` is the first element of the list `L`. That is, `mp_front<L<T1, T...>>` is an alias for `T1`.
+
+Supports value lists as `L` under {cpp}17. In that case, the returned element is wrapped with `mp_value`.
 
 .Using mp_front with std::pair
 ```
@@ -137,11 +180,19 @@ using L3 = mp_list<char[1], char[2], char[3], char[4]>;
 using R3 = mp_front<L3>; // char[1]
 ```
 
+.Using mp_front with mp_list_v
+```
+using L4 = mp_list_v<1, 2, 3, 4>;
+using R4 = mp_front<L4>; // mp_int\<1>
+```
+
 ## mp_pop_front<L>
 
     template<class L> using mp_pop_front = /*...*/;
 
 `mp_pop_front<L>` removes the first element of the list `L`. That is, `mp_pop_front<L<T1, T...>>` is an alias for `L<T...>`.
+
+Supports value lists as `L` under {cpp}17.
 
 .Using mp_pop_front with std::tuple
 ```
@@ -153,6 +204,12 @@ using R1 = mp_pop_front<L1>; // std::tuple<double, long double>
 ```
 using L2 = mp_list<void>;
 using R2 = mp_pop_front<L2>; // mp_list<>
+```
+
+.Using mp_pop_front with mp_list_v
+```
+using L3 = mp_list_v<1, 2, 3, 4>;
+using R3 = mp_pop_front<L3>; // mp_list_v<2, 3, 4>
 ```
 
 ## mp_first<L>
@@ -173,6 +230,8 @@ using R2 = mp_pop_front<L2>; // mp_list<>
 
 `mp_second<L>` is the second element of the list `L`. That is, `mp_second<L<T1, T2, T...>>` is an alias for `T2`.
 
+Supports value lists as `L` under {cpp}17. In that case, the returned element is wrapped with `mp_value`.
+
 .Using mp_second with std::pair
 ```
 using L1 = std::pair<int, float>;
@@ -191,11 +250,19 @@ using L3 = mp_list<char[1], char[2], char[3], char[4]>;
 using R3 = mp_second<L3>; // char[2]
 ```
 
+.Using mp_second with mp_list_v
+```
+using L4 = mp_list_v<1, 2, 3, 4>;
+using R4 = mp_second<L4>; // mp_int\<2>
+```
+
 ## mp_third<L>
 
     template<class L> using mp_third = /*...*/;
 
 `mp_third<L>` is the third element of the list `L`. That is, `mp_third<L<T1, T2, T3, T...>>` is an alias for `T3`.
+
+Supports value lists as `L` under {cpp}17. In that case, the returned element is wrapped with `mp_value`.
 
 .Using mp_third with std::tuple
 ```
@@ -209,12 +276,20 @@ using L2 = mp_list<char[1], char[2], char[3], char[4]>;
 using R2 = mp_third<L2>; // char[3]
 ```
 
+.Using mp_third with mp_list_v
+```
+using L3 = mp_list<1, 2, 3, 4>;
+using R3 = mp_third<L3>; // mp_int\<3>
+```
+
 ## mp_push_front<L, T...>
 
     template<class L, class... T> using mp_push_front = /*...*/;
 
 `mp_push_front<L, T...>` inserts the elements `T...` at the front of the list `L`. That is, `mp_push_front<L<U...>, T...>`
 is an alias for `L<T..., U...>`.
+
+Supports value lists as `L` under {cpp}17. In that case, `mp_push_front<L<A...>, T...>` is `L<T::value..., A...>`.
 
 .Using mp_push_front with std::tuple
 ```
@@ -228,12 +303,20 @@ using L2 = mp_list<void>;
 using R2 = mp_push_front<L2, char[1], char[2]>; // mp_list<char[1], char[2], void>
 ```
 
+.Using mp_push_front with mp_list_v
+```
+using L3 = mp_list_v<0, 1>;
+using R3 = mp_push_front<L3, mp_true, mp_false>; // mp_list_v<true, false, 0, 1>
+```
+
 ## mp_push_back<L, T...>
 
     template<class L, class... T> using mp_push_back = /*...*/;
 
 `mp_push_back<L, T...>` inserts the elements `T...` at the back of the list `L`. That is, `mp_push_back<L<U...>, T...>`
 is an alias for `L<U..., T...>`.
+
+Supports value lists as `L` under {cpp}17. In that case, `mp_push_back<L<A...>, T...>` is `L<A..., T::value...>`.
 
 .Using mp_push_back with std::tuple
 ```
@@ -247,11 +330,19 @@ using L2 = mp_list<void>;
 using R2 = mp_push_back<L2, char[1], char[2]>; // mp_list<void, char[1], char[2]>
 ```
 
+.Using mp_push_back with mp_list_v
+```
+using L3 = mp_list_v<0, 1>;
+using R3 = mp_push_front<L3, mp_true, mp_false>; // mp_list_v<0, 1, true, false>
+```
+
 ## mp_rename<L, Y>
 
     template<class L, template<class...> class Y> using mp_rename = /*...*/;
 
 `mp_rename<L, Y>` changes the type of the list `L` to `Y`. That is, `mp_rename<L<T...>, Y>` is an alias for `Y<T...>`.
+
+Supports value lists as `L` under {cpp}17. In that case, `mp_rename<L<A...>, Y>` is `Y<mp_value<A>...>`.
 
 .Using mp_rename to rename std::pair to std::tuple
 ```
@@ -263,6 +354,12 @@ using R1 = mp_rename<L1, std::tuple>; // std::tuple<double, long double>
 ```
 using L2 = std::tuple<void>;
 using R2 = mp_rename<L2, mp_list>; // mp_list<void>
+```
+
+.Using mp_rename to convert a value list to a type list
+```
+using L3 = mp_list_v<false, 7>;
+using R3 = mp_rename<L3, mp_list>; // mp_list<mp_false, mp_int<7>>
 ```
 
 ## mp_apply<F, L>
@@ -293,12 +390,30 @@ using R1 = mp_apply_q<mp_bind_front<mp_push_back, L1>, L2>;
   // R1 is std::tuple<double, long double, int, long>
 ```
 
+## mp_rename_v<L, Y>
+
+    template<class L, template<auto...> class Y> using mp_rename_v = /*...*/;
+
+Requires {cpp}17.
+
+For a value list `L`, `mp_rename_v<L<A...>, Y>` is `Y<A...>`.
+
+For a type list `L`, `mp_rename_v<L<T...>, Y>` is an alias for `Y<T::value...>`.
+
+.Using mp_rename_v to convert a type list to a value list
+```
+using L1 = mp_list<mp_false, mp_int<7>>;
+using R1 = mp_rename_v<L1, mp_list_v>; // mp_list_v<false, 7>;
+```
+
 ## mp_append<L...>
 
     template<class... L> using mp_append = /*...*/;
 
 `mp_append<L...>` concatenates the lists in `L...` into a single list that has the same type as the first list. `mp_append<>`
 is an alias for `mp_list<>`. `mp_append<L1<T1...>, L2<T2...>, ..., Ln<Tn...>>` is an alias for `L1<T1..., T2..., ..., Tn...>`.
+
+Supports value lists under {cpp}17, but mixing type lists and value lists in the same `mp_append` is not supported.
 
 .Using mp_append with lists of various types
 ```
@@ -311,12 +426,22 @@ using R1 = mp_append<L1, L2, L3, L4>;
   // std::tuple<double, long double, int, short, long>
 ```
 
+.Using mp_append with value lists
+```
+using L1 = mp_list_v<true, false>;
+using L2 = mp_list_v<0, 1, 2, 3>;
+
+using R1 = mp_append<L1, L2>; // mp_list_v<true, false, 0, 1, 2, 3>
+```
+
 ## mp_replace_front<L, T>
 
     template<class L, class T> using mp_replace_front = /*...*/;
 
 `mp_replace_front<L, T>` replaces the first element of the list `L` with `T`. That is, `mp_replace_front<L<U1, U...>, T>` is
 an alias for `L<T, U...>`.
+
+Supports value lists as `L` under {cpp}17. In that case, `mp_replace_front<L<A1, A...>, T>` is `L<T::value, A...>`.
 
 .Using mp_replace_front with std::pair
 ```
@@ -336,6 +461,12 @@ using L3 = mp_list<char[1], char[2], char[3], char[4]>;
 using R3 = mp_replace_front<L3, void>; // mp_list<void, char[2], char[3], char[4]>;
 ```
 
+.Using mp_replace_front with mp_list_v
+```
+using L4 = mp_list_v<1, 2, 3, 4>;
+using R4 = mp_replace_front<L4, mp_false>; // mp_list_v<false, 2, 3, 4>;
+```
+
 ## mp_replace_first<L, T>
 
     template<class L, class T> using mp_replace_first = mp_replace_front<L, T>;
@@ -349,6 +480,8 @@ using R3 = mp_replace_front<L3, void>; // mp_list<void, char[2], char[3], char[4
 `mp_replace_second<L, T>` replaces the second element of the list `L` with `T`. That is, `mp_replace_second<L<U1, U2, U...>, T>`
 is an alias for `L<U1, T, U...>`.
 
+Supports value lists as `L` under {cpp}17. In that case, `mp_replace_second<L<A1, A2, A...>, T>` is `L<A1, T::value, A...>`.
+
 .Using mp_replace_second with std::pair
 ```
 using L1 = std::pair<int, float>;
@@ -361,10 +494,16 @@ using L2 = std::tuple<float, double, long double>;
 using R2 = mp_replace_second<L2, void>; // std::tuple<float, void, long double>
 ```
 
-.Using mp_replace_front with mp_list
+.Using mp_replace_second with mp_list
 ```
 using L3 = mp_list<char[1], char[2], char[3], char[4]>;
 using R3 = mp_replace_second<L3, void>; // mp_list<char[1], void, char[3], char[4]>;
+```
+
+.Using mp_replace_second with mp_list_v
+```
+using L4 = mp_list_v<1, 2, 3, 4>;
+using R4 = mp_replace_second<L4, mp_false>; // mp_list_v<1, false, 3, 4>;
 ```
 
 ## mp_replace_third<L, T>
@@ -373,6 +512,8 @@ using R3 = mp_replace_second<L3, void>; // mp_list<char[1], void, char[3], char[
 
 `mp_replace_third<L, T>` replaces the third element of the list `L` with `T`. That is, `mp_replace_third<L<U1, U2, U3, U...>, T>`
 is an alias for `L<U1, U2, T, U...>`.
+
+Supports value lists as `L` under {cpp}17. In that case, `mp_replace_third<L<A1, A2, A3, A...>, T>` is `L<A1, A2, T::value, A...>`.
 
 .Using mp_replace_third with std::tuple
 ```
@@ -385,3 +526,71 @@ using R1 = mp_replace_third<L1, void>; // std::tuple<float, double, void>
 using L2 = mp_list<char[1], char[2], char[3], char[4]>;
 using R2 = mp_replace_third<L2, void>; // mp_list<char[1], char[2], void, char[4]>;
 ```
+
+.Using mp_replace_third with mp_list_v
+```
+using L4 = mp_list_v<1, 2, 3, 4>;
+using R4 = mp_replace_third<L4, mp_false>; // mp_list_v<1, 2, false, 4>;
+```
+
+## mp_transform_front<L, F>
+
+    template<class L, template<class...> class F> using mp_transform_front =
+        /*...*/;
+
+`mp_transform_front<L, F>` replaces the first element `T1` of the list `L` with `F<T1>`.
+
+Supports value lists as `L` under {cpp}17. In that case, the replacement is `F<mp_value<T1>>::value`.
+
+## mp_transform_front_q<L, Q>
+
+    template<class L, class Q> using mp_transform_front_q =
+        mp_transform_front<L, Q::template fn>;
+
+As `mp_transform_front`, but takes a quoted metafunction.
+
+## mp_transform_first<L, F>
+
+    template<class L, template<class...> class F> using mp_transform_first =
+        mp_transform_front<L, F>;
+
+`mp_transform_first` is another name for `mp_transform_front`.
+
+## mp_transform_first_q<L, Q>
+
+    template<class L, class Q> using mp_transform_first_q =
+        mp_transform_first<L, Q::template fn>;
+
+As `mp_transform_first`, but takes a quoted metafunction.
+
+## mp_transform_second<L, F>
+
+    template<class L, template<class...> class F> using mp_transform_second =
+        /*...*/;
+
+`mp_transform_second<L, F>` replaces the second element `T2` of the list `L` with `F<T2>`.
+
+Supports value lists as `L` under {cpp}17. In that case, the replacement is `F<mp_value<T2>>::value`.
+
+## mp_transform_second_q<L, Q>
+
+    template<class L, class Q> using mp_transform_second_q =
+        mp_transform_second<L, Q::template fn>;
+
+As `mp_transform_second`, but takes a quoted metafunction.
+
+## mp_transform_third<L, F>
+
+    template<class L, template<class...> class F> using mp_transform_third =
+        /*...*/;
+
+`mp_transform_third<L, F>` replaces the third element `T3` of the list `L` with `F<T3>`.
+
+Supports value lists as `L` under {cpp}17. In that case, the replacement is `F<mp_value<T3>>::value`.
+
+## mp_transform_third_q<L, Q>
+
+    template<class L, class Q> using mp_transform_third_q =
+        mp_transform_third<L, Q::template fn>;
+
+As `mp_transform_third`, but takes a quoted metafunction.

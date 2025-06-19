@@ -15,15 +15,11 @@
 
 #include <iostream>
 #include <boost/intrusive/options.hpp>
-#include <boost/functional/hash.hpp>
 #include <boost/intrusive/pointer_traits.hpp>
 #include "nonhook_node.hpp"
 #include "int_holder.hpp"
 #include <boost/intrusive/detail/get_value_traits.hpp>
 #include <boost/container/vector.hpp>
-
-namespace boost{
-namespace intrusive{
 
 struct testvalue_filler
 {
@@ -130,39 +126,16 @@ struct testvalue
    {  return other1.value_.int_ != other2;  }
 
    friend std::size_t hash_value(const testvalue&t)
-   {
-      boost::hash<int> hasher;
-      return hasher((&t)->int_value());
-   }
+   {  return hash_value(t.value_);  }
+
+   template < typename Node_Algorithms >
+   friend void swap_nodes(testvalue& lhs, testvalue& rhs)
+   {  lhs.swap_nodes(rhs);  }
+
+   friend std::ostream& operator<<
+      (std::ostream& s, const testvalue& t)
+   {  return s << t.value_.int_value();   }
 };
-
-template<class T>
-std::size_t priority_hash(const T &t)
-{  return boost::hash<int>()((&t)->int_value()); }
-
-std::size_t priority_hash(int i)
-{  return boost::hash<int>()(i); }
-
-template <class T, class U>
-bool priority_order(const T& t1, const U& t2)
-{
-   std::size_t hash1 = (priority_hash)(t1);
-   boost::hash_combine(hash1, -hash1);
-   std::size_t hash2 = (priority_hash)(t2);
-   boost::hash_combine(hash2, -hash2);
-   return hash1 < hash2;
-}
-
-template < typename Node_Algorithms, class Hooks>
-void swap_nodes(testvalue<Hooks>& lhs, testvalue<Hooks>& rhs)
-{
-    lhs.swap_nodes(rhs);
-}
-
-template<class Hooks>
-std::ostream& operator<<
-   (std::ostream& s, const testvalue<Hooks>& t)
-{  return s << t.value_.int_value();   }
 
 struct even_odd
 {
@@ -206,13 +179,14 @@ struct ValueContainer< testvalue<Hooks> >
 template < typename Pointer >
 class heap_node_holder
 {
-   typedef typename pointer_traits<Pointer>::element_type element_type;
+   typedef boost::intrusive::pointer_traits<Pointer> ptrtraits_t;
+   typedef typename ptrtraits_t::element_type element_type;
    typedef Pointer pointer;
-   typedef typename pointer_rebind<pointer, const element_type>::type const_pointer;
+   typedef typename boost::intrusive::pointer_rebind<pointer, const element_type>::type const_pointer;
 
    public:
    heap_node_holder()
-      : m_ptr(pointer_traits<Pointer>::pointer_to(*new element_type))
+      : m_ptr(ptrtraits_t::pointer_to(*new element_type))
    {}
 
    ~heap_node_holder()
@@ -235,50 +209,38 @@ struct testvalue_traits
    typedef testvalue< Hooks > value_type;
 
    //base
-   typedef typename detail::get_base_value_traits
+   typedef typename boost::intrusive::detail::get_base_value_traits
          < value_type
          , typename Hooks::base_hook_type
          >::type base_value_traits;
    //auto-base
-   typedef typename detail::get_base_value_traits
+   typedef typename boost::intrusive::detail::get_base_value_traits
          < value_type
          , typename Hooks::auto_base_hook_type
          >::type auto_base_value_traits;
    //member
-   typedef typename detail::get_member_value_traits
-         < member_hook
+   typedef typename boost::intrusive::detail::get_member_value_traits
+         < boost::intrusive::member_hook
             < value_type
             , typename Hooks::member_hook_type
             , &value_type::node_
             >
          >::type member_value_traits;
    //auto-member
-   typedef typename detail::get_member_value_traits
-         < member_hook
+   typedef typename boost::intrusive::detail::get_member_value_traits
+         < boost::intrusive::member_hook
             < value_type
             , typename Hooks::auto_member_hook_type
             , &value_type::auto_node_
             >
          >::type auto_member_value_traits;
    //nonmember
-   typedef nonhook_node_member_value_traits
+   typedef boost::intrusive::nonhook_node_member_value_traits
          < value_type
          , typename Hooks::nonhook_node_member_type
          , &value_type::nhn_member_
-         , safe_link
+         , boost::intrusive::safe_link
          > nonhook_value_traits;
 };
-
-}  //namespace intrusive{
-}  //namespace boost{
-
-bool priority_order(int t1, int t2)
-{
-   std::size_t hash1 = boost::hash<int>()(t1);
-   boost::hash_combine(hash1, &t1);
-   std::size_t hash2 = boost::hash<int>()(t2);
-   boost::hash_combine(hash2, &t2);
-   return hash1 < hash2;
-}
 
 #endif

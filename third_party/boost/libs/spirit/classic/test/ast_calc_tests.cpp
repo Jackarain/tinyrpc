@@ -17,7 +17,7 @@
 #include <stack>
 #include <functional>
 #include <string>
-#include <boost/detail/lightweight_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 using namespace BOOST_SPIRIT_CLASSIC_NS;
 
@@ -206,7 +206,9 @@ long eval_expression(iter_t const& i)
             std::abort(); // error
     }
 
+#if defined(_MSC_VER) && (_MSC_VER < 1700)
     return 0;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////

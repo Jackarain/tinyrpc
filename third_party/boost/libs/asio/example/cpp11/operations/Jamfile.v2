@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+# Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 #
 # Distributed under the Boost Software License, Version 1.0. (See accompanying
 # file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,3 +34,6 @@ exe composed_2 : composed_2.cpp ;
 exe composed_3 : composed_3.cpp ;
 exe composed_4 : composed_4.cpp ;
 exe composed_5 : composed_5.cpp ;
+exe composed_6 : composed_6.cpp ;
+exe composed_7 : composed_7.cpp ;
+exe composed_8 : composed_8.cpp ;

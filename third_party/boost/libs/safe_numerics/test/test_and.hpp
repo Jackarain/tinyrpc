@@ -8,7 +8,6 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <iostream>
-#include <exception>
 
 #include <boost/safe_numerics/safe_integer.hpp>
 #include <boost/safe_numerics/range_value.hpp>
@@ -48,7 +47,7 @@ bool test_and(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                     std::cout
                         << " == "<< av1 << " & " << av2
@@ -57,7 +56,7 @@ bool test_and(
                 try{
                     t1 & v2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }
@@ -89,7 +88,7 @@ bool test_and(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                     std::cout
                         << " == "<< av1 << " & " << av2
@@ -98,7 +97,7 @@ bool test_and(
                 try{
                     v1 & t2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }
@@ -127,7 +126,7 @@ bool test_and(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                 std::cout
                     << " == "<< av1 << " & " << av2
@@ -136,7 +135,7 @@ bool test_and(
                 try{
                     t1 & t2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }

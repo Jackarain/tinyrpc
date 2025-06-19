@@ -30,6 +30,11 @@ namespace test {
     typedef test::less type;
   };
 
+  template<class T> struct equals_to_compare< std::equal_to<T> >
+  {
+    typedef std::less<T> type;
+  };
+
   template <class X1, class X2> void compare_range(X1 const& x1, X2 const& x2)
   {
     typedef test::list<typename X1::value_type> value_list;
@@ -37,9 +42,8 @@ namespace test {
     value_list values2(x2.begin(), x2.end());
     values1.sort();
     values2.sort();
-    BOOST_TEST(values1.size() == values2.size() &&
-               test::equal(values1.begin(), values1.end(), values2.begin(),
-                 test::equivalent));
+    BOOST_TEST_ALL_WITH(values1.begin(), values1.end(), values2.begin(),
+      values2.end(), test::equivalent);
   }
 
   template <class X1, class X2, class T>

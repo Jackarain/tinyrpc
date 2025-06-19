@@ -214,14 +214,7 @@ int test_main( int , char* [] )
 {
     test_all<bg::model::d2::point_xy<double> >();
     test_all<bg::model::d2::point_xy<double>, bg::model::point<double, 2, bg::cs::cartesian> >();
-
-#if ! defined(BOOST_GEOMETRY_RESCALE_TO_ROBUST)
     test_all<bg::model::d2::point_xy<boost::rational<int> > >();
-#endif
-
-#if defined(HAVE_TTMATH)
-    test_all<bg::model::d2::point_xy<ttmath_big> >();
-#endif
 
     return 0;
 }

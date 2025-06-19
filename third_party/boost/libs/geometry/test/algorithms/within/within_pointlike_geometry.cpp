@@ -3,8 +3,8 @@
 // Copyright (c) 2007-2015 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2013-2015 Adam Wulkiewicz, Lodz, Poland.
 
-// This file was modified by Oracle on 2014, 2015, 2016, 2017.
-// Modifications copyright (c) 2014-2017 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2014-2021.
+// Modifications copyright (c) 2014-2021 Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
@@ -63,7 +63,7 @@ void test_p_l()
 
     test_geometry<P, mls>("POINT(0 0)", "MULTILINESTRING((0 0,1 1,2 2),(0 0,0 1))", true);
     test_geometry<P, mls>("POINT(0 0)", "MULTILINESTRING((0 0,1 1,2 2),(0 0,0 1),(0 0,1 0))", false);
-    
+
     test_geometry<P, mls>("POINT(1 1)", "MULTILINESTRING((0 0, 1 1),(1 1, 2 2))", true);
     test_geometry<P, mls>("POINT(1 1)", "MULTILINESTRING((0 0, 1 1),(2 2, 3 3))", false);
 
@@ -154,19 +154,19 @@ void test_spherical_geographic()
 {
     bg::model::polygon<Point> wrangel;
 
-    typename boost::mpl::if_
+    std::conditional_t
         <
-            boost::is_same<typename bg::cs_tag<Point>::type, bg::geographic_tag>,
+            std::is_same<typename bg::cs_tag<Point>::type, bg::geographic_tag>::value,
             bg::strategy::within::geographic_winding<Point>,
             bg::strategy::within::spherical_winding<Point>
-        >::type ws;
+        > ws;
 
-    typename boost::mpl::if_
+    std::conditional_t
         <
-            boost::is_same<typename bg::cs_tag<Point>::type, bg::geographic_tag>,
+            std::is_same<typename bg::cs_tag<Point>::type, bg::geographic_tag>::value,
             bg::strategy::side::geographic<>,
             bg::strategy::side::spherical_side_formula<>
-        >::type ss;
+        > ss;
 
     boost::ignore_unused(ws, ss);
 
@@ -252,117 +252,6 @@ void test_spherical_geographic()
         BOOST_CHECK_EQUAL(bg::within(pt_n23, poly_n, ws), false);
         BOOST_CHECK_EQUAL(bg::within(pt_n24, poly_n, ws), false);
     }
-
-    // TODO: Move to covered_by tests
-
-    // Segment going through pole
-    {
-        bg::model::polygon<Point> poly_n1;
-        bg::read_wkt("POLYGON((-90 80,90 80,90 70,-90 70, -90 80))", poly_n1);
-        // Points on segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, 85), poly_n1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, 85), poly_n1, ws), true);
-        // Points on pole
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, 90), poly_n1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(0, 90), poly_n1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(45, 90), poly_n1, ws), true);
-    }
-    // Segment going through pole
-    {
-        bg::model::polygon<Point> poly_n2;
-        bg::read_wkt("POLYGON((-90 80,90 70,0 70,-90 80))", poly_n2);
-        // Points on segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, 85), poly_n2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, 75), poly_n2, ws), true);
-        // Points outside but on the same level as segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, 75), poly_n2, ws), false);
-    }
-    // Possibly invalid, 2-segment polygon with segment going through pole
-    /*{
-        bg::model::polygon<Point> poly_n;
-        bg::read_wkt("POLYGON((-90 80,90 70,-90 80))", poly_n);
-        // Point within
-        BOOST_CHECK_EQUAL(bg::within(Point(0, 89), poly_n), true);
-        // Points on segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, 85), poly_n), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, 75), poly_n), true);
-        // Points outside but on the same level as segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, 75), poly_n), false);
-    }*/
-    // Segment endpoints on pole with arbitrary longitudes
-    {
-        bg::model::polygon<Point> poly_n3;
-        bg::read_wkt("POLYGON((45 90,45 80,0 80,45 90))", poly_n3);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(0, 85), poly_n3, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(45, 85), poly_n3, ws), true);
-    }
-    // Segment going through pole
-    {
-        bg::model::polygon<Point> poly_s1;
-        bg::read_wkt("POLYGON((-90 -80,-90 -70,90 -70,90 -80,-90 -80))", poly_s1);
-        // Points on segment
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(-90, -85), poly_s1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, -85), poly_s1, ws), true);
-        // Points on pole
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(90, -90), poly_s1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(0, -90), poly_s1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(45, -90), poly_s1, ws), true);
-    }
-    // Segment endpoints on pole with arbitrary longitudes
-    {
-        bg::model::polygon<Point> poly_s2;
-        bg::read_wkt("POLYGON((45 -90,0 -80,45 -80,45 -90))", poly_s2);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(0, -85), poly_s2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(45, -85), poly_s2, ws), true);
-    }
-    // Polygon covering nearly half of the globe but no poles
-    {
-        bg::model::polygon<Point> poly_h1;
-        bg::read_wkt("POLYGON((170 0, 170 -80,10 -80,0 -80,0 -20,10 -20,10 20,0 20,0 80,10 80,170 80,170 0))", poly_h1);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 90), poly_h1, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 85), poly_h1, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 50), poly_h1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 0), poly_h1, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -50), poly_h1, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -85), poly_h1, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -90), poly_h1, ws), false);
-    }
-    // Polygon covering more than half of the globe with both holes
-    {
-        bg::model::polygon<Point> poly_h2;
-        bg::read_wkt("POLYGON((180 0, 180 -80,0 -80,10 -80,10 -20,0 -20,0 20,10 20,10 80,0 80,180 80,180 0))", poly_h2);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 90), poly_h2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 85), poly_h2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 50), poly_h2, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 0), poly_h2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -50), poly_h2, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -85), poly_h2, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -90), poly_h2, ws), true);
-    }
-    // Polygon covering around half of the globe covering south pole
-    {
-        bg::model::polygon<Point> poly_h3;
-        bg::read_wkt("POLYGON((180 0, 180 -80,0 -80,0 -20,10 -20,10 20,0 20,0 80,10 80,170 80,180 0))", poly_h3);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 90), poly_h3, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 85), poly_h3, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 50), poly_h3, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 0), poly_h3, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -50), poly_h3, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -85), poly_h3, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -90), poly_h3, ws), true);
-    }
-    // Polygon covering around half of the globe covering north pole
-    {
-        bg::model::polygon<Point> poly_h4;
-        bg::read_wkt("POLYGON((180 0, 170 -80,10 -80,10 -20,0 -20,0 20,10 20,10 80,0 80,180 80,180 0))", poly_h4);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 90), poly_h4, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 85), poly_h4, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 50), poly_h4, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, 0), poly_h4, ws), true);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -50), poly_h4, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -85), poly_h4, ws), false);
-        BOOST_CHECK_EQUAL(bg::covered_by(Point(5, -90), poly_h4, ws), false);
-    }
 }
 
 void test_large_integers()
@@ -390,8 +279,8 @@ void test_large_integers()
 
 void test_tickets()
 {
-    typedef boost::geometry::model::d2::point_xy<double> pt;
-    typedef boost::geometry::model::ring<pt> ring;
+    typedef bg::model::d2::point_xy<double> pt;
+    typedef bg::model::ring<pt> ring;
 
     // https://svn.boost.org/trac/boost/ticket/9628
     {
@@ -408,9 +297,9 @@ void test_tickets()
 
         pt p( -12260.669324773118, 54820.312032458634 );
 
-        //boost::geometry::correct(r);
+        //bg::correct(r);
 
-        bool within = boost::geometry::within(p, r);
+        bool within = bg::within(p, r);
         BOOST_CHECK_EQUAL(within, false);
     }
     // similar
@@ -423,7 +312,7 @@ void test_tickets()
 
         pt p( -13826.0, 54820.312032458634 );
 
-        bool within = boost::geometry::within(p, r);
+        bool within = bg::within(p, r);
         BOOST_CHECK_EQUAL(within, false);
     }
 
@@ -433,9 +322,9 @@ void test_tickets()
         ring r;
         bg::read_wkt("POINT(0.1377 5.00)", p);
         bg::read_wkt("POLYGON((0.1277 4.97,  0.1277 5.00, 0.1278 4.9999999999999982, 0.1278 4.97, 0.1277 4.97))", r);
-        bool within = boost::geometry::within(p, r);
+        bool within = bg::within(p, r);
         BOOST_CHECK_EQUAL(within, false);
-        bool covered_by = boost::geometry::covered_by(p, r);
+        bool covered_by = bg::covered_by(p, r);
         BOOST_CHECK_EQUAL(covered_by, false);
     }
 }
@@ -449,12 +338,6 @@ int test_main( int , char* [] )
 
     test_spherical_geographic<bg::model::point<double, 2, bg::cs::spherical_equatorial<bg::degree> > >();
     test_spherical_geographic<bg::model::point<double, 2, bg::cs::geographic<bg::degree> > >();
-
-#if defined(HAVE_TTMATH)
-    test_all<bg::model::d2::point_xy<ttmath_big> >();
-    test_spherical_geographic<bg::model::point<ttmath_big, 2, bg::cs::spherical_equatorial<bg::degree> > >();
-    test_spherical_geographic<bg::model::point<ttmath_big, 2, bg::cs::geographic<bg::degree> > >();
-#endif
 
     test_tickets();
 

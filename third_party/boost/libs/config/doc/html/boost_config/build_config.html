@@ -1,6 +1,6 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Build Time Configuration</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
@@ -8,6 +8,7 @@
 <link rel="up" href="../index.html" title="Boost.Config">
 <link rel="prev" href="boost_macro_reference.html" title="Boost Macro Reference">
 <link rel="next" href="cstdint.html" title="Standard Integer Types">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <table cellpadding="2" width="100%"><tr>
@@ -104,7 +105,8 @@
       Notice that multiple arguments can be added to the requires rule, and that
       these are always the same as the Boost.Config macro name, but in lower case
       and with the <span class="emphasis"><em>boost_no_</em></span> or <span class="emphasis"><em>boost_has_</em></span>
-      prefix removed.
+      prefix removed. You can also use any C++ standard feature-macro name with the
+      leading underscores removed (see more below).
     </p>
 <p>
       When building the above example, you will see at the start of the build process
@@ -114,6 +116,36 @@
 <span class="special">-</span> <span class="identifier">Boost</span><span class="special">.</span><span class="identifier">Config</span> <span class="identifier">Feature</span> <span class="identifier">Check</span><span class="special">:</span> <span class="identifier">cxx11_constexpr</span> <span class="special">:</span> <span class="identifier">yes</span>
 <span class="special">-</span> <span class="identifier">Boost</span><span class="special">.</span><span class="identifier">Config</span> <span class="identifier">Feature</span> <span class="identifier">Check</span><span class="special">:</span> <span class="identifier">cxx11_user_defined_literals</span> <span class="special">:</span> <span class="identifier">yes</span>
 </pre>
+<p>
+      If you wish to make a build conditional on a C++ standard feature macro then
+      you can specify these too, just remove the leading underscores from the name.
+      For example:
+    </p>
+<pre class="programlisting"><span class="special">[</span> <span class="identifier">requires</span> <span class="identifier">cpp_constexpr</span> <span class="special">]</span>
+</pre>
+<p>
+      To require C++11 style const-expressions. If you want to specify a macro from
+      a particular standard, then you append an underscore followed by the (2 digit)
+      year of the standard, for example:
+    </p>
+<pre class="programlisting"><span class="special">[</span> <span class="identifier">requires</span> <span class="identifier">cpp_constexpr_17</span> <span class="special">]</span>
+</pre>
+<p>
+      For C++17 constepxr. If you don't specify a standard then you get the first
+      version that introduced the macro. In addition there are only standard-specific
+      rules for each version bump of the macro, so:
+    </p>
+<pre class="programlisting"><span class="special">[</span> <span class="identifier">requires</span> <span class="identifier">cpp_if_constexpr_17</span> <span class="special">]</span>
+</pre>
+<p>
+      Is fine since the macro was introduced in C++17 and is the same as the un-versioned
+      name, but:
+    </p>
+<pre class="programlisting"><span class="special">[</span> <span class="identifier">requires</span> <span class="identifier">cpp_if_constexpr_20</span> <span class="special">]</span>
+</pre>
+<p>
+      Will result in a build error since there is no C++20 version bump for <code class="computeroutput"><span class="identifier">__cpp_if_constexpr</span></code>.
+    </p>
 <p>
       That's all there is to this handy feature, should at any time you be unsure
       of the feature-test names you can pass to the "requires" rule, then
@@ -127,15 +159,12 @@
       for you to write the test cases yourself.
     </p>
 </div>
-<table xmlns:rev="http://www.cs.rpi.edu/~gregod/boost/tools/doc/revision" width="100%"><tr>
-<td align="left"></td>
-<td align="right"><div class="copyright-footer">Copyright &#169; 2001-2007 Beman Dawes, Vesa Karvonen, John
+<div class="copyright-footer">Copyright © 2001-2007 Beman Dawes, Vesa Karvonen, John
       Maddock<p>
         Distributed under the Boost Software License, Version 1.0. (See accompanying
         file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt" target="_top">http://www.boost.org/LICENSE_1_0.txt</a>)
       </p>
-</div></td>
-</tr></table>
+</div>
 <hr>
 <div class="spirit-nav">
 <a accesskey="p" href="boost_macro_reference.html"><img src="../../../../../doc/src/images/prev.png" alt="Prev"></a><a accesskey="u" href="../index.html"><img src="../../../../../doc/src/images/up.png" alt="Up"></a><a accesskey="h" href="../index.html"><img src="../../../../../doc/src/images/home.png" alt="Home"></a><a accesskey="n" href="cstdint.html"><img src="../../../../../doc/src/images/next.png" alt="Next"></a>

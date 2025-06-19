@@ -1,10 +1,11 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014-2015, Oracle and/or its affiliates.
+// Copyright (c) 2014-2025, Oracle and/or its affiliates.
 
 // Licensed under the Boost Software License version 1.0.
 // http://www.boost.org/users/license.html
 
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
 // Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 
 #include <iostream>
@@ -26,11 +27,12 @@
 #include <boost/geometry/geometries/multi_linestring.hpp>
 #include <boost/geometry/algorithms/difference.hpp>
 
-typedef bg::model::point<double,2,bg::cs::cartesian>  point_type;
-typedef bg::model::segment<point_type>                segment_type;
-typedef bg::model::linestring<point_type>             linestring_type;
-typedef bg::model::multi_linestring<linestring_type>  multi_linestring_type;
-
+using point_type = bg::model::point<double,2,bg::cs::cartesian>;
+using segment_type = bg::model::segment<point_type>;
+using linestring_type = bg::model::linestring<point_type>;
+using multi_linestring_type = bg::model::multi_linestring<linestring_type>;
+using L = linestring_type;
+using ML = multi_linestring_type;
 
 
 //===========================================================================
@@ -46,10 +48,7 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
     std::cout << std::endl;
 #endif
 
-    typedef linestring_type L;
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<L, L, ML> tester;
+    using tester = test_difference_of_geometries<L, L, ML>;
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0,1 1,2 1,3 2)"),
@@ -271,12 +270,6 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
          "lldf16");
 
     tester::apply
-        (from_wkt<L>("LINESTRING(0 0,1 0,2 1,3 2)"),
-         from_wkt<L>("LINESTRING(4 5,3 2,1 0,0.5 0)"),
-         from_wkt<ML>("MULTILINESTRING((0 0,0.5 0))"),
-         "lldf16-r");
-
-    tester::apply
         (from_wkt<L>("LINESTRING(0 0,10 0,20 1,30 1)"),
          from_wkt<L>("LINESTRING(1 1,2 0,3 1,20 1,25 1)"),
          from_wkt<ML>("MULTILINESTRING((0 0,10 0,20 1),(25 1,30 1))"),
@@ -296,21 +289,9 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0,30 0)"),
-         from_wkt<L>("LINESTRING(5 1,4 0,4 1,20 1,5 0,1 0)"),
-         from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
-         "lldf19-r");
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 0,30 0)"),
          from_wkt<L>("LINESTRING(1 0,5 0,20 1,4 1,4 0)"),
          from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
          "lldf19a");
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 0,30 0)"),
-         from_wkt<L>("LINESTRING(4 0,4 1,20 1,5 0,1 0)"),
-         from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
-         "lldf19a-r");
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0,30 0)"),
@@ -344,21 +325,9 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0,30 0)"),
-         from_wkt<L>("LINESTRING(5 1,5 0,4 0,4 1,20 1,5 0,1 0)"),
-         from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
-         "lldf19f-r");
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 0,30 0)"),
          from_wkt<L>("LINESTRING(1 0,5 0,20 1,4 1,5 0,5 1)"),
          from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
          "lldf19g");
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 0,30 0)"),
-         from_wkt<L>("LINESTRING(5 1,5 0,4 1,20 1,5 0,1 0)"),
-         from_wkt<ML>("MULTILINESTRING((0 0,1 0),(5 0,30 0))"),
-         "lldf19g-r");
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0,30 0,30 30,10 30,10 -10,15 0,40 0)"),
@@ -488,13 +457,6 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
          );
 
     tester::apply
-        (from_wkt<L>("LINESTRING(-5 -4,3 0,4 -1,7 -4,2 -1)"),
-         from_wkt<L>("LINESTRING(-7 -8,3 0,4 -1,-7 10)"),
-         from_wkt<ML>("MULTILINESTRING((-5 -4,3 0),(4 -1,7 -4,2 -1))"),
-         "lldf29c-r"
-         );
-
-    tester::apply
         (from_wkt<L>("LINESTRING(-2 -2,-4 0,1 -8,-2 6,8 5,-7 -8,\
                      3 0,4 -1,-7 10,-4 10)"),
          from_wkt<L>("LINESTRING(-5 -4,3 0,4 -1,7 -4,2 -1,-4 -1,-2 6)"),
@@ -503,7 +465,7 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
          "lldf29d"
          );
 
-#ifdef GEOMETRY_TEST_INCLUDE_FAILING_TESTS
+#ifdef BOOST_GEOMETRY_TEST_FAILURES
      tester::apply
          (from_wkt<L>("LINESTRING(8 5,5 1,-2 3,1 10)"),
           from_wkt<L>("LINESTRING(1.9375 1.875,\
@@ -548,61 +510,40 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_linestring )
          "lldf31s"
          );
 
-    tester::apply
-        (from_wkt<L>("LINESTRING(8 1, 4 .4,2 8)"),
-         from_wkt<L>("LINESTRING(0 -.2, 8 1)"),
-         from_wkt<ML>("MULTILINESTRING((4 .4,2 8))"),
-         "lldf31x",
-         1e-10
-         );
+    {
+        ut_settings settings{1e-10};
 
-    tester::apply
-        (from_wkt<L>("LINESTRING(2 8,4 .4,8 1)"),
-         from_wkt<L>("LINESTRING(0 -.2, 8 1)"),
-         from_wkt<ML>("MULTILINESTRING((2 8,4 .4))"),
-         "lldf31x-r",
-         1e-10
-         );
+        tester::apply
+            (from_wkt<L>("LINESTRING(8 1, 4 .4,2 8)"),
+             from_wkt<L>("LINESTRING(0 -.2, 8 1)"),
+             from_wkt<ML>("MULTILINESTRING((4 .4,2 8))"),
+             "lldf31x",
+             settings
+             );
 
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 5, 8 1, 4 .4, 2 8)"),
-         from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7)"),
-         from_wkt<ML>("MULTILINESTRING((0 5,8 1),(4 .4,2 8))"),
-         "lldf31y",
-         1e-10
-         );
+        tester::apply
+            (from_wkt<L>("LINESTRING(0 5, 8 1, 4 .4, 2 8)"),
+             from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7)"),
+             from_wkt<ML>("MULTILINESTRING((0 5,8 1),(4 .4,2 8))"),
+             "lldf31y",
+             settings
+             );
+        tester::apply
+            (from_wkt<L>("LINESTRING(0 5, 8 1, 4 .4, 2 8)"),
+             from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7, 6 +.2)"),
+             from_wkt<ML>("MULTILINESTRING((0 5,8 1),(4 .4,2 8))"),
+             "lldf31y+",
+             settings
+             );
 
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7)"),
-         from_wkt<L>("LINESTRING(0 5, 8 1, 4 .4, 2 8)"),
-         from_wkt<ML>("MULTILINESTRING((0 -.2,4 .4),(8 1,-.5 7))"),
-         "lldf31y-r",
-         1e-10
-         );
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 5, 8 1, 4 .4, 2 8)"),
-         from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7, 6 +.2)"),
-         from_wkt<ML>("MULTILINESTRING((0 5,8 1),(4 .4,2 8))"),
-         "lldf31y+",
-         1e-10
-         );
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8)"),
-         from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7, 6 +.2)"),
-         from_wkt<ML>("MULTILINESTRING((10.0002 2,9 -1032.34324,.3 8,0 5,8 1),(4 .4,2 8))"),
-         "lldf31z",
-         1e-10
-         );
-
-    tester::apply
-        (from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7, 6 +.2)"),
-         from_wkt<L>("LINESTRING(10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8)"),
-         from_wkt<ML>("MULTILINESTRING((0 -.2,4 .4),(8 1,-.5 7,6 .2))"),
-         "lldf31z-r",
-         1e-10
-         );
+        tester::apply
+            (from_wkt<L>("LINESTRING(10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8)"),
+             from_wkt<L>("LINESTRING(0 -.2, 8 1, -.5 7, 6 +.2)"),
+             from_wkt<ML>("MULTILINESTRING((10.0002 2,9 -1032.34324,.3 8,0 5,8 1),(4 .4,2 8))"),
+             "lldf31z",
+             settings
+             );
+    }
 
     tester::apply
         (from_wkt<L>("LINESTRING(0 0, 8 1, -.5 7)"),
@@ -623,10 +564,7 @@ BOOST_AUTO_TEST_CASE( test_difference_linestring_multilinestring )
     std::cout << std::endl;
 #endif
 
-    typedef linestring_type L;
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<L, ML, ML> tester;
+    using tester = test_difference_of_geometries<L, ML, ML>;
 
     // disjoint linestrings
     tester::apply
@@ -847,10 +785,7 @@ BOOST_AUTO_TEST_CASE( test_difference_multilinestring_linestring )
     std::cout << std::endl;
 #endif
 
-    typedef linestring_type L;
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<ML, L, ML> tester;
+    using tester = test_difference_of_geometries<ML, L, ML>;
 
     // disjoint linestrings
     tester::apply
@@ -932,9 +867,7 @@ BOOST_AUTO_TEST_CASE( test_difference_multilinestring_multilinestring )
     std::cout << std::endl;
 #endif
 
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<ML, ML, ML> tester;
+    using tester = test_difference_of_geometries<ML, ML, ML>;
 
     // disjoint linestrings
     tester::apply
@@ -1155,37 +1088,29 @@ BOOST_AUTO_TEST_CASE( test_difference_multilinestring_multilinestring )
          "mlmldf19"
          );
 
-    tester::apply
-        (from_wkt<ML>("MULTILINESTRING((1 5, -4.3 -.1), (0 6, 8.6 6, 189.7654 5, 1 3, 6 3, 3 5, 6 2.232432, 0 4), (-6 5, 1 2.232432), (3 -1032.34324, 9 0, 189.7654 1, -1.4 3, 3 189.7654, +.3 10.0002, 1 5, 6 3, 5 1, 9 1, 10.0002 -1032.34324, -0.7654 0, 5 3, 3 4), (2.232432 2.232432, 8.6 +.4, 0.0 2.232432, 4 0, -8.8 10.0002), (1 0, 6 6, 7 2, -0 8.4), (-0.7654 3, +.6 8, 4 -1032.34324, 1 6, 0 4), (0 7, 2 1, 8 -7, 7 -.7, -1032.34324 9), (5 0, 10.0002 4, 8 7, 3 3, -8.1 5))"),
-         from_wkt<ML>("MULTILINESTRING((5 10.0002, 2 7, -0.7654 0, 5 3), (0 -0.7654, 4 10.0002, 4 +.1, -.8 3, -.1 8, 10.0002 2, +.9 -1032.34324))"),
-         from_wkt<ML>("MULTILINESTRING((1 5,-4.3 -0.1),(0 6,8.6 6,189.7654 5,1 3,6 3,3 5,6 2.232432,0 4),(-6 5,1 2.232432),(5 3,3 4),(3 -1032.34324,9 0,189.7654 1,-1.4 3,3 189.7654,0.3 10.0002,1 5,6 3,5 1,9 1,10.0002 -1032.34324,-0.7654 0),(2.232432 2.232432,8.6 0.4,0 2.232432,4 0,-8.8 10.0002),(1 0,6 6,7 2,-0 8.4),(-0.7654 3,0.6 8,4 -1032.34324,1 6,0 4),(0 7,2 1,8 -7,7 -0.7,-1032.34324 9),(5 0,10.0002 4,8 7,3 3,-8.1 5))"),
-         "mlmldf24",
-         1e-10
-         );
+    {
+        ut_settings settings{1e-10};
 
-    tester::apply
-        (from_wkt<ML>("MULTILINESTRING((5 10.0002, 2 7, -0.7654 0, 5 3), (0 -0.7654, 4 10.0002, 4 +.1, -.8 3, -.1 8, 10.0002 2, +.9 -1032.34324))"),
-         from_wkt<ML>("MULTILINESTRING((1 5, -4.3 -.1), (0 6, 8.6 6, 189.7654 5, 1 3, 6 3, 3 5, 6 2.232432, 0 4), (-6 5, 1 2.232432), (3 -1032.34324, 9 0, 189.7654 1, -1.4 3, 3 189.7654, +.3 10.0002, 1 5, 6 3, 5 1, 9 1, 10.0002 -1032.34324, -0.7654 0, 5 3, 3 4), (2.232432 2.232432, 8.6 +.4, 0.0 2.232432, 4 0, -8.8 10.0002), (1 0, 6 6, 7 2, -0 8.4), (-0.7654 3, +.6 8, 4 -1032.34324, 1 6, 0 4), (0 7, 2 1, 8 -7, 7 -.7, -1032.34324 9), (5 0, 10.0002 4, 8 7, 3 3, -8.1 5))"),
-         from_wkt<ML>("MULTILINESTRING((5 10.0002,2 7,-0.7654 8.88178e-16),(0 -0.7654,4 10.0002,4 0.1,-0.8 3,-0.1 8,10.0002 2,0.9 -1032.34324))"),
-         "mlmldf24-r",
-         1e-10
-         );
+        tester::apply
+            (from_wkt<ML>("MULTILINESTRING((1 5, -4.3 -.1), (0 6, 8.6 6, 189.7654 5, 1 3, 6 3, 3 5, 6 2.232432, 0 4), (-6 5, 1 2.232432), (3 -1032.34324, 9 0, 189.7654 1, -1.4 3, 3 189.7654, +.3 10.0002, 1 5, 6 3, 5 1, 9 1, 10.0002 -1032.34324, -0.7654 0, 5 3, 3 4), (2.232432 2.232432, 8.6 +.4, 0.0 2.232432, 4 0, -8.8 10.0002), (1 0, 6 6, 7 2, -0 8.4), (-0.7654 3, +.6 8, 4 -1032.34324, 1 6, 0 4), (0 7, 2 1, 8 -7, 7 -.7, -1032.34324 9), (5 0, 10.0002 4, 8 7, 3 3, -8.1 5))"),
+             from_wkt<ML>("MULTILINESTRING((5 10.0002, 2 7, -0.7654 0, 5 3), (0 -0.7654, 4 10.0002, 4 +.1, -.8 3, -.1 8, 10.0002 2, +.9 -1032.34324))"),
+             from_wkt<ML>("MULTILINESTRING((1 5,-4.3 -0.1),(0 6,8.6 6,189.7654 5,1 3,6 3,3 5,6 2.232432,0 4),(-6 5,1 2.232432),(5 3,3 4),(3 -1032.34324,9 0,189.7654 1,-1.4 3,3 189.7654,0.3 10.0002,1 5,6 3,5 1,9 1,10.0002 -1032.34324,-0.7654 0),(2.232432 2.232432,8.6 0.4,0 2.232432,4 0,-8.8 10.0002),(1 0,6 6,7 2,-0 8.4),(-0.7654 3,0.6 8,4 -1032.34324,1 6,0 4),(0 7,2 1,8 -7,7 -0.7,-1032.34324 9),(5 0,10.0002 4,8 7,3 3,-8.1 5))"),
+             "mlmldf24",
+             settings
+             );
+    }
 
-    tester::apply
-        (from_wkt<ML>("MULTILINESTRING((-.4 2, 2.232432 3, 6 9, 8 189.7654, -1032.34324 5.4, 2.232432 9), (-1032.34324 3, 8 -1.6), (0 -.2, 8 1, -.5 7, 6 +.2))"),
-         from_wkt<ML>("MULTILINESTRING((-8 1, 4.8 6, 2 +.5), (10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8), (6 7, +.1 7, 0 -.5))"),
-         from_wkt<ML>("MULTILINESTRING((-0.4 2,2.232432 3,6 9,8 189.7654,-1032.34324 5.4,2.232432 9),(-1032.34324 3,8 -1.6),(0 -0.2,4 0.4),(8 1,-0.5 7,6 0.2))"),
-         "mlmldf25",
-         1e-10
-         );
+    {
+        ut_settings settings{1e-10};
 
-    tester::apply
-        (from_wkt<ML>("MULTILINESTRING((-8 1, 4.8 6, 2 +.5), (10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8), (6 7, +.1 7, 0 -.5))"),
-         from_wkt<ML>("MULTILINESTRING((-.4 2, 2.232432 3, 6 9, 8 189.7654, -1032.34324 5.4, 2.232432 9), (-1032.34324 3, 8 -1.6), (0 -.2, 8 1, -.5 7, 6 +.2))"),
-         from_wkt<ML>("MULTILINESTRING((-8 1,4.8 6,2 0.5),(10.0002 2,9 -1032.34324,0.3 8,0 5,8 1),(4 0.4,2 8),(6 7,0.1 7,0 -0.5))"),
-         "mlmldf25-r",
-         1e-10
-         );
+        tester::apply
+            (from_wkt<ML>("MULTILINESTRING((-.4 2, 2.232432 3, 6 9, 8 189.7654, -1032.34324 5.4, 2.232432 9), (-1032.34324 3, 8 -1.6), (0 -.2, 8 1, -.5 7, 6 +.2))"),
+             from_wkt<ML>("MULTILINESTRING((-8 1, 4.8 6, 2 +.5), (10.0002 2,9 -1032.34324, .3 8, 0 5, 8 1, 4 .4, 2 8), (6 7, +.1 7, 0 -.5))"),
+             from_wkt<ML>("MULTILINESTRING((-0.4 2,2.232432 3,6 9,8 189.7654,-1032.34324 5.4,2.232432 9),(-1032.34324 3,8 -1.6),(0 -0.2,4 0.4),(8 1,-0.5 7,6 0.2))"),
+             "mlmldf25",
+             settings
+             );
+    }
 
     {
         std::string wkt1 = "MULTILINESTRING((0 -18,17 -9,8.422018348623853 -6.477064220183486),(4.0893470790378 -5.202749140893471,0 -4,6.049382716049383 -7.4567901234567895),(9.21951219512195 -9.26829268292683,14 -12),(-7 3,-5.903614457831325 6.289156626506024),(-5.277777777777778 8.166666666666668,-5 9,-5.445859872611465 8.26751592356688),(-6.342710997442455 6.794117647058823,-19 -14,-6.2338779019776425 6.668959587274291),(-5.3004291845493565 8.180257510729614,-3.579710144927536 10.966183574879228),(-3.390625 11.272321428571429,2 20),(20 -19,14 -3,3.258064516129032 1.774193548387096),(-5.275590551181104 5.5669291338582685,-13 9,-8.678414096916299 9.480176211453745),(-7.65625 9.59375,-4 10),(-2 -4,-0.15873015873015883 -0.31746031746031766),(1.875 3.75,9 18,6 8,13 17),(12 -11,6 4))";
@@ -1226,15 +1151,13 @@ BOOST_AUTO_TEST_CASE( test_difference_ml_ml_degenerate )
 {
 #ifdef BOOST_GEOMETRY_TEST_DEBUG
     std::cout << std::endl << std::endl << std::endl;
-    std::cout << "*** MULTILINESTRING / MULTILINESTRING DIFFERENCE" 
+    std::cout << "*** MULTILINESTRING / MULTILINESTRING DIFFERENCE"
               << " (DEGENERATE) ***"
               << std::endl;
     std::cout << std::endl;
 #endif
 
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<ML, ML, ML> tester;
+    using tester = test_difference_of_geometries<ML, ML, ML>;
 
     // the following test cases concern linestrings with duplicate
     // points and possibly linestrings with zero length.
@@ -1313,15 +1236,13 @@ BOOST_AUTO_TEST_CASE( test_difference_ml_ml_spikes )
 {
 #ifdef BOOST_GEOMETRY_TEST_DEBUG
     std::cout << std::endl << std::endl << std::endl;
-    std::cout << "*** MULTILINESTRING / MULTILINESTRING DIFFERENCE" 
+    std::cout << "*** MULTILINESTRING / MULTILINESTRING DIFFERENCE"
               << " (WITH SPIKES) ***"
               << std::endl;
     std::cout << std::endl;
 #endif
 
-    typedef multi_linestring_type ML;
-
-    typedef test_difference_of_geometries<ML, ML, ML> tester;
+    using tester = test_difference_of_geometries<ML, ML, ML>;
 
     // the following test cases concern linestrings with spikes
 
@@ -1493,7 +1414,7 @@ BOOST_AUTO_TEST_CASE( test_difference_ml_ml_spikes )
          "mlmldf-spikes-17"
          );
 
-    // test cases sent by Adam on the mailing list (equal slikes)
+    // test cases sent by Adam on the mailing list (equal spikes)
     tester::apply
         (from_wkt<ML>("MULTILINESTRING((0 0,1 1,0 0))"),
          from_wkt<ML>("MULTILINESTRING((0 0,1 1,0 0))"),
@@ -1511,14 +1432,14 @@ BOOST_AUTO_TEST_CASE( test_difference_ml_ml_spikes )
 
 BOOST_AUTO_TEST_CASE( test_difference_ls_mls_geo_rad )
 {
-    typedef bg::model::point<double, 2, bg::cs::geographic<bg::radian> > pt;
-    typedef bg::model::linestring<pt> ls;
-    typedef bg::model::multi_linestring<ls> mls;
+    using pt = bg::model::point<double, 2, bg::cs::geographic<bg::radian>>;
+    using ls = bg::model::linestring<pt>;
+    using mls = bg::model::multi_linestring<ls>;
 
     bg::srs::spheroid<double> sph_wgs84(6378137.0, 6356752.3142451793);
     boost::geometry::strategy::intersection::geographic_segments<> wgs84(sph_wgs84);
 
-    ls g1 = from_wkt<ls>("LINESTRING(0 0, -3.14159265358979 0)");
+    ls g1 = from_wkt<ls>("LINESTRING(0 0,-3.14159265358979 0)");
     mls g2 = from_wkt<mls>("MULTILINESTRING((-2.1467549799530232 -0.12217304763960295,"
                                             "-2.5481807079117185 -0.90757121103705041,"
                                             "-2.6529004630313784 0.85521133347722067,"

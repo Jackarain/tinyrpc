@@ -2,12 +2,13 @@
 // echo_server.cpp
 // ~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <boost/asio/detached.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/spawn.hpp>
@@ -21,10 +22,10 @@ using boost::asio::ip::tcp;
 class session : public std::enable_shared_from_this<session>
 {
 public:
-  explicit session(tcp::socket socket)
+  explicit session(boost::asio::io_context& io_context, tcp::socket socket)
     : socket_(std::move(socket)),
-      timer_(socket_.get_io_context()),
-      strand_(socket_.get_io_context())
+      timer_(io_context),
+      strand_(io_context.get_executor())
   {
   }
 
@@ -39,7 +40,7 @@ public:
             char data[128];
             for (;;)
             {
-              timer_.expires_from_now(std::chrono::seconds(10));
+              timer_.expires_after(std::chrono::seconds(10));
               std::size_t n = socket_.async_read_some(boost::asio::buffer(data), yield);
               boost::asio::async_write(socket_, boost::asio::buffer(data, n), yield);
             }
@@ -49,7 +50,7 @@ public:
             socket_.close();
             timer_.cancel();
           }
-        });
+        }, boost::asio::detached);
 
     boost::asio::spawn(strand_,
         [this, self](boost::asio::yield_context yield)
@@ -58,16 +59,16 @@ public:
           {
             boost::system::error_code ignored_ec;
             timer_.async_wait(yield[ignored_ec]);
-            if (timer_.expires_from_now() <= std::chrono::seconds(0))
+            if (timer_.expiry() <= boost::asio::steady_timer::clock_type::now())
               socket_.close();
           }
-        });
+        }, boost::asio::detached);
   }
 
 private:
   tcp::socket socket_;
   boost::asio::steady_timer timer_;
-  boost::asio::io_context::strand strand_;
+  boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 };
 
 int main(int argc, char* argv[])
@@ -93,8 +94,16 @@ int main(int argc, char* argv[])
             boost::system::error_code ec;
             tcp::socket socket(io_context);
             acceptor.async_accept(socket, yield[ec]);
-            if (!ec) std::make_shared<session>(std::move(socket))->go();
+            if (!ec)
+            {
+              std::make_shared<session>(io_context, std::move(socket))->go();
+            }
           }
+        },
+        [](std::exception_ptr e)
+        {
+          if (e)
+            std::rethrow_exception(e);
         });
 
     io_context.run();

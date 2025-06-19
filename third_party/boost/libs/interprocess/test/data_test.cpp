@@ -8,11 +8,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/containers/list.hpp>
+#include <boost/container/vector.hpp>
+#include <boost/container/list.hpp>
 #include <functional>
 #include <string>
 #include "print_container.hpp"
@@ -27,7 +26,7 @@ int main ()
    test::get_process_id_name(process_name);
    const char *const shMemName = process_name.c_str();
 
-   try{
+   BOOST_INTERPROCESS_TRY{
    shared_memory_object::remove(shMemName);
 
    //Create shared memory
@@ -44,19 +43,19 @@ int main ()
 
    const char *allocName = "testAllocation";
 
-   typedef boost::interprocess::vector<int, shmem_allocator_int_t > MyVect;
+   typedef boost::container::vector<int, shmem_allocator_int_t > MyVect;
 
    //----   ALLOC, NAMED_ALLOC, NAMED_NEW TEST   ----//
    {
-      int i;
+      std::size_t i;
       //Let's allocate some memory
       for(i = 0; i < max; ++i){
-         array[i] = segment.allocate(i+1);
+         array[std::ptrdiff_t(i)] = segment.allocate(i+1u);
       }
 
       //Deallocate allocated memory
       for(i = 0; i < max; ++i){
-         segment.deallocate(array[i]);
+         segment.deallocate(array[std::ptrdiff_t(i)]);
       }
 
       bool res;
@@ -86,12 +85,10 @@ int main ()
          return 1;
    }
    }
-   catch(...){
+   BOOST_INTERPROCESS_CATCH(...){
       shared_memory_object::remove(shMemName);
-      throw;
-   }
+      BOOST_INTERPROCESS_RETHROW
+   } BOOST_INTERPROCESS_CATCH_END
    shared_memory_object::remove(shMemName);
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,11 +7,12 @@
 // Official repository: https://github.com/boostorg/beast
 //
 
+#include <boost/beast/core/buffers_range.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/read_size.hpp>
 #include <boost/beast/core/string.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <algorithm>
 #include <chrono>
@@ -67,7 +68,7 @@ public:
     fill(MutableBufferSequence const& buffers)
     {
         std::size_t n = 0;
-        for(auto b : beast::detail::buffers_range(buffers))
+        for(auto b : beast::buffers_range_ref(buffers))
         {
             std::fill(
                 static_cast<char*>(b.data()),
@@ -223,10 +224,10 @@ public:
                 ,[&](){ return do_hints   <flat_buffer>(repeat, count, size); }
                 ,[&](){ return do_random  <flat_buffer>(repeat, count, size); }
             );
-            do_trials("boost::asio::streambuf", trials,
-                 [&](){ return do_prepares<boost::asio::streambuf>(repeat, count, size); }
-                ,[&](){ return do_hints   <boost::asio::streambuf>(repeat, count, size); }
-                ,[&](){ return do_random  <boost::asio::streambuf>(repeat, count, size); }
+            do_trials("net::streambuf", trials,
+                 [&](){ return do_prepares<net::streambuf>(repeat, count, size); }
+                ,[&](){ return do_hints   <net::streambuf>(repeat, count, size); }
+                ,[&](){ return do_random  <net::streambuf>(repeat, count, size); }
             );
             log << std::endl;
         }

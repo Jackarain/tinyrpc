@@ -3,7 +3,7 @@
 //                      releases and compare format specification handling
 // ------------------------------------------------------------------------------
 
-//  Copyright 2017 James E. King, III. Use, modification, and distribution 
+//  Copyright 2017 - 2019 James E. King, III. Use, modification, and distribution 
 //  are subject to the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -120,12 +120,6 @@ BOOST_CONSTEXPR const double          g_db  = 1234567.891234f;
 BOOST_CONSTEXPR const double          g_ndb = -1234567.891234f;
 BOOST_CONSTEXPR const long double     g_ldb = 6543211234567.891234l;
 BOOST_CONSTEXPR const long double     g_nld = -6543211234567.891234l;
-#if defined(INFINITY)
-BOOST_CONSTEXPR const double          g_inf = INFINITY;
-#endif
-#if defined(NAN)
-BOOST_CONSTEXPR const double          g_nan = NAN;
-#endif
 
 boost::array<const char *, 12> length_modifier = { { "hh", "h", "", "l", "ll", "j", "z", "L", "w", "I", "I32", "I64" } };
 boost::array<const char *, 6>  format_flags    = { { "", "-", "+", " ", "#", "0" } };
@@ -244,10 +238,10 @@ std::string call_snprintf(const std::string& fmtStr, interop_datatype type)
         case ID_SPTRDF: len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_pt ); break;
         case ID_PTRDIF: len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_pt ); break;
 #if defined(INFINITY)
-        case ID_INF:    len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_inf); break;
+        case ID_INF:    len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), INFINITY); break;
 #endif
 #if defined(NAN)
-        case ID_NAN:    len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_nan); break;
+        case ID_NAN:    len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), NAN);   break;
 #endif
         case ID_DOUBLE: len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_db ); break;
         case ID_NEGDBL: len = SNPRINTF(buf, BUFSIZ, fmtStr.c_str(), g_ndb); break;
@@ -291,10 +285,10 @@ std::string call_format(const std::string& fmtStr, interop_datatype type)
         case ID_SPTRDF: return ::boost::str(::boost::format(fmtStr) % g_pt );
         case ID_PTRDIF: return ::boost::str(::boost::format(fmtStr) % g_pt );
 #if defined(INFINITY)
-        case ID_INF:    return ::boost::str(::boost::format(fmtStr) % g_inf);
+        case ID_INF:    return ::boost::str(::boost::format(fmtStr) % INFINITY);
 #endif
 #if defined(NAN)
-        case ID_NAN:    return ::boost::str(::boost::format(fmtStr) % g_nan);
+        case ID_NAN:    return ::boost::str(::boost::format(fmtStr) % NAN);
 #endif
         case ID_DOUBLE: return ::boost::str(::boost::format(fmtStr) % g_db );
         case ID_NEGDBL: return ::boost::str(::boost::format(fmtStr) % g_ndb);

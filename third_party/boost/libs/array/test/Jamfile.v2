@@ -2,24 +2,110 @@
 #~ Distributed under the Boost Software License, Version 1.0.
 #~ (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+require-b2 5.0.1 ;
 import testing ;
+import-search /boost/config/checks ;
+import config : requires ;
 
-alias unit_test_framework
-    : # sources
-        /boost//unit_test_framework
-    ;        
+project
+    : requirements
 
-test-suite array :
-    [ run array0.cpp unit_test_framework  : : : : array0 ]
-    [ run array1.cpp ]
-    [ run array2.cpp ]
-    [ run array3.cpp ]
-    [ run array4.cpp ]
-    [ run array5.cpp ]
-    [ run array6.cpp unit_test_framework  : : : : array6 ]
-    [ run array7.cpp unit_test_framework  : : : : array7 ]
-#    [ run array_constexpr.cpp unit_test_framework  : : : : array_constexpr ]
-    [ compile-fail array_getfail1.cpp ]
-    [ compile-fail array_getfail2.cpp ]
-    [ run array_hash.cpp unit_test_framework  : : : : array_hash ]
+        <library>/boost/array//boost_array
+        <library>/boost/core//boost_core
+
+        <warnings>extra
+
+        <toolset>msvc:<warnings-as-errors>on
+        <toolset>clang:<warnings-as-errors>on
+        <toolset>gcc:<warnings-as-errors>on
+
+        <toolset>gcc-4.6:<cxxflags>-Wno-missing-braces
+        <toolset>gcc-4.7:<cxxflags>-Wno-missing-braces
+
+        <toolset>gcc-4.6:<cxxflags>-Wno-missing-field-initializers
+        <toolset>gcc-4.7:<cxxflags>-Wno-missing-field-initializers
+        <toolset>gcc-4.8:<cxxflags>-Wno-missing-field-initializers
+        <toolset>gcc-4.9:<cxxflags>-Wno-missing-field-initializers
+
+        <toolset>gcc-4.6:<cxxflags>-Wno-type-limits
+        <toolset>gcc-4.7:<cxxflags>-Wno-type-limits
+        <toolset>gcc-10:<cxxflags>-Wno-type-limits
+
+        <toolset>clang:<cxxflags>-Wno-unnamed-type-template-args
+
+        <toolset>clang-3.5:<cxxflags>-Wno-missing-braces
+        <toolset>clang-3.6:<cxxflags>-Wno-missing-braces
+        <toolset>clang-3.7:<cxxflags>-Wno-missing-braces
+        <toolset>clang-3.8:<cxxflags>-Wno-missing-braces
+        <toolset>clang-3.9:<cxxflags>-Wno-missing-braces
+        <toolset>clang-4:<cxxflags>-Wno-missing-braces
+        <toolset>clang-5:<cxxflags>-Wno-missing-braces
     ;
+
+#
+
+run array0.cpp ;
+run array1.cpp ;
+run array2.cpp ;
+run array3.cpp ;
+run array4.cpp ;
+run array5.cpp ;
+run array6.cpp ;
+run array7.cpp ;
+
+compile array_constexpr.cpp ;
+
+compile-fail array_getfail1.cpp
+  : <warnings>off ;
+compile-fail array_getfail2.cpp
+  : <warnings>off ;
+
+run array_hash.cpp
+  : : : <library>/boost/container_hash//boost_container_hash [ requires cxx11_noexcept ] ;
+
+#
+
+run array_typedef_test.cpp ;
+run array_elems_test.cpp ;
+run array_init_test.cpp ;
+run array_copy_test.cpp ;
+run array_convert_test.cpp ;
+run array_data_test.cpp ;
+run array_iterator_test.cpp ;
+run array_reverse_test.cpp ;
+run array_size_test.cpp ;
+run array_access_test.cpp ;
+run array_c_array_test.cpp ;
+run array_fill_test.cpp ;
+run array_assign_test.cpp ;
+run array_swap_test.cpp ;
+run array_swap_test2.cpp ;
+run array_eq_test.cpp ;
+run array_lt_test.cpp ;
+run array_thw_test.cpp ;
+run array_get_test.cpp ;
+run to_array_test.cpp ;
+
+# C++11 constexpr
+
+compile array_init_test_cx.cpp ;
+compile array_copy_test_cx.cpp ;
+compile array_data_test_cx.cpp ;
+compile array_iterator_test_cx.cpp ;
+compile array_size_test_cx.cpp ;
+compile array_access_test_cx.cpp ;
+compile array_get_test_cx.cpp ;
+
+# C++14 constexpr
+
+compile array_assign_test_cx.cpp ;
+compile array_access_test_cx2.cpp ;
+compile array_fill_test_cx.cpp ;
+compile array_eq_test_cx.cpp ;
+compile array_lt_test_cx.cpp ;
+compile array_thw_test_cx.cpp ;
+compile to_array_test_cx.cpp ;
+
+#
+
+run quick.cpp ;

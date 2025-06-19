@@ -23,8 +23,15 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-from recommonmark.parser import CommonMarkParser
-from recommonmark.transform import AutoStructify
+import sphinx as sphinxversioncheck
+from pkg_resources import parse_version
+sphinxversion=""
+if parse_version(sphinxversioncheck.__version__) < parse_version("2.0.0"):
+    sphinxversion="1"
+
+if sphinxversion=="1":
+    from recommonmark.parser import CommonMarkParser
+    from recommonmark.transform import AutoStructify
 import sphinx_boost
 
 # -- General configuration ------------------------------------------------
@@ -36,25 +43,41 @@ import sphinx_boost
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    # 'sphinx.ext.autodoc',
-    # 'sphinx.ext.githubpages',
-    'sphinx.ext.autosectionlabel',
-]
+if sphinxversion=="1":
+    extensions = [
+        # 'sphinx.ext.autodoc',
+        # 'sphinx.ext.githubpages',
+        'sphinx.ext.autosectionlabel',
+    ]
+else:
+    extensions = [
+        'sphinx.ext.autosectionlabel',
+        'myst_parser'
+    ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-source_parsers = {
-    '.md': CommonMarkParser,
-    '.hpp': CommonMarkParser
-}
+if sphinxversion=="1":
+    source_parsers = {
+        '.md': CommonMarkParser,
+        '.hpp': CommonMarkParser
+    }
+else:
+    source_parsers = {}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = ['.rst', '.md', '.hpp']
-# source_suffix = '.rst'
+if sphinxversion=="1":
+    source_suffix = ['.rst', '.md', '.hpp']
+else:
+    source_suffix = {
+        '.rst': 'restructuredtext',
+        '.txt': 'markdown',
+        '.md': 'markdown',
+        '.hpp': 'markdown',
+    }
 
 # The encoding of source files.
 #
@@ -384,6 +407,53 @@ texinfo_documents = [
 
 nitpicky = True
 
+def convert_to_code_fences(lines, fence='```'):
+    output = []
+    incode = False
+    isempty = False
+    infence = False
+    for line in lines:
+        sline = line.strip()
+        iscode = (isempty or incode) and line.startswith('    ') and not infence
+        isempty = not sline
+        isfence = line.startswith('```')
+        if infence:
+            if isfence:
+                infence = False
+            output.append(line)
+        elif incode:
+            if isempty:
+                output.append(line)
+            elif iscode:
+                output.append(line[4:])
+            else:
+                output.append(fence)
+                output.append('\n\n')
+                output.append(line)
+                incode = False
+        else:
+            if iscode:
+                nested_list = sline.startswith(('-', '*', '+')) or sline[0].isdigit()
+                x = line[4:]
+                if nested_list:
+                    output.append(line)
+                elif x.startswith('!'):
+                    output.append('{fence}{language}'.format(
+                        fence=fence, language=x[1:].strip()))
+                    output.append('\n')
+                else:
+                    output.append(fence+'cpp')
+                    output.append('\n')
+                    output.append(x)
+                incode = not nested_list
+            elif isfence:
+                infence = True
+                incode = False
+                output.append(line)
+            else:
+                output.append(line)
+    return '\n'.join(output)
+
 def insert_header(lines, f):
     for line in lines:
         yield line
@@ -399,18 +469,24 @@ extract_prefix = '/// '
 include_dir = os.path.abspath('../include/')
 def extract_doc(app, docname, source):
     path = app.env.doc2path(docname)
+    if sphinxversion != "1":
+        source[0] = source[0].replace('```eval_rst', '```{eval-rst}')
     if path.endswith('.hpp'):
         lines = source[0].split('\n')
         md = [line[len(extract_prefix):] for line in lines if line.startswith(extract_prefix)]
         source[0] = '\n'.join(insert_header(md, os.path.relpath(path, include_dir)))
+    if path.endswith(('.hpp', '.md')):
+        lines = source[0].split('\n')
+        source[0] = convert_to_code_fences(lines)
 
 # app setup hook
 def setup(app):
     app.srcdir = os.path.abspath(os.path.join(app.srcdir, os.pardir))
-    app.add_config_value('recommonmark_config', {
-            'enable_eval_rst': True,
-            # 'enable_auto_doc_ref': True,
-            'commonmark_suffixes': ['.md', '.hpp'],
-            }, True)
-    app.add_transform(AutoStructify)
+    if sphinxversion=="1":
+        app.add_config_value('recommonmark_config', {
+                'enable_eval_rst': True,
+                # 'enable_auto_doc_ref': True,
+                'commonmark_suffixes': ['.md', '.hpp'],
+                }, True)
+        app.add_transform(AutoStructify)
     app.connect('source-read', extract_doc)

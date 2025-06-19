@@ -4,12 +4,14 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/mpl/assert.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
-
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include <boost/accumulators/statistics/rolling_variance.hpp>
 
 using namespace boost;
@@ -133,6 +135,66 @@ void test_rolling_variance()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency_impl
+//
+template<typename accumulator_set_type>
+void test_persistency_impl(accumulator_set_type& acc)
+{
+    std::stringstream ss;
+    {
+        acc(1.2);
+        acc(2.3);
+        acc(3.4);
+        acc(4.5);
+        acc(0.4);
+        acc(2.2);
+        acc(7.1);
+        acc(4.0);
+        BOOST_CHECK_CLOSE(rolling_variance(acc),8.16250000000000,1e-10);
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_set_type other_acc = acc;
+    boost::archive::text_iarchive ia(ss);
+    other_acc.serialize(ia, 0);
+    BOOST_CHECK_CLOSE(rolling_variance(acc),8.16250000000000,1e-10);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    // tag::rolling_window::window_size
+    accumulator_set<double, stats<tag::immediate_rolling_variance> >
+        acc_immediate_rolling_variance(tag::immediate_rolling_variance::window_size = window_size);
+
+    accumulator_set<double, stats<tag::immediate_rolling_variance, tag::rolling_mean> >
+        acc_immediate_rolling_variance2(tag::immediate_rolling_variance::window_size = window_size);
+
+    accumulator_set<double, stats<tag::rolling_variance(immediate)> >
+        acc_immediate_rolling_variance3(tag::immediate_rolling_variance::window_size = window_size);
+
+    accumulator_set<double, stats<tag::lazy_rolling_variance> >
+        acc_lazy_rolling_variance(tag::lazy_rolling_variance::window_size = window_size);
+
+    accumulator_set<double, stats<tag::rolling_variance(lazy)> >
+       acc_lazy_rolling_variance2(tag::immediate_rolling_variance::window_size = window_size);
+
+    accumulator_set<double, stats<tag::rolling_variance> >
+        acc_default_rolling_variance(tag::rolling_variance::window_size = window_size);
+
+    //// test the different implementations
+    test_persistency_impl(acc_immediate_rolling_variance);
+    test_persistency_impl(acc_immediate_rolling_variance2);
+    test_persistency_impl(acc_immediate_rolling_variance3);
+    test_persistency_impl(acc_lazy_rolling_variance);
+    test_persistency_impl(acc_lazy_rolling_variance2);
+    test_persistency_impl(acc_default_rolling_variance);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -140,6 +202,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("rolling variance test");
 
     test->add(BOOST_TEST_CASE(&test_rolling_variance));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

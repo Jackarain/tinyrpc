@@ -7,6 +7,7 @@
 
 // Boost.Test
 #include <boost/test/unit_test.hpp>
+#include <boost/test/utils/algorithm.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/test/parameterized_test.hpp>
 using namespace boost::unit_test;
@@ -15,7 +16,7 @@ using namespace boost::unit_test;
 #include <boost/functional.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/mem_fn.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 // STL
 #include <string>
@@ -65,7 +66,7 @@ public:
             throw std::runtime_error( "Wrong argument size" );
 
         std::string::const_iterator it = std::find_if( arg.begin(), arg.end(),
-                                                       std::bind1st( boost::mem_fun( &hash_function::helper_ ), this ) );
+            BOOST_TEST_BIND1ST( boost::mem_fun( &hash_function::helper_ ), this ) );
 
         if( it != arg.end() )
             throw std::out_of_range( std::string( "Invalid character " ) + *it );

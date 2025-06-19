@@ -1,303 +1,273 @@
 //
-//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
+// Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
-//  Distributed under the Boost Software License, Version 1.0. (See
-//  accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//
-#include "test_locale.hpp"
-#include "test_locale_tools.hpp"
-#include <boost/locale/utf.hpp>
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#include <string.h>
+#include <boost/locale/utf.hpp>
+#include <boost/locale/util/string.hpp>
+#include "boostLocale/test/tools.hpp"
+#include "boostLocale/test/unit_test.hpp"
+#include <boost/detail/workaround.hpp>
+#include <cstring>
 
 using namespace boost::locale::utf;
 
-char *make2(unsigned v)
+const std::uint32_t* u32_seq(std::uint32_t a)
 {
-    static unsigned char buf[3] = {0};
-    buf[0] = 0xC0 | (v >> 6);
-    buf[1] = 0x80 | (v & 0x3F );
-    return reinterpret_cast<char*>(buf);
-}
-
-char *make3(unsigned v)
-{
-    static unsigned char buf[4] = {0};
-    buf[0] = 0xE0 | ((v >> 12) ) ;
-    buf[1] = 0x80 | ((v >>  6) & 0x3F );
-    buf[2] = 0x80 | ((v >>  0) & 0x3F );
-    return reinterpret_cast<char*>(buf);
-}
-
-char *make4(unsigned v)
-{
-    static unsigned char buf[5] = {0};
-    buf[0] = 0xF0 | ((v >> 18) ) ;
-    buf[1] = 0x80 | ((v >> 12) & 0x3F );
-    buf[2] = 0x80 | ((v >>  6) & 0x3F );
-    buf[3] = 0x80 | ((v >>  0) & 0x3F );
-    return reinterpret_cast<char*>(buf);
-}
-
-boost::uint32_t const *u32_seq(boost::uint32_t a)
-{
-    static boost::uint32_t buf[2];
-    buf[0]=a;
-    buf[1]=0;
+    static std::uint32_t buf[2];
+    buf[0] = a;
+    buf[1] = 0;
     return buf;
 }
 
-boost::uint16_t const *u16_seq(boost::uint16_t a)
+const std::uint16_t* u16_seq(std::uint16_t a)
 {
-    static boost::uint16_t buf[2];
-    buf[0]=a;
-    buf[1]=0;
+    static std::uint16_t buf[2];
+    buf[0] = a;
+    buf[1] = 0;
     return buf;
 }
 
-boost::uint16_t const *u16_seq(boost::uint16_t a,boost::uint16_t b)
+const std::uint16_t* u16_seq(std::uint16_t a, std::uint16_t b)
 {
-    static boost::uint16_t buf[3];
-    buf[0]=a;
-    buf[1]=b;
-    buf[2]=0;
+    static std::uint16_t buf[3];
+    buf[0] = a;
+    buf[1] = b;
+    buf[2] = 0;
+    return buf;
+}
+
+const char16_t* c16_seq(std::uint16_t a)
+{
+    static char16_t buf[2];
+    buf[0] = static_cast<char16_t>(a);
+    buf[1] = 0;
+    return buf;
+}
+
+const char32_t* c32_seq(std::uint32_t a)
+{
+    static char32_t buf[2];
+    buf[0] = static_cast<char32_t>(a);
+    buf[1] = 0;
     return buf;
 }
 
 template<typename CharType>
-void test_to(CharType const *s,unsigned codepoint)
+void test_from_utf(const CharType* const s, unsigned codepoint)
 {
-    CharType const *begin = s;
-    CharType const *end = begin;
-
-    while(*end)
-        end++;
+    const CharType* cur = s;
+    const CharType* const end = boost::locale::util::str_end(s);
 
     typedef utf_traits<CharType> tr;
-    
-    TEST(tr::max_width == 4 / sizeof(CharType));
 
-    TEST(tr::template decode<CharType const *>(begin,end) == codepoint);
+    static_assert(tr::max_width == 4 / sizeof(CharType), "Wrong max_width");
 
-    if(codepoint == incomplete || codepoint != illegal)
-        TEST(end == begin);
+    TEST_EQ(tr::decode(cur, end), codepoint);
+
+    if(codepoint != illegal)
+        TEST(cur == end);
 
     if(codepoint == incomplete) {
-        TEST(*s== 0 || 0 < tr::trail_length(*s));
-        TEST(tr::trail_length(*s) + 1 > end - s);
+        TEST(*s == 0 || tr::trail_length(*s) > 0);
+        TEST_GE(tr::trail_length(*s), end - s);
     }
 
     if(codepoint != incomplete && codepoint != illegal) {
-        begin=s;
-        TEST(tr::is_lead(*begin));
-        TEST(!tr::is_trail(*begin));
-        begin++;
-        while(begin!=end) {
-            TEST(tr::is_trail(*begin));
-            TEST(!tr::is_lead(*begin));
-            begin++;
+        TEST(tr::is_lead(*s));
+        TEST(!tr::is_trail(*s));
+        cur = s;
+        while(++cur != end) {
+            TEST(tr::is_trail(*cur));
+            TEST(!tr::is_lead(*cur));
         }
-        TEST(tr::width(codepoint)==end - s);
-        TEST(tr::trail_length(*s) == tr::width(codepoint) - 1);
-        begin = s;
-        TEST(tr::decode_valid(begin) == codepoint);
-        TEST(begin == end);
+        TEST_EQ(tr::width(codepoint), end - s);
+        TEST_EQ(tr::trail_length(*s), tr::width(codepoint) - 1);
+        cur = s;
+        TEST_EQ(tr::decode_valid(cur), codepoint);
+        TEST(cur == end);
     }
 }
 
 template<typename CharType>
-void test_from(CharType const *str,unsigned codepoint)
+void test_to_utf(const CharType* str, unsigned codepoint)
 {
-    CharType buf[5] = {1,1,1,1,1};
-    CharType *p=buf;
-    p = utf_traits<CharType>::template encode<CharType *>(codepoint,p);
-    CharType const *end = str;
-    while(*end)
-        end++;
-    TEST(end - str == p-buf );
+    CharType buf[5] = {1, 1, 1, 1, 1};
+    CharType* p = buf;
+    p = utf_traits<CharType>::encode(codepoint, p);
+    const CharType* const end = boost::locale::util::str_end(str);
+    TEST_EQ(end - str, p - buf);
     TEST(*p);
-    *p=0;
-    TEST(memcmp(str,buf,sizeof(CharType) * (end-str))==0);
+    *p = 0;
+    TEST_EQ(memcmp(str, buf, sizeof(CharType) * (end - str)), 0);
 }
 
-
-int main()
+template<typename CharType>
+void test_valid_utf(const CharType* str, unsigned codepoint)
 {
-    try {
-
-        std::cout << "Test UTF-8" << std::endl;
-        std::cout << "- From UTF-8" << std::endl;
-
-
-        std::cout << "-- Correct" << std::endl;
-
-        test_to("\x7f",0x7f);
-        test_to("\xc2\x80",0x80);
-        test_to("\xdf\xbf",0x7ff);
-        test_to("\xe0\xa0\x80",0x800);
-        test_to("\xef\xbf\xbf",0xffff);
-        test_to("\xf0\x90\x80\x80",0x10000);
-        test_to("\xf4\x8f\xbf\xbf",0x10ffff);
-
-        std::cout << "-- Too big" << std::endl;
-        test_to("\xf4\x9f\x80\x80",illegal); //  11 0000
-        test_to("\xfb\xbf\xbf\xbf",illegal); // 3ff ffff
-        test_to("\xf8\x90\x80\x80\x80",illegal);  // 400 0000
-        test_to("\xfd\xbf\xbf\xbf\xbf\xbf",illegal);  // 7fff ffff
-
-        std::cout << "-- Invalid length" << std::endl;
-
-        /// test that this actually works
-        test_to(make2(0x80),0x80);
-        test_to(make2(0x7ff),0x7ff);
-
-        test_to(make3(0x800),0x800);
-        test_to(make3(0xffff),0xffff);
-
-        test_to(make4(0x10000),0x10000);
-        test_to(make4(0x10ffff),0x10ffff);
-
-        test_to(make4(0x110000),illegal);
-        test_to(make4(0x1fffff),illegal);
-        
-        test_to(make2(0),illegal);
-        test_to(make3(0),illegal);
-        test_to(make4(0),illegal);
-        test_to(make2(0x7f),illegal);
-        test_to(make3(0x7f),illegal);
-        test_to(make4(0x7f),illegal);
-
-        test_to(make3(0x80),illegal);
-        test_to(make4(0x80),illegal);
-        test_to(make3(0x7ff),illegal);
-        test_to(make4(0x7ff),illegal);
-
-        test_to(make4(0x8000),illegal);
-        test_to(make4(0xffff),illegal);
-        
-        std::cout << "-- Invalid surrogate" << std::endl;
-        
-        test_to(make3(0xd800),illegal);
-        test_to(make3(0xdbff),illegal);
-        test_to(make3(0xdc00),illegal);
-        test_to(make3(0xdfff),illegal);
-
-        test_to(make4(0xd800),illegal);
-        test_to(make4(0xdbff),illegal);
-        test_to(make4(0xdc00),illegal);
-        test_to(make4(0xdfff),illegal);
-
-        std::cout <<"-- Incomplete" << std::endl;
-
-        test_to("",incomplete);
-
-        test_to("\x80",illegal);
-        test_to("\xc2",incomplete);
-        
-        test_to("\xdf",incomplete);
-
-        test_to("\xe0",incomplete);
-        test_to("\xe0\xa0",incomplete);
-
-        test_to("\xef\xbf",incomplete);
-        test_to("\xef",incomplete);
-
-        test_to("\xf0\x90\x80",incomplete);
-        test_to("\xf0\x90",incomplete);
-        test_to("\xf0",incomplete);
-
-        test_to("\xf4\x8f\xbf",incomplete);
-        test_to("\xf4\x8f",incomplete);
-        test_to("\xf4",incomplete);
-
-        std::cout << "- To UTF-8" << std::endl;
-
-        std::cout << "-- Test correct" << std::endl;
-
-        test_from("\x7f",0x7f);
-        test_from("\xc2\x80",0x80);
-        test_from("\xdf\xbf",0x7ff);
-        test_from("\xe0\xa0\x80",0x800);
-        test_from("\xef\xbf\xbf",0xffff);
-        test_from("\xf0\x90\x80\x80",0x10000);
-        test_from("\xf4\x8f\xbf\xbf",0x10ffff);
-
-        std::cout << "Test UTF-16" << std::endl;
-        std::cout << "- From UTF-16" << std::endl;
-
-
-        std::cout << "-- Correct" << std::endl;
-
-        test_to(u16_seq(0x10),0x10);
-        test_to(u16_seq(0xffff),0xffff);
-        test_to(u16_seq(0xD800,0xDC00),0x10000);
-        test_to(u16_seq(0xDBFF,0xDFFF),0x10FFFF);
-
-
-        std::cout << "-- Invalid surrogate" << std::endl;
-        
-        test_to(u16_seq(0xDFFF),illegal);
-        test_to(u16_seq(0xDC00),illegal);
-
-        std::cout <<"-- Incomplete" << std::endl;
-
-        test_to(u16_seq(0),incomplete);
-        test_to(u16_seq(0xD800),incomplete);
-        test_to(u16_seq(0xDBFF),incomplete);
-
-        std::cout << "- To UTF-16" << std::endl;
-
-        std::cout << "-- Test correct" << std::endl;
-
-        test_to(u16_seq(0x10),0x10);
-        test_to(u16_seq(0xffff),0xffff);
-        test_to(u16_seq(0xD800,0xDC00),0x10000);
-        test_to(u16_seq(0xDBFF,0xDFFF),0x10FFFF);
-
-
-        std::cout << "Test UTF-32" << std::endl;
-        std::cout << "- From UTF-32" << std::endl;
-
-
-        std::cout << "-- Correct" << std::endl;
-
-        test_to(u32_seq(0x10),0x10);
-        test_to(u32_seq(0xffff),0xffff);
-        test_to(u32_seq(0x10000),0x10000);
-        test_to(u32_seq(0x10ffff),0x10ffff);
-
-
-
-        std::cout << "-- Invalid surrogate" << std::endl;
-        
-        test_to(u32_seq(0xD800),illegal);
-        test_to(u32_seq(0xDBFF),illegal);
-        test_to(u32_seq(0xDFFF),illegal);
-        test_to(u32_seq(0xDC00),illegal);
-        test_to(u32_seq(0x110000),illegal);
-
-        std::cout <<"-- Incomplete" << std::endl;
-
-        test_to(u32_seq(0),incomplete);
-
-        std::cout << "- To UTF-32" << std::endl;
-
-        std::cout << "-- Test correct" << std::endl;
-
-        test_to(u32_seq(0x10),0x10);
-        test_to(u32_seq(0xffff),0xffff);
-        test_to(u32_seq(0x10ffff),0x10ffff);
-
-
-
-    }
-    catch(std::exception const &e) {
-        std::cerr << "Failed " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    FINALIZE();
+    test_from_utf(str, codepoint);
+    test_to_utf(str, codepoint);
 }
 
-// vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
-// boostinspect:noascii 
+void test_utf8()
+{
+    std::cout << "- Test UTF-8\n";
+
+    std::cout << "-- Correct" << std::endl;
+    test_valid_utf("\x7f", 0x7f);
+    test_valid_utf("\xc2\x80", 0x80);
+    test_valid_utf("\xdf\xbf", 0x7ff);
+    test_valid_utf("\xe0\xa0\x80", 0x800);
+    test_valid_utf("\xef\xbf\xbf", 0xffff);
+    test_valid_utf("\xf0\x90\x80\x80", 0x10000);
+    test_valid_utf("\xf4\x8f\xbf\xbf", 0x10ffff);
+
+    // test that this actually works
+    test_from_utf(make2(0x80), 0x80);
+    test_from_utf(make2(0x7ff), 0x7ff);
+
+    test_from_utf(make3(0x800), 0x800);
+    test_from_utf(make3(0xffff), 0xffff);
+
+    test_from_utf(make4(0x10000), 0x10000);
+    test_from_utf(make4(0x10ffff), 0x10ffff);
+
+    std::cout << "-- Too big" << std::endl;
+    test_from_utf("\xf4\x9f\x80\x80", illegal);         //  11 0000
+    test_from_utf("\xfb\xbf\xbf\xbf", illegal);         // 3ff ffff
+    test_from_utf("\xf8\x90\x80\x80\x80", illegal);     // 400 0000
+    test_from_utf("\xfd\xbf\xbf\xbf\xbf\xbf", illegal); // 7fff ffff
+
+    std::cout << "-- Invalid length" << std::endl;
+
+    test_from_utf(make2(0), illegal);
+    test_from_utf(make3(0), illegal);
+    test_from_utf(make4(0), illegal);
+    test_from_utf(make2(0x7f), illegal);
+    test_from_utf(make3(0x7f), illegal);
+    test_from_utf(make4(0x7f), illegal);
+
+    test_from_utf(make3(0x80), illegal);
+    test_from_utf(make4(0x80), illegal);
+    test_from_utf(make3(0x7ff), illegal);
+    test_from_utf(make4(0x7ff), illegal);
+
+    test_from_utf(make4(0x8000), illegal);
+    test_from_utf(make4(0xffff), illegal);
+    test_from_utf(make4(0x110000), illegal);
+    test_from_utf(make4(0x1fffff), illegal);
+
+    std::cout << "-- Invalid surrogate" << std::endl;
+
+    test_from_utf(make3(0xd800), illegal);
+    test_from_utf(make3(0xdbff), illegal);
+    test_from_utf(make3(0xdc00), illegal);
+    test_from_utf(make3(0xdfff), illegal);
+
+    test_from_utf(make4(0xd800), illegal);
+    test_from_utf(make4(0xdbff), illegal);
+    test_from_utf(make4(0xdc00), illegal);
+    test_from_utf(make4(0xdfff), illegal);
+
+    std::cout << "-- Incomplete" << std::endl;
+
+    test_from_utf("", incomplete);
+
+    test_from_utf("\x80", illegal);
+    test_from_utf("\xc2", incomplete);
+
+    test_from_utf("\xdf", incomplete);
+
+    test_from_utf("\xe0", incomplete);
+    test_from_utf("\xe0\xa0", incomplete);
+
+    test_from_utf("\xef\xbf", incomplete);
+    test_from_utf("\xef", incomplete);
+
+    test_from_utf("\xf0\x90\x80", incomplete);
+    test_from_utf("\xf0\x90", incomplete);
+    test_from_utf("\xf0", incomplete);
+
+    test_from_utf("\xf4\x8f\xbf", incomplete);
+    test_from_utf("\xf4\x8f", incomplete);
+    test_from_utf("\xf4", incomplete);
+}
+
+void test_utf16()
+{
+    std::cout << "- Test UTF-16\n";
+
+    std::cout << "-- Correct" << std::endl;
+    test_valid_utf(u16_seq(0x10), 0x10);
+    test_valid_utf(u16_seq(0xffff), 0xffff);
+    test_valid_utf(u16_seq(0xD800, 0xDC00), 0x10000);
+    test_valid_utf(u16_seq(0xDBFF, 0xDFFF), 0x10FFFF);
+
+    std::cout << "-- Invalid surrogate" << std::endl;
+    test_from_utf(u16_seq(0xDFFF), illegal);
+    test_from_utf(u16_seq(0xDC00), illegal);
+
+    std::cout << "-- Incomplete" << std::endl;
+    test_from_utf(u16_seq(0), incomplete);
+    test_from_utf(u16_seq(0xD800), incomplete);
+    test_from_utf(u16_seq(0xDBFF), incomplete);
+
+    std::cout << "-- Test char16_t" << std::endl;
+#if BOOST_WORKAROUND(BOOST_GCC_VERSION, < 50000)
+    test_valid_utf(u"\x0010", 0x10);
+    test_valid_utf(u"\xffff", 0xffff);
+#else
+    test_valid_utf(u"\u0010", 0x10);
+    test_valid_utf(u"\uffff", 0xffff);
+#endif
+    test_valid_utf(u"\U00010000", 0x10000);
+    test_valid_utf(u"\U0010FFFF", 0x10FFFF);
+    test_from_utf(c16_seq(0xDFFF), illegal);
+    test_from_utf(c16_seq(0xDC00), illegal);
+}
+
+void test_utf32()
+{
+    std::cout << "- Test UTF-32\n";
+
+    std::cout << "-- Correct" << std::endl;
+    test_valid_utf(u32_seq(0x10), 0x10);
+    test_valid_utf(u32_seq(0xffff), 0xffff);
+    test_valid_utf(u32_seq(0x10000), 0x10000);
+    test_valid_utf(u32_seq(0x10ffff), 0x10ffff);
+
+    std::cout << "-- Invalid surrogate" << std::endl;
+    test_from_utf(u32_seq(0xD800), illegal);
+    test_from_utf(u32_seq(0xDBFF), illegal);
+    test_from_utf(u32_seq(0xDFFF), illegal);
+    test_from_utf(u32_seq(0xDC00), illegal);
+    test_from_utf(u32_seq(0x110000), illegal);
+
+    std::cout << "-- Incomplete" << std::endl;
+    test_from_utf(u32_seq(0), incomplete);
+
+    std::cout << "-- Test char32_t" << std::endl;
+#if BOOST_WORKAROUND(BOOST_GCC_VERSION, < 50000)
+    test_valid_utf(U"\x0010", 0x10);
+#else
+    test_valid_utf(U"\U00000010", 0x10);
+#endif
+    test_valid_utf(U"\U0000ffff", 0xffff);
+    test_valid_utf(U"\U00010000", 0x10000);
+    test_valid_utf(U"\U0010ffff", 0x10ffff);
+    test_from_utf(c32_seq(0xD800), illegal);
+    test_from_utf(c32_seq(0xDBFF), illegal);
+    test_from_utf(c32_seq(0xDFFF), illegal);
+    test_from_utf(c32_seq(0xDC00), illegal);
+    test_from_utf(c32_seq(0x110000), illegal);
+}
+
+void test_main(int /*argc*/, char** /*argv*/)
+{
+    test_utf8();
+    test_utf16();
+    test_utf32();
+}
+
+// boostinspect:noascii

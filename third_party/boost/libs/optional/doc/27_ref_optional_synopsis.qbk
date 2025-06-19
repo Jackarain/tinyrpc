@@ -16,10 +16,10 @@
     namespace boost {
 
     class in_place_init_t { /* see below */ } ; ``[link reference_in_place_init __GO_TO__]``
-    const in_place_init_t in_place_init ( /* see below */ ) ;
+    inline constexpr in_place_init_t in_place_init ( /* see below */ ) ;
 
     class in_place_init_if_t { /*see below*/ } ; ``[link reference_in_place_init_if __GO_TO__]``
-    const in_place_init_if_t in_place_init_if ( /*see below*/ ) ;
+    inline constexpr in_place_init_if_t in_place_init_if ( /*see below*/ ) ;
 
     template <class T>
     class optional ; ``[link reference_operator_template __GO_TO__]``
@@ -73,6 +73,16 @@
 
     } // namespace boost
 
+    namespace std {
+
+    template <typename T>
+    struct hash<boost::optional<T> > ; ``[link reference_std_hash_spec __GO_TO__]``
+
+    template <typename T>
+    struct hash<boost::optional<T&> > ; ``[link reference_std_hash_spec __GO_TO__]``
+
+    } // namespace std
+
 
 [endsect]
 
@@ -92,7 +102,7 @@
 
     }
 
-Classes `in_place_init_t` and `in_place_init_if_t` are empty clsses. Their purpose is to control overload resolution in the initialization of optional objects.
+Classes `in_place_init_t` and `in_place_init_if_t` are empty classes. Their purpose is to control overload resolution in the initialization of optional objects.
 They are empty, trivially copyable classes with disabled default constructor.
 
 [endsect]
@@ -218,7 +228,7 @@ They are empty, trivially copyable classes with disabled default constructor.
 
 [#reference_operator_template_spec]
     template <class T>
-    class optional<T&> // specilization for lvalue references
+    class optional<T&> // specialization for lvalue references
     {
     public :
 

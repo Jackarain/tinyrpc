@@ -19,18 +19,9 @@
 #include <boost/iterator/iterator_concepts.hpp>
 #include <boost/iterator/new_iterator_tests.hpp>
 #include <boost/pending/iterator_tests.hpp>
-#include <boost/bind.hpp>
 #include <boost/concept_check.hpp>
 
-#ifdef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
-namespace boost { namespace detail
-{
-  template<> struct function_object_result<int (*)(int)>
-  {
-      typedef int type;
-  };
-}}
-#endif
+#include "static_assert_same.hpp"
 
 struct mult_functor {
   // Functors used with transform_iterator must be
@@ -43,7 +34,7 @@ struct mult_functor {
   int a;
 };
 
-struct adaptable_mult_functor 
+struct adaptable_mult_functor
  : mult_functor
 {
   typedef int result_type;
@@ -114,9 +105,9 @@ struct polymorphic_mult_functor
     template <class F, class T> struct result<F(T&      )> {typedef void type;};
     template <class F, class T> struct result<F(const T&)> {typedef void type;};
 
-    template <class T> 
+    template <class T>
     T operator()(const T& _arg) const {return _arg*2;}
-    template <class T> 
+    template <class T>
     void operator()(const T& _arg) { BOOST_ASSERT(0); }
 };
 
@@ -139,15 +130,15 @@ main()
     for (int k = 0; k < N; ++k)
       x[k] = k;
     std::copy(x, x + N, y);
-    
+
     for (int k2 = 0; k2 < N; ++k2)
       x[k2] = x[k2] * 2;
-    
+
     typedef boost::transform_iterator<adaptable_mult_functor, int*> iter_t;
     iter_t i(y, adaptable_mult_functor(2));
     boost::input_iterator_test(i, x[0], x[1]);
     boost::input_iterator_test(iter_t(&y[0], adaptable_mult_functor(2)), x[0], x[1]);
-    
+
     boost::random_access_readable_iterator_test(i, N, x);
   }
 
@@ -157,15 +148,15 @@ main()
     for (int k = 0; k < N; ++k)
       x[k] = k;
     std::copy(x, x + N, y);
-    
+
     for (int k2 = 0; k2 < N; ++k2)
       x[k2] = x[k2] * 2;
-    
+
     typedef boost::transform_iterator<mult_functor, int*, int> iter_t;
     iter_t i(y, mult_functor(2));
     boost::input_iterator_test(i, x[0], x[1]);
     boost::input_iterator_test(iter_t(&y[0], mult_functor(2)), x[0], x[1]);
-    
+
     boost::random_access_readable_iterator_test(i, N, x);
   }
 
@@ -173,20 +164,20 @@ main()
   {
     {
       typedef boost::transform_iterator<adaptable_mult_functor, int*, float> iter_t;
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::reference,  float>::value));
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::value_type, float>::value));
+      STATIC_ASSERT_SAME(iter_t::reference,  float);
+      STATIC_ASSERT_SAME(iter_t::value_type, float);
     }
 
     {
       typedef boost::transform_iterator<adaptable_mult_functor, int*, boost::use_default, float> iter_t;
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::reference,  int>::value));
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::value_type, float>::value));
+      STATIC_ASSERT_SAME(iter_t::reference,  int);
+      STATIC_ASSERT_SAME(iter_t::value_type, float);
     }
 
     {
       typedef boost::transform_iterator<adaptable_mult_functor, int*, float, double> iter_t;
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::reference,  float>::value));
-      BOOST_STATIC_ASSERT((boost::is_same<iter_t::value_type, double>::value));
+      STATIC_ASSERT_SAME(iter_t::reference,  float);
+      STATIC_ASSERT_SAME(iter_t::value_type, double);
     }
   }
 
@@ -196,16 +187,16 @@ main()
     for (int k = 0; k < N; ++k)
       x[k] = k;
     std::copy(x, x + N, y);
-    
+
     for (int k2 = 0; k2 < N; ++k2)
       x[k2] = x[k2] * 2;
-    
+
     boost::input_iterator_test(
         boost::make_transform_iterator(y, mult_2), x[0], x[1]);
 
     boost::input_iterator_test(
         boost::make_transform_iterator(&y[0], mult_2), x[0], x[1]);
- 
+
     boost::random_access_readable_iterator_test(
         boost::make_transform_iterator(y, mult_2), N, x);
 
@@ -250,7 +241,7 @@ main()
     );
 
     boost::constant_lvalue_iterator_test(
-        boost::make_transform_iterator((pair_t*)values, const_select_first()), x[0]); 
+        boost::make_transform_iterator((pair_t*)values, const_select_first()), x[0]);
 
     boost::non_const_lvalue_iterator_test(
         boost::make_transform_iterator((pair_t*)values, select_first()), x[0], 17);
@@ -267,16 +258,16 @@ main()
     for (int k = 0; k < N; ++k)
       x[k] = k;
     std::copy(x, x + N, y);
-    
+
     for (int k2 = 0; k2 < N; ++k2)
       x[k2] = x[k2] * 2;
-    
+
     boost::input_iterator_test(
         boost::make_transform_iterator(y, polymorphic_mult_functor()), x[0], x[1]);
 
     boost::input_iterator_test(
         boost::make_transform_iterator(&y[0], polymorphic_mult_functor()), x[0], x[1]);
- 
+
     boost::random_access_readable_iterator_test(
         boost::make_transform_iterator(y, polymorphic_mult_functor()), N, x);
   }

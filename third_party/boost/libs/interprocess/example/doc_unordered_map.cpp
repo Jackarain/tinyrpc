@@ -7,8 +7,10 @@
 // See http://www.boost.org/libs/interprocess for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/interprocess/detail/config_begin.hpp>
+
 #include <boost/interprocess/detail/workaround.hpp>
+#if BOOST_CXX_VERSION >=201103L
+
 //[doc_unordered_map
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
@@ -26,7 +28,7 @@
 //->
 
 #include <functional>                  //std::equal_to
-#include <boost/functional/hash.hpp>   //boost::hash
+#include <boost/container_hash/hash.hpp>   //boost::hash
 
 //<-
 #include "../test/get_process_id_name.hpp"
@@ -38,32 +40,15 @@ int main ()
    //Remove shared memory on construction and destruction
    struct shm_remove
    {
-   //<-
-   #if 1
       shm_remove() { shared_memory_object::remove(test::get_process_id_name()); }
       ~shm_remove(){ shared_memory_object::remove(test::get_process_id_name()); }
-   #else
-   //->
-      shm_remove() { shared_memory_object::remove("MySharedMemory"); }
-      ~shm_remove(){ shared_memory_object::remove("MySharedMemory"); }
-   //<-
-   #endif
-   //->
    } remover;
    //<-
    (void)remover;
    //->
 
    //Create shared memory
-   //<-
-   #if 1
    managed_shared_memory segment(create_only, test::get_process_id_name(), 65536);
-   #else
-   //->
-   managed_shared_memory segment(create_only, "MySharedMemory", 65536);
-   //<-
-   #endif
-   //->
 
    //Note that unordered_map<Key, MappedType>'s value_type is std::pair<const Key, MappedType>,
    //so the allocator must allocate that pair.
@@ -85,14 +70,19 @@ int main ()
    //Note that the first parameter is the initial bucket count and
    //after that, the hash function, the equality function and the allocator
    MyHashMap *myhashmap = segment.construct<MyHashMap>("MyHashMap")  //object name
-      ( 3, boost::hash<int>(), std::equal_to<int>()                  //
+      ( 3u, boost::hash<int>(), std::equal_to<int>()                  //
       , segment.get_allocator<ValueType>());                         //allocator instance
 
    //Insert data in the hash map
-   for(int i = 0; i < 100; ++i){
-      myhashmap->insert(ValueType(i, (float)i));
+   for(std::size_t i = 0; i < 100u; ++i){
+      myhashmap->insert(ValueType((int)i, (float)i));
    }
    return 0;
 }
 //]
-#include <boost/interprocess/detail/config_end.hpp>
+#else
+int main()
+{
+   return 0;
+}
+#endif //#if BOOST_CXX_VERSION >=201103L

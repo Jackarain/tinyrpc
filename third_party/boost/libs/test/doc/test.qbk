@@ -7,7 +7,7 @@
 
 [library Boost.Test
     [quickbook 1.7]
-    [copyright 2001 - 2018 Boost.Test contributors]
+    [copyright 2001 - 2022 Boost.Test contributors]
     [id boost_test]
     [purpose Testing library]
     [license
@@ -33,7 +33,7 @@
 [/ content in the test organization]
 
 [def __floating_points_testing_tools__    [link boost_test.testing_tools.extended_comparison.floating_point.floating_points_comparison_theory Floating point comparison algorithms]]
-[def __master_test_suite__                [link boost_test.tests_organization.test_suite.master_test_suite master test suite]]
+[def __master_test_suite__                [link boost_test.tests_organization.test_tree.master_test_suite master test suite]]
 
 [def __runtime_configuration__            [link boost_test.runtime_config runtime configuration]]
 [def __output_test_stream_tool__          [link boost_test.testing_tools.output_stream_testing output test stream]]
@@ -53,6 +53,7 @@
 [def __BOOST_TEST_MESSAGE__               [link boost_test.utf_reference.testout_reference.test_output_macro_message      `BOOST_TEST_MESSAGE`]]
 [def __BOOST_TEST_INFO__                  [link boost_test.utf_reference.testout_reference.test_output_macro_info         `BOOST_TEST_INFO`]]
 [def __BOOST_TEST_CONTEXT__               [link boost_test.utf_reference.testout_reference.test_output_macro_context      `BOOST_TEST_CONTEXT`]]
+[def __BOOST_TEST_INFO_SCOPE__            [link boost_test.utf_reference.testout_reference.test_output_macro_context_sticky `BOOST_TEST_INFO_SCOPE`]]
 [def __BOOST_TEST_DONT_PRINT_LOG_VALUE__  [link boost_test.utf_reference.testout_reference.test_output_macro_disable_type `BOOST_TEST_DONT_PRINT_LOG_VALUE`]]
 
 

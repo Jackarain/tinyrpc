@@ -5,27 +5,28 @@
 
 #define BOOST_NO_EXCEPTIONS
 #define BOOST_EXCEPTION_DISABLE
+
 #include <boost/throw_exception.hpp>
-#include <boost/detail/lightweight_test.hpp>
+#include <cstdlib>
 
-class my_exception: public std::exception { };
+#if defined(_MSC_VER)
+# pragma warning(disable: 4702) // unreachable code
+#endif
 
-bool called=false;
+class my_exception: public std::exception {};
 
-namespace
-boost
-    {
-    void
-    throw_exception( std::exception const & )
-        {
-        called=true;
-        }
-    }
+int main()
+{
+    boost::throw_exception( my_exception() );
+    return 1;
+}
 
-int
-main()
-    {
-    boost::throw_exception(my_exception());
-    BOOST_TEST(called);
-    return boost::report_errors();
-    }
+namespace boost
+{
+
+void throw_exception( std::exception const & )
+{
+    std::exit( 0 );
+}
+
+} // namespace boost

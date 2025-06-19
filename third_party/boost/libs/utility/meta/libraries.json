@@ -5,15 +5,13 @@
         "authors": [
             "Dave Abrahams and others"
         ],
-        "description": "Class noncopyable plus checked_delete(), checked_array_delete(), next(), prior() function templates, plus base-from-member idiom.",
+        "description": "Various utilities, such as base-from-member idiom and binary literals in C++03.",
         "documentation": "utility.htm",
         "category": [
-            "Algorithms",
-            "Function-objects",
-            "Memory",
             "Miscellaneous",
             "Patterns"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/call_traits",
@@ -25,7 +23,8 @@
         "documentation": "call_traits.htm",
         "category": [
             "Generic"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/compressed_pair",
@@ -33,12 +32,13 @@
         "authors": [
             "John Maddock, Howard Hinnant, et al"
         ],
-        "description": "Empty member optimization.",
+        "description": "A pair class with empty member optimization.",
         "documentation": "compressed_pair.htm",
         "category": [
             "Data",
             "Patterns"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/identity_type",
@@ -53,7 +53,8 @@
         ],
         "maintainers": [
             "Lorenzo Caminiti <lorcaminiti -at- gmail.com>"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/in_place_factories",
@@ -65,7 +66,8 @@
         "documentation": "in_place_factories.html",
         "category": [
             "Generic"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/operators",
@@ -74,7 +76,7 @@
             "Dave Abrahams",
             "Jeremy Siek"
         ],
-        "description": "Templates ease arithmetic classes and iterators.",
+        "description": "Templates to simplify operator definition in arithmetic classes and iterators.",
         "documentation": "operators.htm",
         "category": [
             "Generic",
@@ -83,20 +85,37 @@
         ],
         "maintainers": [
             "Daniel Frey <d.frey -at- gmx.de>"
-        ]
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/result_of",
         "name": "Result Of",
         "description": "Determines the type of a function call expression.",
-        "documentation": "utility.htm#result_of",
+        "documentation": "doc/html/utility/utilities/result_of.html",
         "category": [
             "Function-objects"
         ],
         "authors": "",
         "maintainers": [
             "Daniel Walker <daniel.j.walker -at- gmail.com>"
-        ]
+        ],
+        "cxxstd": "03"
+    },
+    {
+        "key": "utility/string_view",
+        "name": "String View",
+        "description": "String view templates.",
+        "documentation": "doc/html/utility/utilities/string_view.html",
+        "category": [
+            "Containers",
+            "String"
+        ],
+        "authors": "Marshall Clow",
+        "maintainers": [
+            "Marshall Clow <marshall -at- idio.com>"
+        ],
+        "cxxstd": "03"
     },
     {
         "key": "utility/value_initialized",
@@ -108,6 +127,7 @@
         "documentation": "value_init.htm",
         "category": [
             "Miscellaneous"
-        ]
+        ],
+        "cxxstd": "03"
     }
 ]

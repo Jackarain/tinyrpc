@@ -26,7 +26,15 @@ void expected_results()
 #else
    largest_type = "(long\\s+)?double|real_concept";
 #endif
-
+#if defined(__APPLE__ ) && defined(__clang__)
+   add_expected_result(
+      ".*",                          // compiler
+      ".*",                          // stdlib
+      ".*",                          // platform
+      largest_type,                  // test type(s)
+      ".*large arguments",           // test data group
+      ".*", 700, 200);               // test function
+#else
    add_expected_result(
       ".*",                          // compiler
       ".*",                          // stdlib
@@ -34,6 +42,7 @@ void expected_results()
       largest_type,                  // test type(s)
       ".*large arguments",           // test data group
       ".*", 400, 200);               // test function
+#endif
    add_expected_result(
       ".*",                          // compiler
       ".*",                          // stdlib
@@ -85,7 +94,9 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_polygamma(0.0, "double");
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_polygamma(0.0L, "long double");
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
    test_polygamma(boost::math::concepts::real_concept(0.1), "real_concept");
+#endif
 #endif
 #ifdef BOOST_FLOAT128_C
    //test_polygamma(BOOST_FLOAT128_C(0.0), "float128_t");

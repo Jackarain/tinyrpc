@@ -3,18 +3,40 @@
 # ===========================================================================
 #  Copyright (c) 2011-2012 Barend Gehrels, Amsterdam, the Netherlands.
 #  Copyright (c) 2011-2013 Adam Wulkiewicz, Lodz, Poland.
+#
+# This file was modified by Oracle on 2020.
+# Modifications copyright (c) 2020, Oracle and/or its affiliates.
+# Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 # 
 #  Use, modification and distribution is subject to the Boost Software License,
 #  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
-#  http://www.boost.org/LICENSE_1_0.txt)9
+#  http://www.boost.org/LICENSE_1_0.txt)
 # ============================================================================
 
 import os, sys, shutil
 
-cmd = "doxygen_xml2qbk"
+# Resolves the path to an executable and returns an absolute path to it
+def resolve_executable(orig_path):
+    resolved_path = shutil.which(orig_path)
+    if resolved_path is None:
+        raise Exception("%s is not found or not executable" % orig_path)
+    return os.path.abspath(resolved_path)
+
+if 'DOXYGEN_XML2QBK' in os.environ:
+    doxygen_xml2qbk_cmd = os.environ['DOXYGEN_XML2QBK']
+elif '--doxygen-xml2qbk' in sys.argv:
+    doxygen_xml2qbk_cmd = sys.argv[sys.argv.index('--doxygen-xml2qbk')+1]
+else:
+    doxygen_xml2qbk_cmd = 'doxygen_xml2qbk'
+doxygen_xml2qbk_cmd = resolve_executable(doxygen_xml2qbk_cmd)
+os.environ['DOXYGEN_XML2QBK'] = doxygen_xml2qbk_cmd
+doxygen_xml2qbk_cmd = '"' + doxygen_xml2qbk_cmd + '"'
+
+cmd = doxygen_xml2qbk_cmd
 cmd = cmd + " --xml xml/%s.xml"
 cmd = cmd + " --start_include boost/"
 cmd = cmd + " --output_style alt"
+cmd = cmd + " --alt_max_synopsis_length 59"
 cmd = cmd + " > generated/%s.qbk"
 
 def run_command(command):

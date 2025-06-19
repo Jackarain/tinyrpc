@@ -1,3 +1,9 @@
+//  Copyright (c) 2018 Robert Ramey
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+
 #include <stdexcept>
 #include <iostream>
 
@@ -10,28 +16,27 @@ int main(int, const char *[]){
     std::cout << "Not using safe numerics" << std::endl;
 
     try{
-        int x = 1;
-        int y = 0;
         // can't do this as it will crash the program with no
         // opportunity for recovery - comment out for example
-        //std::cout << x / y;
-        std::cout << "error NOT detectable!" << std::endl;
+        // int x = 1;
+        // int y = 0;
+        // std::cout << x / y;
+        std::cout << "error cannot be handled at runtime!" << std::endl;
     }
-    catch(std::exception){
-        std::cout << "error detected!" << std::endl;
+    catch(const std::exception &){
+        std::cout << "error handled at runtime!" << std::endl;
     }
-
     // solution: replace int with safe<int>
     std::cout << "Using safe numerics" << std::endl;
     try{
         using namespace boost::safe_numerics;
-        safe<int> x = 1;
-        safe<int> y = 0;
+        const safe<int> x = 1;
+        const safe<int> y = 0;
         std::cout << x / y;
-        std::cout << " error NOT detected!" << std::endl;
+        std::cout << "error NOT detected!" << std::endl;
     }
-    catch(std::exception & e){
-        std::cout << "error detected:" << e.what() << std::endl;
+    catch(const std::exception & e){
+        std::cout << "error handled at runtime!" << e.what() << std::endl;
     }
     return 0;
 }

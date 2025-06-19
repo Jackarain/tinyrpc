@@ -12,15 +12,17 @@
 #  pragma warning (disable : 4127) //  conditional expression is constant.
 #endif
 
-
+#include <boost/math/tools/config.hpp>
+#ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
+#endif
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <boost/math/distributions/weibull.hpp>
     using boost::math::weibull_distribution;
-#include <boost/math/tools/test.hpp> 
+#include "../include_private/boost/math/tools/test.hpp"
 #include "test_out_of_range.hpp"
 
 #include <iostream>
@@ -29,6 +31,8 @@
    using std::setprecision;
 #include <limits>
   using std::numeric_limits;
+#include <cmath>
+  using std::log;
 
 template <class RealType>
 void check_weibull(RealType shape, RealType scale, RealType x, RealType p, RealType q, RealType tol)
@@ -40,12 +44,25 @@ void check_weibull(RealType shape, RealType scale, RealType x, RealType p, RealT
          p,                                             // probability.
          tol);                                          // %tolerance.
    BOOST_CHECK_CLOSE(
+      ::boost::math::logcdf(
+         weibull_distribution<RealType>(shape, scale),       // distribution.
+         x),                                            // random variable.
+         log(p),                                             // probability.
+         tol);   
+   BOOST_CHECK_CLOSE(
       ::boost::math::cdf(
          complement(
             weibull_distribution<RealType>(shape, scale),    // distribution.
             x)),                                        // random variable.
          q,                                             // probability complement.
          tol);                                          // %tolerance.
+   BOOST_CHECK_CLOSE(
+      ::boost::math::logcdf(
+         complement(
+            weibull_distribution<RealType>(shape, scale),    // distribution.
+            x)),                                        // random variable.
+         log(q),                                             // probability complement.
+         tol);   
    BOOST_CHECK_CLOSE(
       ::boost::math::quantile(
          weibull_distribution<RealType>(shape, scale),       // distribution.
@@ -70,7 +87,7 @@ void test_spots(RealType)
    // using the online calculator at 
    // http://espse.ed.psu.edu/edpsych/faculty/rhale/hale/507Mat/statlets/free/pdist.htm
    //
-   // Tolerance is just over 5 decimal digits expressed as a persentage:
+   // Tolerance is just over 5 decimal digits expressed as a percentage:
    // that's the limit of the test data.
    RealType tolerance = 2e-5f * 100;  
    cout << "Tolerance for type " << typeid(RealType).name()  << " is " << tolerance << " %" << endl;
@@ -245,6 +262,50 @@ void test_spots(RealType)
       tolerance);
 
    //
+   // Tests for logpdf
+   //
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.25, 0.5), static_cast<RealType>(0.1)), 
+      log(static_cast<RealType>(0.856579)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.25, 0.5), static_cast<RealType>(0.5)), 
+      log(static_cast<RealType>(0.183940)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.25, 0.5), static_cast<RealType>(5)), 
+      log(static_cast<RealType>(0.015020)), 
+      tolerance * 10); // fewer digits in test value
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.5, 2), static_cast<RealType>(0.1)), 
+      log(static_cast<RealType>(0.894013)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.5, 2), static_cast<RealType>(0.5)), 
+      log(static_cast<RealType>(0.303265)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(0.5, 2), static_cast<RealType>(1)), 
+      log(static_cast<RealType>(0.174326)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(2, 0.25), static_cast<RealType>(0.1)), 
+      log(static_cast<RealType>(2.726860)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(2, 0.25), static_cast<RealType>(0.5)), 
+      log(static_cast<RealType>(0.293050)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(3, 2), static_cast<RealType>(1)), 
+      log(static_cast<RealType>(0.330936)), 
+      tolerance);
+   BOOST_CHECK_CLOSE(
+      logpdf(weibull_distribution<RealType>(3, 2), static_cast<RealType>(2)), 
+      log(static_cast<RealType>(0.551819)), 
+      tolerance);
+
+   //
    // These test values were obtained using the formulas at 
    // http://en.wikipedia.org/wiki/Weibull_distribution
    // which are subtly different to (though mathematically
@@ -301,11 +362,11 @@ void test_spots(RealType)
     skewness(dist), 
     (boost::math::tgamma(1 + 3/dist.shape()) * pow(dist.scale(), RealType(3)) - 3 * mean(dist) * variance(dist) - pow(mean(dist), RealType(3))) / pow(standard_deviation(dist), RealType(3)), 
     tolerance * 100);
-   // kertosis:
+   // kurtosis:
    BOOST_CHECK_CLOSE(
     kurtosis(dist)
     , kurtosis_excess(dist) + 3, tolerance);
-   // kertosis excess:
+   // kurtosis excess:
    BOOST_CHECK_CLOSE(
     kurtosis_excess(dist), 
     (pow(dist.scale(), RealType(4)) * boost::math::tgamma(1 + 4/dist.shape()) 
@@ -314,6 +375,11 @@ void test_spots(RealType)
          - 6 * variance(dist) * mean(dist) * mean(dist) 
          - pow(mean(dist), RealType(4))) / (variance(dist) * variance(dist)), 
     tolerance * 1000);
+
+   RealType expected_entropy = boost::math::constants::euler<RealType>()*(1-1/dist.shape()) + log(dist.scale()/dist.shape()) + 1;
+   BOOST_CHECK_CLOSE(
+    entropy(dist)
+    , expected_entropy, tolerance);
 
    //
    // Special cases:
@@ -361,7 +427,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double. OK at decdigits 7, tolerance = 1e07 %
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_spots(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x0582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x0582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #else

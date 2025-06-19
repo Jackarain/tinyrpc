@@ -24,7 +24,7 @@
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // Boost.Test
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <typeinfo>
 #include <iostream>
@@ -65,7 +65,7 @@ treated differently than the remaining ones.
 
 The test cover various regions of order,
 each one tested with several zeros:
-  * Order 219/100: This checks a region just below a critical cutof.
+  * Order 219/100: This checks a region just below a critical cutoff.
   * Order 221/100: This checks a region just above a critical cutoff.
   * Order 0: Something always tends to go wrong at zero.
   * Order 1/1000: A small order.
@@ -116,8 +116,7 @@ void test_bessel_zeros(RealType)
    using boost::math::isnan;
 
   BOOST_MATH_CHECK_THROW(cyl_bessel_j_zero(static_cast<RealType>(0), 0), std::domain_error);
-  // BOOST_MATH_CHECK_THROW(cyl_bessel_j_zero(static_cast<RealType>(-1), 2), std::domain_error);
-  // From 83051 negative orders are supported.
+  BOOST_MATH_CHECK_THROW(cyl_bessel_j_zero(static_cast<RealType>(-1.5), 0), std::domain_error);
 
   // Abuse with infinity and max.
   if (std::numeric_limits<RealType>::has_infinity)
@@ -152,7 +151,7 @@ void test_bessel_zeros(RealType)
   // Checks on some spot values.
 
   // http://mathworld.wolfram.com/BesselFunctionZeros.html provides some spot values,
-  // evaluation at 50 deciaml digits using WoldramAlpha.
+  // evaluation at 50 decimal digits using WoldramAlpha.
 
   /* Table[N[BesselJZero[0, n], 50], {n, 1, 5, 1}]
   n |
@@ -493,7 +492,23 @@ n |
     BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-3), 4), static_cast<RealType>(14.623077742393873174076722507725200649352970569915L), tolerance);
     BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-3), 5), static_cast<RealType>(17.818455232945520262553239064736739443380352162752L), tolerance);
 
-  { // Repeat rest using multiple zeros version.
+    /*
+      Table[N[BesselYZero[-5/2, n], 50], {n, 1, 5, 1}]
+      n | y_(-2.5000000000000000000000000000000000000000000000000, n)
+      1 | 5.7634591968945497914064666539527350764090876841674
+      2 | 9.0950113304763551563376983279896952524009293663831
+      3 | 12.322940970566582051969567925329726061189423834915
+      4 | 5.7634591968945497914064666539527350764090876841674
+      5 | 9.0950113304763551563376983279896952524009293663831
+    */
+
+    BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-2.5), 1), static_cast<RealType>(5.7634591968945497914064666539527350764090876841674L), tolerance);
+    BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-2.5), 2), static_cast<RealType>(9.0950113304763551563376983279896952524009293663831L), tolerance);
+    BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-2.5), 3), static_cast<RealType>(12.322940970566582051969567925329726061189423834915L), tolerance);
+    //BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-2.5), 4), static_cast<RealType>(5.7634591968945497914064666539527350764090876841674L), tolerance);
+    //BOOST_CHECK_CLOSE_FRACTION(cyl_neumann_zero(static_cast<RealType>(-2.5), 5), static_cast<RealType>(9.0950113304763551563376983279896952524009293663831L), tolerance);
+    
+    { // Repeat rest using multiple zeros version.
     std::vector<RealType> zeros;
     cyl_neumann_zero(static_cast<RealType>(0.0), 1, 3, std::back_inserter(zeros) );
     BOOST_CHECK_CLOSE_FRACTION(zeros[0], static_cast<RealType>(0.89357696627916752158488710205833824122514686193001L), tolerance);
@@ -840,7 +855,11 @@ Calculated using cpp_dec_float_50
   }
 
   BOOST_MATH_CHECK_THROW(airy_ai_zero<RealType>(-1), std::domain_error);
-  BOOST_CHECK_CLOSE_FRACTION(airy_ai_zero<RealType>((std::numeric_limits<boost::int32_t>::max)()), -static_cast<RealType>(4678579.33301973093739L), tolerance);
+  if (std::numeric_limits<RealType>::digits && (std::numeric_limits<RealType>::digits < 100))
+  {
+     // Limited precision test value:
+     BOOST_CHECK_CLOSE_FRACTION(airy_ai_zero<RealType>((std::numeric_limits<std::int32_t>::max)()), -static_cast<RealType>(4678579.33301973093739L), tolerance);
+  }
 
   // Can't abuse with infinity because won't compile - no conversion.
   //if (std::numeric_limits<RealType>::has_infinity)
@@ -908,7 +927,11 @@ Calculated using cpp_dec_float_50
   }
 
   BOOST_MATH_CHECK_THROW(airy_bi_zero<RealType>(-1), std::domain_error);
-  BOOST_CHECK_CLOSE_FRACTION(airy_bi_zero<RealType>((std::numeric_limits<boost::int32_t>::max)()), -static_cast<RealType>(4678579.33229351984573L), tolerance * 300);
+  if (std::numeric_limits<RealType>::digits && (std::numeric_limits<RealType>::digits < 100))
+  {
+     // Limited precision test value:
+     BOOST_CHECK_CLOSE_FRACTION(airy_bi_zero<RealType>((std::numeric_limits<std::int32_t>::max)()), -static_cast<RealType>(4678579.33229351984573L), tolerance * 300);
+  }
 
   // Can't abuse with infinity because won't compile - no conversion.
   //if (std::numeric_limits<RealType>::has_infinity)

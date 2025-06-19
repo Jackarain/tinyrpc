@@ -6,7 +6,7 @@
  /]
 
 [library Boost.Intrusive
-    [quickbook 1.6]
+    [quickbook 1.7]
     [authors [Krzikalla, Olaf], [Gaztanaga, Ion]]
     [copyright 2005 Olaf Krzikalla, 2006-2015 Ion Gaztanaga]
     [id intrusive]
@@ -376,7 +376,7 @@ using:
    struct my_tag1;
    struct my_tag2;
 
-   typedef list_base_hook< tag<my_tag>  > BaseHook;
+   typedef list_base_hook< tag<my_tag1> > BaseHook;
    typedef list_base_hook< tag<my_tag2> > BaseHook2;
    class Foo   :  public BaseHook, public BaseHook2
    { /**/ };
@@ -886,7 +886,7 @@ the section [link intrusive.usage How to use Boost.Intrusive]:
 
 *  [*`linear<bool Enable>`]: the singly linked list is implemented as a
    null-terminated list instead of a circular list. This allows `O(1)` swap,
-   but losses some operations like `container_from_end_iterator`.
+   but loses some operations like `container_from_end_iterator`.
 *  [*`cache_last<bool Enable>`]: `slist` also stores a pointer to the
    last element of the singly linked list. This allows `O(1)` swap,
    `splice_after(iterator, slist &)` and makes the list offer new functions
@@ -1304,7 +1304,11 @@ And they also can receive additional options:
    in containers. Default: `equal< std::equal_to<T> >`
 
 *  [*`hash<class Hash>`]: Hash function to be used in the container.
-   Default: `hash< boost::hash<T> >`
+   Default: internal hash functor that hashes scalar types, triggering unqualified call to
+           `hash_value`for non-scalar types (boost::hash<T> compatible protocol). If
+           the ADL call does not find a viable candidate a boost::hash<T>() call is tried
+           in case the user has included boost/container_hash/hash.hpp and a viable
+           candidate is found there. Fails otherwise.
 
 *  [*`bucket_traits<class BucketTraits>`]: A type that wraps the bucket vector to
    be used by the unordered container. Default: a type initialized by the address
@@ -1852,9 +1856,14 @@ And they also can receive additional options:
    in containers. The comparison functor must induce a strict weak ordering.
    Default: `compare< std::less<key_type> >`
 
+*  [*`priority_of_value<class PriorityOfValue>`]: A function object
+   that specifies the type of the priority (`priority_type`) of a treap
+   container and an operator to obtain it from a value type.
+   Default: `priority_type` is equal to `value_type` (set-like interface).
+
 *  [*`priority<class PriorityCompare>`]: Priority Comparison function for the objects to be inserted
    in containers. The comparison functor must induce a strict weak ordering.
-   Default: `priority< priority_compare<key_type> >`
+   Default: `priority< priority_compare<priority_type> >`
 
 *  [*`key_of_value<class KeyOfValueFunctionObject>`]: A function object that will
    define the `key_type` of the value type to be stored. This type will allow a map-like interface. See
@@ -2387,7 +2396,7 @@ Let's see a small function that shows the use of `iterator_to` and
 [section:any_hooks Any Hooks: A single hook for any Intrusive container]
 
 Sometimes, a class programmer wants to place a class in several intrusive
-containers but no at the same time. In this case, the programmer might
+containers but not at the same time. In this case, the programmer might
 decide to insert two hooks in the same class.
 
 [c++]
@@ -3879,7 +3888,140 @@ to be inserted in intrusive containers are allocated using `std::vector` or `std
 
 [endsect]
 
+[import ../../../tools/auto_index/include/auto_index_helpers.qbk]
+
+[section:index Indexes]
+
+[named_index class_name Class Index]
+[named_index typedef_name Typedef Index]
+[named_index function_name Function Index]
+[/named_index macro_name Macro Index]
+[/index]
+
+[endsect]
+
 [section:release_notes Release Notes]
+
+[section:release_notes_boost_1_86_00 Boost 1.86 Release]
+
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/issues/86 GitHub #86: ['Invalid UTF-8 character in comment]]
+
+[endsect]
+
+[section:release_notes_boost_1_85_00 Boost 1.85 Release]
+
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/issues/81 GitHub #81: ['unordered_set rehash breaks insert_commit_data]]
+   * [@https://github.com/boostorg/intrusive/issues/83 GitHub #83: ['\[docs\] Index is missing]]
+
+* Potentially breaking: Unordered containers use now by default an internal a `boost::hash`-protocol compatible internal hash functor.
+   * Reasons:
+      * Since Boost 1.84 Boost.ContainerHash requires C++11, breaking Boost.Intrusive C++03 users.
+      * To avoid header inclusion dependency on Boost.ContainerHash, which indirectly also brings other libraries (Boost.Describe, Boost.Mp11...).
+   * The new default hash function:
+       * Handles scalar types directly (in case scalar types are used with `key_of_value`) with trivial hashes (similar to `boost::hash`).
+       * For other types (most Boost.Intrusive users are here), uses ADL-based `hash_function` call, just like `boost::hash`.
+       * If that ADL lookup fails, forward declares `boost::hash` and calls through an object of that type. If the user has included `boost/container_hash/hash.hpp`
+         before or after including Boost.Intrusive, `boost::hash` will be properly called.
+   * It's possible that some Boost.Intrusive users were using Boost.ContainerHash functions/features without including the needed
+     `boost/container_hash/hash.hpp` header, since it was indirectly included through Boost.Intrusive. Those users will need to
+     explicitly include `boost/container_hash/hash.hpp`to obtain Boost.ContainerHash features.
+
+* Boost.Intrusive no longer depends on Boost.StaticCast.
+
+[endsect]
+
+[section:release_notes_boost_1_82_00 Boost 1.82 Release]
+
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/pull/77 GitHub #77: ['Suppress unused variable warnings on node_count (clang 15)]]
+
+[endsect]
+
+[section:release_notes_boost_1_81_00 Boost 1.81 Release]
+
+* Semi-intrusive hash containers rewritten to reduce compilation times and improve runtime performance.
+
+[endsect]
+
+[section:release_notes_boost_1_80_00 Boost 1.80 Release]
+
+* Unordered containers optimized for performance. Experimental `linear_buckets` and `fastmod_buckets` options.
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/issues/75 GitHub #75: ['Bug: Rehashing an empty unordered_set with cache_begin set to true hits an assert]]
+
+[endsect]
+
+[section:release_notes_boost_1_79_00 Boost 1.79 Release]
+
+* The library now compiles without warnings with GCC's -Wcast-align=strict
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/pull/66   GitHub #66: ['Fix declaration of node shadowing member]]
+   * [@https://github.com/boostorg/intrusive/pull/70   GitHub #70: ['list: fix remove / remove_and_dispose]]
+
+[endsect]
+
+[section:release_notes_boost_1_77_00 Boost 1.77 Release]
+
+* Added `noexcept` support to the library to obtain better performance and diagnostics.
+
+* Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/pull/57   GitHub #57: ['UB: comparing unrelated pointers]]
+   * [@https://github.com/boostorg/intrusive/issues/59 GitHub #59: ['Add noexcept support to the library]]
+   * [@https://github.com/boostorg/intrusive/issues/60 GitHub #60: ['Licensing question for math.hpp]]
+   * [@https://github.com/boostorg/intrusive/pull/61   GitHub #61: ['Fix bstree_algorithms<>::swap_nodes]]
+   * [@https://github.com/boostorg/intrusive/issues/63 GitHub #63: ['nop splice removes element]]
+
+[endsect]
+
+
+[section:release_notes_boost_1_76_00 Boost 1.76 Release]
+
+*  Reduced compile-time dependencies:
+    *   `linear_slist_algorithms` use a simple node_ptr instead of std::pair on return.
+    *   `list`/`slist` use `operator <`/`operator ==` instead of `std::equal_to`/`std::less`.
+*  Fixed bugs:
+   * [@https://github.com/boostorg/intrusive/issues/54  GitHub #54: ['set.rbegin() looks like O(log(N))]]
+
+[endsect]
+
+[section:release_notes_boost_1_75_00 Boost 1.75 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/intrusive/pull/48    GitHub #48: ['MSVC "assignment within conditional" warning fix]]
+   *  [@https://github.com/boostorg/intrusive/pull/49    GitHub #49: ['Fix empty control statement warnings]]
+   *  [@https://github.com/boostorg/intrusive/issues/52  GitHub #52: ['Invalid casting in BOOST_INTRUSIVE_BSR_INTRINSIC]]
+
+[endsect]
+
+
+[section:release_notes_boost_1_73_00 Boost 1.73 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/intrusive/issues/46  GitHub #46: ['UB due to union based type punning]]
+ 
+[endsect]
+
+[section:release_notes_boost_1_71_00 Boost 1.71 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/intrusive/pull/42  GitHub #42: ['Documentation does not describe treap priority_of_value changes]]
+   *  [@https://github.com/boostorg/intrusive/pull/43  GitHub #43: ['Fix tests with BOOST_INTRUSIVE_VARIADIC_TEMPLATES enabled]]
+   *  [@https://github.com/boostorg/intrusive/pull/45  GitHub #45: ['Disable variadic templates for MSVC-12 to avoid ICEs]]
+ 
+[endsect]
+
+[section:release_notes_boost_1_70_00 Boost 1.70 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/intrusive/pull/33 GitHub Pull #33: ['Fix compilation in case if key is void*, again]]
+   *  [@https://github.com/boostorg/intrusive/issues/34 GitHub Issue #34: ['-Wdeprecated-copy on gcc9]]
+   *  [@https://github.com/boostorg/intrusive/issues/35 GitHub Issue #35: ['key_of_value on treap_set seems to be broken in 1.69]]
+   *  [@https://github.com/boostorg/intrusive/issues/38 GitHub Issue #38: ['treap: Same type for priority and key comparison leads to ambiguous base class error]]
+   *  [@https://github.com/boostorg/intrusive/pull/39 GitHub Pull #39: ['Fix -Wextra-semi clang warnings]]
+
+[endsect]
 
 [section:release_notes_boost_1_67_00 Boost 1.67 Release]
 
@@ -4024,7 +4166,7 @@ to be inserted in intrusive containers are allocated using `std::vector` or `std
 *  Big refactoring in order to reduce template and debug symbol bloat. Test object files have been slashed
    to half in MSVC compilers in Debug mode. Toolchains without Identical COMDAT Folding (ICF) should notice size improvements.
 
-*  Implemented [link intrusive.scary_iterators SCARY iterators].
+*  Implemented [link intrusive.boost_intrusive_iterators.scary_iterators SCARY iterators].
 
 [endsect]
 
@@ -4214,18 +4356,6 @@ helpful discussions.
 
 *  Special thanks to [*Steven Watanabe] and [*Tobias Schwinger] for their
    invaluable suggestions and improvements.
-
-[endsect]
-
-[include auto_index_helpers.qbk]
-
-[section:index Indexes]
-
-[named_index class_name Class Index]
-[named_index typedef_name Typedef Index]
-[named_index function_name Function Index]
-[named_index macro_name Macro Index]
-[/index]
 
 [endsect]
 

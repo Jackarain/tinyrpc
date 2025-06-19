@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Fiber management</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="prev" href="overview/implementations__fcontext_t__ucontext_t_and_winfiber.html" title="Implementations: fcontext_t, ucontext_t and WinFiber">
@@ -26,7 +26,7 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="fiber.fiber_mgmt"></a><a class="link" href="fiber_mgmt.html" title="Fiber management">Fiber management</a>
 </h2></div></div></div>
-<div class="toc"><dl class="toc">
+<div class="toc"><dl>
 <dt><span class="section"><a href="fiber_mgmt/fiber.html">Class
       <code class="computeroutput"><span class="identifier">fiber</span></code></a></span></dt>
 <dt><span class="section"><a href="fiber_mgmt/id.html">Class fiber::id</a></span></dt>
@@ -34,7 +34,7 @@
 </dl></div>
 <h4>
 <a name="fiber.fiber_mgmt.h0"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.synopsis"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.synopsis">Synopsis</a>
+      <span><a name="fiber.fiber_mgmt.synopsis"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.synopsis">Synopsis</a>
     </h4>
 <pre class="programlisting"><span class="preprocessor">#include</span> <span class="special">&lt;</span><span class="identifier">boost</span><span class="special">/</span><span class="identifier">fiber</span><span class="special">/</span><span class="identifier">all</span><span class="special">.</span><span class="identifier">hpp</span><span class="special">&gt;</span>
 
@@ -74,7 +74,7 @@
 </pre>
 <h4>
 <a name="fiber.fiber_mgmt.h1"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.tutorial"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.tutorial">Tutorial</a>
+      <span><a name="fiber.fiber_mgmt.tutorial"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.tutorial">Tutorial</a>
     </h4>
 <p>
       Each <a class="link" href="fiber_mgmt/fiber.html#class_fiber"><code class="computeroutput">fiber</code></a> represents a micro-thread which will be launched and managed
@@ -90,7 +90,7 @@
 </pre>
 <h4>
 <a name="fiber.fiber_mgmt.h2"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.launching"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.launching">Launching</a>
+      <span><a name="fiber.fiber_mgmt.launching"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.launching">Launching</a>
     </h4>
 <p>
       A new fiber is launched by passing an object of a callable type that can be
@@ -121,7 +121,7 @@
     </p>
 <a name="exceptions"></a><h4>
 <a name="fiber.fiber_mgmt.h3"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.exceptions"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.exceptions">Exceptions</a>
+      <span><a name="fiber.fiber_mgmt.exceptions"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.exceptions">Exceptions</a>
     </h4>
 <p>
       An exception escaping from the function or callable object passed to the <a class="link" href="fiber_mgmt/fiber.html#class_fiber"><code class="computeroutput">fiber</code></a>
@@ -132,7 +132,7 @@ constructor
     </p>
 <h4>
 <a name="fiber.fiber_mgmt.h4"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.detaching"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.detaching">Detaching</a>
+      <span><a name="fiber.fiber_mgmt.detaching"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.detaching">Detaching</a>
     </h4>
 <p>
       A <a class="link" href="fiber_mgmt/fiber.html#class_fiber"><code class="computeroutput">fiber</code></a> can be detached by explicitly invoking the <a class="link" href="fiber_mgmt/fiber.html#fiber_detach"><code class="computeroutput">fiber::detach()</code></a> member
@@ -155,7 +155,7 @@ constructor
     </p>
 <h4>
 <a name="fiber.fiber_mgmt.h5"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.joining"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.joining">Joining</a>
+      <span><a name="fiber.fiber_mgmt.joining"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.joining">Joining</a>
     </h4>
 <p>
       In order to wait for a fiber to finish, the <a class="link" href="fiber_mgmt/fiber.html#fiber_join"><code class="computeroutput">fiber::join()</code></a> member function
@@ -176,7 +176,7 @@ constructor
     </p>
 <h4>
 <a name="fiber.fiber_mgmt.h6"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.destruction"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.destruction">Destruction</a>
+      <span><a name="fiber.fiber_mgmt.destruction"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.destruction">Destruction</a>
     </h4>
 <p>
       When a <a class="link" href="fiber_mgmt/fiber.html#class_fiber"><code class="computeroutput">fiber</code></a> object representing a valid execution context (the fiber
@@ -195,7 +195,7 @@ constructor
 </pre>
 <a name="class_fiber_id"></a><h4>
 <a name="fiber.fiber_mgmt.h7"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.fiber_ids"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.fiber_ids">Fiber
+      <span><a name="fiber.fiber_mgmt.fiber_ids"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.fiber_ids">Fiber
       IDs</a>
     </h4>
 <p>
@@ -218,7 +218,7 @@ by calling the <a class="link" href="fiber_mgmt/fiber.html#fiber_get_id"><code c
     </p>
 <a name="class_launch"></a><h4>
 <a name="fiber.fiber_mgmt.h8"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt.enumeration__code__phrase_role__identifier__launch__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.enumeration__code__phrase_role__identifier__launch__phrase___code_">Enumeration
+      <span><a name="fiber.fiber_mgmt.enumeration__code__phrase_role__identifier__launch__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt.enumeration__code__phrase_role__identifier__launch__phrase___code_">Enumeration
       <code class="computeroutput"><span class="identifier">launch</span></code></a>
     </h4>
 <p>
@@ -232,11 +232,11 @@ by calling the <a class="link" href="fiber_mgmt/fiber.html#fiber_get_id"><code c
 </pre>
 <h4>
 <a name="fiber.fiber_mgmt.h9"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt._code__phrase_role__identifier__dispatch__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt._code__phrase_role__identifier__dispatch__phrase___code_"><code class="computeroutput"><span class="identifier">dispatch</span></code></a>
+      <span><a name="fiber.fiber_mgmt._code__phrase_role__identifier__dispatch__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt._code__phrase_role__identifier__dispatch__phrase___code_"><code class="computeroutput"><span class="identifier">dispatch</span></code></a>
     </h4>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
             A fiber launched with <code class="computeroutput"><span class="identifier">launch</span>
@@ -248,11 +248,11 @@ by calling the <a class="link" href="fiber_mgmt/fiber.html#fiber_get_id"><code c
 </div>
 <h4>
 <a name="fiber.fiber_mgmt.h10"></a>
-      <span class="phrase"><a name="fiber.fiber_mgmt._code__phrase_role__identifier__post__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt._code__phrase_role__identifier__post__phrase___code_"><code class="computeroutput"><span class="identifier">post</span></code></a>
+      <span><a name="fiber.fiber_mgmt._code__phrase_role__identifier__post__phrase___code_"></a></span><a class="link" href="fiber_mgmt.html#fiber.fiber_mgmt._code__phrase_role__identifier__post__phrase___code_"><code class="computeroutput"><span class="identifier">post</span></code></a>
     </h4>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
             A fiber launched with <code class="computeroutput"><span class="identifier">launch</span>

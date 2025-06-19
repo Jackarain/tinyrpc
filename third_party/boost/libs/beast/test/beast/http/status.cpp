@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,7 @@
 // Test that header file is self-contained.
 #include <boost/beast/http/status.hpp>
 
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 namespace boost {
 namespace beast {
@@ -32,6 +32,7 @@ public:
         check(status::continue_                             ,100, status_class::informational);
         check(status::switching_protocols                   ,101, status_class::informational);
         check(status::processing                            ,102, status_class::informational);
+        check(status::early_hints                           ,103, status_class::informational);
 
         check(status::ok                                    ,200, status_class::successful);
         check(status::created                               ,201, status_class::successful);
@@ -71,17 +72,17 @@ public:
         check(status::unsupported_media_type                ,415, status_class::client_error);
         check(status::range_not_satisfiable                 ,416, status_class::client_error);
         check(status::expectation_failed                    ,417, status_class::client_error);
+        check(status::i_am_a_teapot                         ,418, status_class::client_error);
         check(status::misdirected_request                   ,421, status_class::client_error);
         check(status::unprocessable_entity                  ,422, status_class::client_error);
         check(status::locked                                ,423, status_class::client_error);
         check(status::failed_dependency                     ,424, status_class::client_error);
+        check(status::too_early                             ,425, status_class::client_error);
         check(status::upgrade_required                      ,426, status_class::client_error);
         check(status::precondition_required                 ,428, status_class::client_error);
         check(status::too_many_requests                     ,429, status_class::client_error);
         check(status::request_header_fields_too_large       ,431, status_class::client_error);
-        check(status::connection_closed_without_response    ,444, status_class::client_error);
         check(status::unavailable_for_legal_reasons         ,451, status_class::client_error);
-        check(status::client_closed_request                 ,499, status_class::client_error);
 
         check(status::internal_server_error                 ,500, status_class::server_error);
         check(status::not_implemented                       ,501, status_class::server_error);
@@ -94,7 +95,6 @@ public:
         check(status::loop_detected                         ,508, status_class::server_error);
         check(status::not_extended                          ,510, status_class::server_error);
         check(status::network_authentication_required       ,511, status_class::server_error);
-        check(status::network_connect_timeout_error         ,599, status_class::server_error);
 
         BEAST_EXPECT(to_status_class(1) == status_class::unknown);
         BEAST_EXPECT(to_status_class(status::unknown) == status_class::unknown);
@@ -107,6 +107,7 @@ public:
         good(status::continue_);
         good(status::switching_protocols);
         good(status::processing);
+        good(status::early_hints);
         good(status::ok);
         good(status::created);
         good(status::accepted);
@@ -143,10 +144,12 @@ public:
         good(status::unsupported_media_type);
         good(status::range_not_satisfiable);
         good(status::expectation_failed);
+        good(status::i_am_a_teapot);
         good(status::misdirected_request);
         good(status::unprocessable_entity);
         good(status::locked);
         good(status::failed_dependency);
+        good(status::too_early);
         good(status::upgrade_required);
         good(status::precondition_required);
         good(status::too_many_requests);

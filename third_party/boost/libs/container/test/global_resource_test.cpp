@@ -10,7 +10,6 @@
 #include <boost/container/pmr/global_resource.hpp>
 #include <boost/container/pmr/memory_resource.hpp>
 #include <boost/core/lightweight_test.hpp>
-#include <boost/core/no_exceptions_support.hpp>
 
 #include "derived_from_memory_resource.hpp"
 
@@ -60,7 +59,6 @@ void operator delete[](void *p) BOOST_CONTAINER_DELETE_EXCEPTION_SPECIFIER
 #pragma warning (pop)
 #endif
 
-#define BOOST_CONTAINER_ASAN
 #ifndef BOOST_CONTAINER_ASAN
 
 void test_new_delete_resource()
@@ -87,20 +85,23 @@ void test_null_memory_resource()
 {
    //Make sure it throw or returns null
    memory_resource *mr = null_memory_resource();
+   BOOST_TEST(mr != 0);
+
    #if !defined(BOOST_NO_EXCEPTIONS)
    bool bad_allocexception_thrown = false;
-   try{
+
+   BOOST_CONTAINER_TRY{
       mr->allocate(1, 1);
    }
-   catch(std::bad_alloc&) {
+   BOOST_CONTAINER_CATCH(std::bad_alloc&) {
       bad_allocexception_thrown = true;
    }
-   catch(...) {
+   BOOST_CONTAINER_CATCH(...) {
    }
+   BOOST_CONTAINER_CATCH_END
+
    BOOST_TEST(bad_allocexception_thrown == true);
-   #else
-   BOOST_TEST(0 == mr->allocate(1, 1));
-   #endif
+   #endif   //BOOST_NO_EXCEPTIONS
 }
 
 void test_default_resource()

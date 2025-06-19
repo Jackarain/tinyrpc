@@ -172,6 +172,8 @@ provides access to the so-called backend.
 
 For instance::
 
+    typedef bmp_tag tag_t;
+
     typedef get_reader_backend< const std::string
                               , tag_t
                               >::type backend_t;
@@ -205,9 +207,10 @@ If that's the case the user has to use the xxx_and_convert_xxx variants.
 
 All functions take the filename or a device as the first parameter.
 The filename can be anything from a C-string, ``std::string``,
-``std::wstring`` and ``boost::filesystem`` path. When using the path
-object the user needs to define the ADD_FS_PATH_SUPPORT compiler symbol to
-include the boost::filesystem dependency.
+``std::wstring`` to ``std::filesystem`` and ``boost::filesystem`` path.
+The availability of the ``std::filesystem`` is detected automatically,
+unless ``BOOST_GIL_IO_USE_BOOST_FILESYSTEM`` macro is defined that forces
+preference of the Boost.Filesystem.
 Devices could be a ``FILE*``, ``std::ifstream``, and ``TIFF*`` for TIFF images.
 
 The second parameter is either an image or view type depending on the
@@ -240,13 +243,11 @@ several image types. The IO extension would then pick the matching image type
 to the current image file.
 The following example shows this feature::
 
-    typedef mpl::vector< gray8_image_t
-                       , gray16_image_t
-                       , rgb8_image_t
-                       , rgba_image_t
-                       > my_img_types;
-
-    any_image< my_img_types > runtime_image;
+    any_image< gray8_image_t
+             , gray16_image_t
+             , rgb8_image_t
+             , rgba8_image_t
+             > runtime_image;
 
     read_image( filename
               , runtime_image
@@ -267,7 +268,7 @@ The following code sample shows the usage::
                             , tag_t
                             > reader_t;
 
-    reader_t reader = make_scanline_reader( "C:/boost/libs/gil/io/test_images/tiff/test.tif", tag_t() );
+    reader_t reader = make_scanline_reader( "C:/boost/libs/gil/test/extension/io/images/tiff/test.tif", tag_t() );
 
     typedef rgba8_image_t image_t;
 
@@ -305,9 +306,10 @@ Write Interface
 There is only one function for writing out images, write_view.
 Similar to reading the first parameter is either a filename or a device.
 The filename can be anything from a C-string, ``std::string``,
-``std::wstring``, and ``boost::filesystem`` path. When using the path object
-the user needs to define the ``ADD_FS_PATH_SUPPORT`` compiler symbol to
-include the ``boost::filesystem`` dependency.
+``std::wstring`` to ``std::filesystem`` and ``boost::filesystem`` path.
+The availability of the ``std::filesystem`` is detected automatically,
+unless ``BOOST_GIL_IO_USE_BOOST_FILESYSTEM`` macro is defined that forces
+preference of the Boost.Filesystem.
 Devices could be ``FILE*``, ``std::ifstream``, and ``TIFF*`` for TIFF images.
 
 The second parameter is an view object to image being written.
@@ -319,14 +321,11 @@ the possible settings.
 
 Writing an any_image<...> is supported. See the following example::
 
-    typedef mpl::vector< gray8_image_t
-                       , gray16_image_t
-                       , rgb8_image_t
-                       , rgba_image_t
-                       > my_img_types;
-
-
-    any_image< my_img_types > runtime_image;
+    any_image< gray8_image_t
+             , gray16_image_t
+             , rgb8_image_t
+             , rgba8_image_t
+             > runtime_image;
 
     // fill any_image
 
@@ -347,14 +346,12 @@ that can be set by the user:
    Symbol                                                   Description
 ======================================================== ========================================================
 BOOST_GIL_IO_ENABLE_GRAY_ALPHA                           Enable the color space "gray_alpha".
-BOOST_GIL_IO_ADD_FS_PATH_SUPPORT                         Enable boost::filesystem 3.0 library.
 BOOST_GIL_IO_PNG_FLOATING_POINT_SUPPORTED                Use libpng in floating point mode. This symbol is incompatible with BOOST_GIL_IO_PNG_FIXED_POINT_SUPPORTED.
 BOOST_GIL_IO_PNG_FIXED_POINT_SUPPORTED                   Use libpng in integer mode. This symbol is incompatible with BOOST_GIL_IO_PNG_FLOATING_POINT_SUPPORTED.
 BOOST_GIL_IO_PNG_DITHERING_SUPPORTED                     Look up "dithering" in libpng manual for explanation.
 BOOST_GIL_IO_PNG_1_4_OR_LOWER                            Allow compiling with libpng 1.4 or lower.
 BOOST_GIL_EXTENSION_IO_JPEG_C_LIB_COMPILED_AS_CPLUSPLUS  libjpeg is compiled as c++ lib.
 BOOST_GIL_EXTENSION_IO_PNG_C_LIB_COMPILED_AS_CPLUSPLUS   libpng is compiled as c++ lib.
-BOOST_GIL_EXTENSION_IO_RAW_C_LIB_COMPILED_AS_CPLUSPLUS   libraw is compiled as c++ lib.
 BOOST_GIL_EXTENSION_IO_TIFF_C_LIB_COMPILED_AS_CPLUSPLUS  libtiff is compiled as c++ lib.
 BOOST_GIL_EXTENSION_IO_ZLIB_C_LIB_COMPILED_AS_CPLUSPLUS  zlib is compiled as c++ lib.
 BOOST_GIL_IO_TEST_ALLOW_READING_IMAGES                   Allow basic test images to be read from local hard drive. The paths can be set in paths.hpp
@@ -362,7 +359,6 @@ BOOST_GIL_IO_TEST_ALLOW_WRITING_IMAGES                   Allow images to be writ
 BOOST_GIL_IO_USE_BMP_TEST_SUITE_IMAGES                   Run tests using the bmp test images suite. See _BMP_TEST_FILES
 BOOST_GIL_IO_USE_PNG_TEST_SUITE_IMAGES                   Run tests using the png test images suite. See _PNG_TEST_FILES
 BOOST_GIL_IO_USE_PNM_TEST_SUITE_IMAGES                   Run tests using the pnm test images suite. Send me an email for accessing the files.
-BOOST_GIL_IO_USE_TARGA_FILEFORMAT_TEST_SUITE_IMAGES      Run tests using the targa file format test images suite. See _TARGA_TEST_FILES
 BOOST_GIL_IO_USE_TIFF_LIBTIFF_TEST_SUITE_IMAGES          Run tests using the targa file format test images suite. See _TIFF_LIB_TIFF_TEST_FILES
 BOOST_GIL_IO_USE_TIFF_GRAPHICSMAGICK_TEST_SUITE_IMAGES   Run tests using the targa file format test images suite. See _TIFF_GRAPHICSMAGICK_TEST_FILES
 ======================================================== ========================================================
@@ -435,18 +431,17 @@ Currently the code is able to read and write the following image types:
 :Read: gray1, gray2, gray4, gray8, gray16, gray_alpha_8, gray_alpha_16, rgb8, rgb16, rgba8, rgba16
 :Write: gray1, gray2, gray4, gray8, gray16, gray_alpha_8, gray_alpha_16, rgb8, rgb16, rgba8, rgba16
 
-For reading gray_alpha images the user has to enable the ``ENABLE_GRAY_ALPHA``
-compiler switch. This color space is defined in the toolbox by
-using ``gray_alpha.hpp``.
+For reading gray_alpha images the user has to compile application with ``BOOST_GIL_IO_ENABLE_GRAY_ALPHA``
+macro  defined. This color space is defined in the toolbox by using ``gray_alpha.hpp``.
 
 PNM
 +++
 
 For a general overview of the PNM image file format go to the
-following PNM_Wiki_.
+following PNM_Wiki_. No external library is needed for the pnm format.
 
-No external library is needed for the pnm format.
-Both ascii and binary formats are supported.
+The extension can read images in both flavours of the formats, ASCII and binary,
+that is types from P1 through P6; can write only binary formats.
 
 Currently the code is able to read and write the following image types:
 
@@ -634,7 +629,6 @@ to enable the tests:
 :BMP:   BMP_TEST_FILES_                 -- BOOST_GIL_IO_USE_BMP_TEST_SUITE_IMAGES
 :PNG:   PNG_TEST_FILES_                 -- BOOST_GIL_IO_USE_PNG_TEST_SUITE_IMAGES
 :PNM:   request files from me           -- BOOST_GIL_IO_USE_PNM_TEST_SUITE_IMAGES
-:TARGA: TARGA_TEST_FILES_               -- BOOST_GIL_IO_USE_TARGA_FILEFORMAT_TEST_SUITE_IMAGES
 :TIFF:  TIFF_LIB_TIFF_TEST_FILES_       -- BOOST_GIL_IO_USE_TIFF_LIBTIFF_TEST_SUITE_IMAGES
 :TIFF:  TIFF_GRAPHICSMAGICK_TEST_FILES_ -- BOOST_GIL_IO_USE_TIFF_GRAPHICSMAGICK_TEST_SUITE_IMAGES
 

@@ -234,3 +234,18 @@ BOOST_AUTO_TEST_CASE(test_ticket_12926)
     BOOST_CHECK_EQUAL(a.size(), 200);
 }
 
+BOOST_AUTO_TEST_CASE(github_25_intersects_for_empty_interval_throws)
+{
+    typedef boost::icl::interval_set<int> ItvSet;
+    typedef ItvSet::interval_type Itv;
+    ItvSet itv_set(Itv::right_open(2,7));
+    BOOST_CHECK_EQUAL(false, intersects(itv_set, Itv::right_open(3,3)));
+    ItvSet mt_set;
+    BOOST_CHECK_EQUAL(false, intersects(mt_set, Itv::right_open(3,3)));
+    BOOST_CHECK_EQUAL(false, intersects(mt_set, Itv::right_open(3,5)));
+    mt_set.insert(Itv::right_open(0,0));
+    ItvSet mt_set2; //
+    BOOST_CHECK_EQUAL(mt_set, mt_set2);
+    BOOST_CHECK_EQUAL(false, intersects(mt_set, Itv::right_open(-1,-1)));
+}
+

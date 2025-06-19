@@ -15,9 +15,9 @@
 //
 //
 #include "generative_tests.hpp"
-#include "boost/array.hpp"
-#include "boost/multi_array.hpp"
-#include "boost/cstdlib.hpp"
+#include <boost/array.hpp>
+#include <boost/multi_array.hpp>
+#include <boost/cstdlib.hpp>
 #include <algorithm>
 #include <iostream>
 
@@ -59,7 +59,7 @@ void access(Array& A, const mutable_array_tag&) {
 
   A = filler;
 
-  BOOST_CHECK(::equal(A,filler));
+  BOOST_TEST(::equal(A,filler));
   ++tests_run;
 }
 
@@ -68,6 +68,6 @@ void access(Array&, const const_array_tag&) {
 }
 
 
-int test_main(int,char*[]) {
+int main() {
   return run_generative_tests();
 }

@@ -19,7 +19,7 @@
 
 #include <boost/math/quaternion.hpp>
 
-#ifdef BOOST_MSVC
+#ifdef _MSC_VER
 #pragma warning(disable:4127) // conditional expression is constant
 #endif
 
@@ -198,7 +198,7 @@ void check_exact_quaternion_result(const boost::math::quaternion<T>& q, R1 a, R2
 template <class T, class R1, class R2, class R3, class R4>
 void check_approx_quaternion_result(const boost::math::quaternion<T>& q, R1 a, R2 b, R3 c, R4 d, int eps = 10)
 {
-   T tol = std::numeric_limits<T>::epsilon() * eps * 100;  // epsilon as a persentage.
+   T tol = std::numeric_limits<T>::epsilon() * eps * 100;  // epsilon as a percentage.
    using std::abs;
    if (abs(a) > tol / 100)
    {
@@ -397,7 +397,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(arithmetic_test, T, test_types)
 
    // using /= (const T &)
    q4 /= f0;
-   check_exact_quaternion_result(q4, -T(868) / 7, T(420) / 7, T(490) / 7, T(560) / 7);
+   if(std::numeric_limits<T>::radix == 2)
+      check_exact_quaternion_result(q4, -T(868) / 7, T(420) / 7, T(490) / 7, T(560) / 7);
+   else
+      // cpp_dec_float division is still inextact / not rounded:
+      check_approx_quaternion_result(q4, -T(868) / 7, T(420) / 7, T(490) / 7, T(560) / 7);
 
    q4 = q3;
    q4 /= boost::math::quaternion<T>(9, 4, 6, 2);
@@ -497,6 +501,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(arithmetic_test, T, test_types)
    q1 += 1;
    test_compare(q1, q3, false);
 
+   #ifndef BOOST_MATH_STANDALONE
    BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(q4), "(34,56,20,2)");
    q1 = boost::lexical_cast<boost::math::quaternion<T> >("(34,56,20,2)");
    check_exact_quaternion_result(q1, 34, 56, 20, 2);
@@ -534,6 +539,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(arithmetic_test, T, test_types)
    check_approx_quaternion_result(sinc_pi(q4), boost::lexical_cast<T>("-239180458943182912968898.352151239530846"), boost::lexical_cast<T>("-417903427539587405399855.0577257263862799"), boost::lexical_cast<T>("-149251224121281216214233.9491877594236714"), boost::lexical_cast<T>("-14925122412128121621423.39491877594236714"), 200);
    check_approx_quaternion_result(sinhc_pi(q4), boost::lexical_cast<T>("-1366603120232.604666248483234115586439226"), boost::lexical_cast<T>("3794799638667.255581055299959135992677524"), boost::lexical_cast<T>("1355285585238.305564662607128262854527687"), boost::lexical_cast<T>("135528558523.8305564662607128262854527687"), 200);
 #endif
+   #endif // BOOST_MATH_STANDALONE
    //
    // Construction variations:
    //
@@ -555,9 +561,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(arithmetic_test, T, test_types)
    T t = 5;
    T radius = boost::math::constants::root_two<T>();
    T longitude = boost::math::constants::pi<T>() / 4;
-   T lattitude = boost::math::constants::pi<T>() / 3;
-   q1 = ::boost::math::cylindrospherical(t, radius, longitude, lattitude);
+   T latitude = boost::math::constants::pi<T>() / 3;
+   q1 = ::boost::math::cylindrospherical(t, radius, longitude, latitude);
+
+   #ifndef BOOST_MATH_STANDALONE
    check_approx_quaternion_result(q1, 5, 0.5, 0.5, boost::lexical_cast<T>("1.224744871391589049098642037352945695983"), 10);
+   #endif
+   
    T r = boost::math::constants::root_two<T>();
    T angle = boost::math::constants::pi<T>() / 4;
    T h1 = 3;

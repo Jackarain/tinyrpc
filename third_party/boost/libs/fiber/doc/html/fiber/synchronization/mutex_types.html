@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Mutex Types</title>
 <link rel="stylesheet" href="../../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../synchronization.html" title="Synchronization">
 <link rel="prev" href="../synchronization.html" title="Synchronization">
@@ -30,7 +30,7 @@
         </p>
 <h5>
 <a name="class_mutex_bridgehead"></a>
-  <span class="phrase"><a name="class_mutex"></a></span>
+  <span><a name="class_mutex"></a></span>
   <a class="link" href="mutex_types.html#class_mutex">Class <code class="computeroutput">mutex</code></a>
 </h5>
 <p>
@@ -68,7 +68,7 @@
         </p>
 <h5>
 <a name="mutex_lock_bridgehead"></a>
-  <span class="phrase"><a name="mutex_lock"></a></span>
+  <span><a name="mutex_lock"></a></span>
   <a class="link" href="mutex_types.html#mutex_lock">Member function <code class="computeroutput">lock</code>()</a>
 </h5>
 <p>
@@ -77,7 +77,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -102,7 +102,7 @@
         </p>
 <h5>
 <a name="mutex_try_lock_bridgehead"></a>
-  <span class="phrase"><a name="mutex_try_lock"></a></span>
+  <span><a name="mutex_try_lock"></a></span>
   <a class="link" href="mutex_types.html#mutex_try_lock">Member function <code class="computeroutput">try_lock</code>()</a>
 </h5>
 <p>
@@ -111,7 +111,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -142,7 +142,7 @@
         </p>
 <h5>
 <a name="mutex_unlock_bridgehead"></a>
-  <span class="phrase"><a name="mutex_unlock"></a></span>
+  <span><a name="mutex_unlock"></a></span>
   <a class="link" href="mutex_types.html#mutex_unlock">Member function <code class="computeroutput">unlock</code>()</a>
 </h5>
 <p>
@@ -151,7 +151,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The current fiber owns <code class="computeroutput"><span class="special">*</span><span class="keyword">this</span></code>.
@@ -176,7 +176,7 @@
         </p>
 <h5>
 <a name="class_timed_mutex_bridgehead"></a>
-  <span class="phrase"><a name="class_timed_mutex"></a></span>
+  <span><a name="class_timed_mutex"></a></span>
   <a class="link" href="mutex_types.html#class_timed_mutex">Class <code class="computeroutput">timed_mutex</code></a>
 </h5>
 <p>
@@ -215,7 +215,7 @@
         </p>
 <h5>
 <a name="timed_mutex_lock_bridgehead"></a>
-  <span class="phrase"><a name="timed_mutex_lock"></a></span>
+  <span><a name="timed_mutex_lock"></a></span>
   <a class="link" href="mutex_types.html#timed_mutex_lock">Member function
         <code class="computeroutput">lock</code>()</a>
 </h5>
@@ -225,7 +225,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -250,7 +250,7 @@
         </p>
 <h5>
 <a name="timed_mutex_try_lock_bridgehead"></a>
-  <span class="phrase"><a name="timed_mutex_try_lock"></a></span>
+  <span><a name="timed_mutex_try_lock"></a></span>
   <a class="link" href="mutex_types.html#timed_mutex_try_lock">Member
         function <code class="computeroutput">try_lock</code>()</a>
 </h5>
@@ -260,7 +260,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -291,7 +291,7 @@
         </p>
 <h5>
 <a name="timed_mutex_unlock_bridgehead"></a>
-  <span class="phrase"><a name="timed_mutex_unlock"></a></span>
+  <span><a name="timed_mutex_unlock"></a></span>
   <a class="link" href="mutex_types.html#timed_mutex_unlock">Member function
         <code class="computeroutput">unlock</code>()</a>
 </h5>
@@ -301,7 +301,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The current fiber owns <code class="computeroutput"><span class="special">*</span><span class="keyword">this</span></code>.
@@ -326,7 +326,7 @@
         </p>
 <h5>
 <a name="timed_mutex_try_lock_until_bridgehead"></a>
-  <span class="phrase"><a name="timed_mutex_try_lock_until"></a></span>
+  <span><a name="timed_mutex_try_lock_until"></a></span>
   <a class="link" href="mutex_types.html#timed_mutex_try_lock_until">Templated
         member function <code class="computeroutput">try_lock_until</code>()</a>
 </h5>
@@ -337,7 +337,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -371,7 +371,7 @@
         </p>
 <h5>
 <a name="timed_mutex_try_lock_for_bridgehead"></a>
-  <span class="phrase"><a name="timed_mutex_try_lock_for"></a></span>
+  <span><a name="timed_mutex_try_lock_for"></a></span>
   <a class="link" href="mutex_types.html#timed_mutex_try_lock_for">Templated
         member function <code class="computeroutput">try_lock_for</code>()</a>
 </h5>
@@ -382,7 +382,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Precondition:</span></dt>
 <dd><p>
               The calling fiber doesn't own the mutex.
@@ -416,7 +416,7 @@
         </p>
 <h5>
 <a name="class_recursive_mutex_bridgehead"></a>
-  <span class="phrase"><a name="class_recursive_mutex"></a></span>
+  <span><a name="class_recursive_mutex"></a></span>
   <a class="link" href="mutex_types.html#class_recursive_mutex">Class
         <code class="computeroutput">recursive_mutex</code></a>
 </h5>
@@ -456,7 +456,7 @@
         </p>
 <h5>
 <a name="recursive_mutex_lock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_mutex_lock"></a></span>
+  <span><a name="recursive_mutex_lock"></a></span>
   <a class="link" href="mutex_types.html#recursive_mutex_lock">Member
         function <code class="computeroutput">lock</code>()</a>
 </h5>
@@ -466,7 +466,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               The current fiber blocks until ownership can be obtained.
@@ -481,7 +481,7 @@
         </p>
 <h5>
 <a name="recursive_mutex_try_lock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_mutex_try_lock"></a></span>
+  <span><a name="recursive_mutex_try_lock"></a></span>
   <a class="link" href="mutex_types.html#recursive_mutex_try_lock">Member
         function <code class="computeroutput">try_lock</code>()</a>
 </h5>
@@ -491,7 +491,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Attempt to obtain ownership for the current fiber without blocking.
@@ -512,7 +512,7 @@
         </p>
 <h5>
 <a name="recursive_mutex_unlock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_mutex_unlock"></a></span>
+  <span><a name="recursive_mutex_unlock"></a></span>
   <a class="link" href="mutex_types.html#recursive_mutex_unlock">Member
         function <code class="computeroutput">unlock</code>()</a>
 </h5>
@@ -522,7 +522,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Releases a lock on <code class="computeroutput"><span class="special">*</span><span class="keyword">this</span></code>
@@ -543,7 +543,7 @@
         </p>
 <h5>
 <a name="class_recursive_timed_mutex_bridgehead"></a>
-  <span class="phrase"><a name="class_recursive_timed_mutex"></a></span>
+  <span><a name="class_recursive_timed_mutex"></a></span>
   <a class="link" href="mutex_types.html#class_recursive_timed_mutex">Class
         <code class="computeroutput">recursive_timed_mutex</code></a>
 </h5>
@@ -595,7 +595,7 @@
         </p>
 <h5>
 <a name="recursive_timed_mutex_lock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_timed_mutex_lock"></a></span>
+  <span><a name="recursive_timed_mutex_lock"></a></span>
   <a class="link" href="mutex_types.html#recursive_timed_mutex_lock">Member
         function <code class="computeroutput">lock</code>()</a>
 </h5>
@@ -605,7 +605,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               The current fiber blocks until ownership can be obtained.
@@ -620,7 +620,7 @@
         </p>
 <h5>
 <a name="recursive_timed_mutex_try_lock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_timed_mutex_try_lock"></a></span>
+  <span><a name="recursive_timed_mutex_try_lock"></a></span>
   <a class="link" href="mutex_types.html#recursive_timed_mutex_try_lock">Member
         function <code class="computeroutput">try_lock</code>()</a>
 </h5>
@@ -630,7 +630,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Attempt to obtain ownership for the current fiber without blocking.
@@ -651,7 +651,7 @@
         </p>
 <h5>
 <a name="recursive_timed_mutex_unlock_bridgehead"></a>
-  <span class="phrase"><a name="recursive_timed_mutex_unlock"></a></span>
+  <span><a name="recursive_timed_mutex_unlock"></a></span>
   <a class="link" href="mutex_types.html#recursive_timed_mutex_unlock">Member
         function <code class="computeroutput">unlock</code>()</a>
 </h5>
@@ -661,7 +661,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Releases a lock on <code class="computeroutput"><span class="special">*</span><span class="keyword">this</span></code>
@@ -682,7 +682,7 @@
         </p>
 <h5>
 <a name="recursive_timed_mutex_try_lock_until_bridgehead"></a>
-  <span class="phrase"><a name="recursive_timed_mutex_try_lock_until"></a></span>
+  <span><a name="recursive_timed_mutex_try_lock_until"></a></span>
   <a class="link" href="mutex_types.html#recursive_timed_mutex_try_lock_until">Templated
         member function <code class="computeroutput">try_lock_until</code>()</a>
 </h5>
@@ -693,7 +693,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Attempt to obtain ownership for the current fiber. Blocks until ownership
@@ -716,7 +716,7 @@
         </p>
 <h5>
 <a name="recursive_timed_mutex_try_lock_for_bridgehead"></a>
-  <span class="phrase"><a name="recursive_timed_mutex_try_lock_for"></a></span>
+  <span><a name="recursive_timed_mutex_try_lock_for"></a></span>
   <a class="link" href="mutex_types.html#recursive_timed_mutex_try_lock_for">Templated
         member function <code class="computeroutput">try_lock_for</code>()</a>
 </h5>
@@ -727,7 +727,7 @@
 </pre>
 <div class="variablelist">
 <p class="title"><b></b></p>
-<dl class="variablelist">
+<dl>
 <dt><span class="term">Effects:</span></dt>
 <dd><p>
               Attempt to obtain ownership for the current fiber. Blocks until ownership

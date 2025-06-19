@@ -9,5 +9,8 @@
 
 build-project server ;
 
-# VFALCO How do I make this work on Windows and if OpenSSL is not available?
-#build-project server-flex ;
+# SSL
+build-project server-flex ;
+
+# C++20
+build-project server-flex-awaitable ;

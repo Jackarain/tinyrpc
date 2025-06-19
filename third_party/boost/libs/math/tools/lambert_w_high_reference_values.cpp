@@ -49,7 +49,7 @@ const int no_of_tests = 450; // 500 overflows float.
 static const float min_z = 0.5F; // for element[0]
 
 int main()
-{	// Make C++ file containing Lambert W test values.
+{  // Make C++ file containing Lambert W test values.
   std::cout << filename << " ";
   std::cout << std::endl;
   std::cout << "Lambert W0 decimal digit precision values for high z argument values." << std::endl;
@@ -79,7 +79,7 @@ int main()
       "// Written by " << __FILE__ << " " << __TIMESTAMP__ << "\n"
 
       "\n"
-      "// Copyright Paul A. Bristow 2017." 	"\n"
+      "// Copyright Paul A. Bristow 2017."   "\n"
       "// Distributed under the Boost Software License, Version 1.0." "\n"
       "// (See accompanying file LICENSE_1_0.txt" "\n"
       "// or copy at http://www.boost.org/LICENSE_1_0.txt)" "\n"
@@ -103,7 +103,7 @@ int main()
       << std::endl;
 
     fout << "// The values are defined using the macro BOOST_MATH_TEST_VALUE to ensure\n"
-      "// that both built-in and multiprecision types are correctly initialiased with full precision.\n"
+      "// that both built-in and multiprecision types are correctly initialized with full precision.\n"
       "// built-in types like float, double require a floating-point literal like 3.14,\n"
       "// but multiprecision types require a decimal digit string like \"3.14\".\n"
       "// Numerical values are chosen to avoid exactly representable values."

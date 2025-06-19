@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE( test_forward_iterable_concept )
   }
 
   {
-    typedef std::set<int, int> type;
+    typedef std::set<int> type;
     BOOST_CHECK_MESSAGE(utf::ut_detail::has_member_size<type>::value, "has_member_size failed");
     BOOST_CHECK_MESSAGE(utf::ut_detail::has_member_begin<type>::value, "has_member_begin failed");
     BOOST_CHECK_MESSAGE(utf::ut_detail::has_member_end<type>::value, "has_member_end failed");
@@ -657,7 +657,7 @@ BOOST_AUTO_TEST_CASE( test_comparison_with_arrays )
 
         predicate_result const& res = EXPR_TYPE( c_long_array == v_long_array ).evaluate();
         BOOST_TEST( !res );
-        BOOST_TEST( res.message() == ". \nMismatch at position 1: 4 != 7. \nMismatch at position 2: 7 != 4. " );
+        BOOST_TEST( res.message() == ": \n  - mismatch at position 1: [4 == 7] is false\n  - mismatch at position 2: [7 == 4] is false" );
 
         std::swap(v_long_array[1], v_long_array[2]);
         BOOST_TEST( c_long_array == v_long_array );
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE( test_comparison_with_arrays )
 
         predicate_result const& res = EXPR_TYPE( v_long_array == c_long_array ).evaluate();
         BOOST_TEST( !res );
-        BOOST_TEST( res.message() == ". \nMismatch at position 1: 7 != 4. \nMismatch at position 2: 4 != 7. " );
+        BOOST_TEST( res.message() == ": \n  - mismatch at position 1: [7 == 4] is false\n  - mismatch at position 2: [4 == 7] is false" );
         std::swap(v_long_array[1], v_long_array[2]);
         BOOST_TEST( c_long_array == v_long_array );
     }
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE( test_comparison_with_arrays )
 
         predicate_result const& res = EXPR_TYPE( c_long_array == v_long_array ).evaluate();
         BOOST_TEST( !res );
-        BOOST_TEST( res.message() == ". \nMismatch at position 1: 4 != 7. \nMismatch at position 2: 7 != 4. " );
+        BOOST_TEST( res.message() == ": \n  - mismatch at position 1: [4 == 7] is false\n  - mismatch at position 2: [7 == 4] is false" );
 
         std::swap(v_long_array[1], v_long_array[2]);
         BOOST_TEST( c_long_array == v_long_array );
@@ -697,7 +697,7 @@ BOOST_AUTO_TEST_CASE( test_comparison_with_arrays )
 
         predicate_result const& res = EXPR_TYPE( v_long_array == c_long_array ).evaluate();
         BOOST_TEST( !res );
-        BOOST_TEST( res.message() == ". \nMismatch at position 1: 7 != 4. \nMismatch at position 2: 4 != 7. " );
+        BOOST_TEST( res.message() == ": \n  - mismatch at position 1: [7 == 4] is false\n  - mismatch at position 2: [4 == 7] is false" );
         std::swap(v_long_array[1], v_long_array[2]);
         BOOST_TEST( c_long_array == v_long_array );
     }
@@ -705,4 +705,3 @@ BOOST_AUTO_TEST_CASE( test_comparison_with_arrays )
 }
 
 // EOF
-

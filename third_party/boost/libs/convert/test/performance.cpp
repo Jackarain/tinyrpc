@@ -1,11 +1,11 @@
 // Boost.Convert test and usage example
-// Copyright (c) 2009-2016 Vladimir Batov.
+// Copyright (c) 2009-2020 Vladimir Batov.
 // Use, modification and distribution are subject to the Boost Software License,
 // Version 1.0. See http://www.boost.org/LICENSE_1_0.txt.
 
 #include "./test.hpp"
 
-#if defined(BOOST_CONVERT_IS_NOT_SUPPORTED)
+#if !defined(BOOST_CONVERT_CXX14) || defined(BOOST_NO_CXX17_HDR_CHARCONV)
 int main(int, char const* []) { return 0; }
 #else
 
@@ -15,14 +15,12 @@ int main(int, char const* []) { return 0; }
 #include <boost/convert/printf.hpp>
 #include <boost/convert/strtol.hpp>
 #include <boost/convert/spirit.hpp>
+#include <boost/convert/charconv.hpp>
 #include <boost/convert/lexical_cast.hpp>
-#include <boost/detail/lightweight_test.hpp>
 #include <boost/timer/timer.hpp>
-#include <boost/array.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
-#include <cstdlib>
-#include <cstdio>
+#include <array>
 
 using std::string;
 using boost::convert;
@@ -35,17 +33,17 @@ namespace { namespace local
     template<typename Type>
     struct array
     {
-        typedef boost::array<Type, 20> type;
+        using type = std::array<Type, 20>;
     };
     template<typename T> static typename array<T>::type const& get();
 
-    static int const num_cycles = 1000000;
-    int                     sum = 0;
+    int BOOST_CONSTEXPR_OR_CONST num_cycles = 1000000;
+    int                  sum = 0;
 
-    struct timer : public boost::timer::cpu_timer
+    struct timer : boost::timer::cpu_timer
     {
-        typedef timer                   this_type;
-        typedef boost::timer::cpu_timer base_type;
+        using this_type = timer;
+        using base_type = boost::timer::cpu_timer;
 
         double value() const
         {
@@ -141,13 +139,29 @@ struct raw_str_to_int_lxcast
     }
 };
 
+struct raw_str_to_int_charconv
+{
+    int operator()(char const* str) const
+    {
+        char const* beg = str;
+        char const* end = beg + strlen(str);
+        int      result;
+
+        const auto [ptr, ec] = std::from_chars(beg, end, result);
+        if (ptr == end) // ensure the whole string was parsed
+            return result;
+
+        return (BOOST_ASSERT(0), result);
+    }
+};
+
 template<typename Type, typename Converter>
 double
 raw_str_to(Converter const& cnv)
 {
-    local::strings strings = local::get_strs(); // Create strings on the stack
-    int const         size = strings.size();
-    local::timer     timer;
+    auto strings = local::get_strs(); // Create strings on the stack
+    int     size = strings.size();
+    auto   timer = local::timer();
 
     for (int t = 0; t < local::num_cycles; ++t)
         for (int k = 0; k < size; ++k)
@@ -160,9 +174,9 @@ template<typename Type, typename Converter>
 double
 local::str_to(Converter const& try_converter)
 {
-    local::strings strings = local::get_strs(); // Create strings on the stack
-    int const         size = strings.size();
-    local::timer     timer;
+    auto strings = local::get_strs(); // Create strings on the stack
+    int     size = strings.size();
+    auto   timer = local::timer();
 
     for (int t = 0; t < local::num_cycles; ++t)
         for (int k = 0; k < size; ++k)
@@ -175,11 +189,9 @@ template<typename string_type, typename Type, typename Converter>
 double
 local::to_str(Converter const& try_converter)
 {
-    typedef typename local::array<Type>::type collection;
-
-    collection  values = local::get<Type>();
-    int const     size = values.size();
-    local::timer timer;
+    auto values = local::get<Type>();
+    int    size = values.size();
+    auto  timer = local::timer();
 
     for (int t = 0; t < local::num_cycles; ++t)
         for (int k = 0; k < size; ++k)
@@ -211,9 +223,9 @@ template<typename Converter>
 double
 performance_type_to_str(Converter const& try_converter)
 {
-    boost::array<change, 3>   input = {{ change::no, change::up, change::dn }};
-    boost::array<string, 3> results = {{ "no", "up", "dn" }};
-    local::timer              timer;
+    std::array<change, 3>   input = {{ change::no, change::up, change::dn }};
+    std::array<string, 3> results = {{ "no", "up", "dn" }};
+    local::timer            timer;
 
     for (int k = 0; k < local::num_cycles; ++k)
     {
@@ -250,52 +262,60 @@ main(int, char const* [])
 {
     printf("Started performance tests...\n");
 
-    printf("str-to-int: spirit/strtol/lcast/scanf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+    printf("str-to-int: spirit/strtol/lcast/scanf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::str_to<int>(boost::cnv::spirit()),
            local::str_to<int>(boost::cnv::strtol()),
            local::str_to<int>(boost::cnv::lexical_cast()),
            local::str_to<int>(boost::cnv::printf()),
-           local::str_to<int>(boost::cnv::cstream()));
-    printf("str-to-lng: spirit/strtol/lcast/scanf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+           local::str_to<int>(boost::cnv::cstream()),
+           local::str_to<int>(boost::cnv::charconv()));
+    printf("str-to-lng: spirit/strtol/lcast/scanf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::str_to<long int>(boost::cnv::spirit()),
            local::str_to<long int>(boost::cnv::strtol()),
            local::str_to<long int>(boost::cnv::lexical_cast()),
            local::str_to<long int>(boost::cnv::printf()),
-           local::str_to<long int>(boost::cnv::cstream()));
-    printf("str-to-dbl: spirit/strtol/lcast/scanf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+           local::str_to<long int>(boost::cnv::cstream()),
+           local::str_to<long int>(boost::cnv::charconv()));
+    printf("str-to-dbl: spirit/strtol/lcast/scanf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::str_to<double>(boost::cnv::spirit()),
            local::str_to<double>(boost::cnv::strtol()),
            local::str_to<double>(boost::cnv::lexical_cast()),
            local::str_to<double>(boost::cnv::printf()),
-           local::str_to<double>(boost::cnv::cstream()));
+           local::str_to<double>(boost::cnv::cstream()),
+           local::str_to<double>(boost::cnv::charconv()));
 
-    printf("int-to-str: spirit/strtol/lcast/prntf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+    printf("int-to-str: spirit/strtol/lcast/prntf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::to_str<std::string, int>(boost::cnv::spirit()),
            local::to_str<std::string, int>(boost::cnv::strtol()),
            local::to_str<std::string, int>(boost::cnv::lexical_cast()),
            local::to_str<std::string, int>(boost::cnv::printf()),
-           local::to_str<std::string, int>(boost::cnv::cstream()));
-    printf("lng-to-str: spirit/strtol/lcast/prntf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+           local::to_str<std::string, int>(boost::cnv::cstream()),
+           local::to_str<std::string, int>(boost::cnv::charconv()));
+    printf("lng-to-str: spirit/strtol/lcast/prntf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::to_str<std::string, long int>(boost::cnv::spirit()),
            local::to_str<std::string, long int>(boost::cnv::strtol()),
            local::to_str<std::string, long int>(boost::cnv::lexical_cast()),
            local::to_str<std::string, long int>(boost::cnv::printf()),
-           local::to_str<std::string, long int>(boost::cnv::cstream()));
-    printf("dbl-to-str: spirit/strtol/lcast/prntf/stream=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
+           local::to_str<std::string, long int>(boost::cnv::cstream()),
+           local::to_str<std::string, long int>(boost::cnv::charconv()));
+    printf("dbl-to-str: spirit/strtol/lcast/prntf/stream/charconv=%7.2f/%7.2f/%7.2f/%7.2f/%7.2f/%7.2f seconds.\n",
            local::to_str<std::string, double>(boost::cnv::spirit()),
            local::to_str<std::string, double>(boost::cnv::strtol()(arg::precision = 6)),
            local::to_str<std::string, double>(boost::cnv::lexical_cast()),
            local::to_str<std::string, double>(boost::cnv::printf()(arg::precision = 6)),
-           local::to_str<std::string, double>(boost::cnv::cstream()(arg::precision = 6)));
+           local::to_str<std::string, double>(boost::cnv::cstream()(arg::precision = 6)),
+           local::to_str<std::string, double>(boost::cnv::charconv()(arg::precision = 6)));
 
-    printf("str-to-user-type: lcast/stream/strtol=%.2f/%.2f/%.2f seconds.\n",
+    printf("str-to-user-type: lcast/stream/strtol/charconv=%.2f/%.2f/%.2f/%.2f seconds.\n",
            performance_str_to_type(boost::cnv::lexical_cast()),
            performance_str_to_type(boost::cnv::cstream()),
-           performance_str_to_type(boost::cnv::strtol()));
-    printf("user-type-to-str: lcast/stream/strtol=%.2f/%.2f/%.2f seconds.\n",
+           performance_str_to_type(boost::cnv::strtol()),
+           performance_str_to_type(boost::cnv::charconv()));
+    printf("user-type-to-str: lcast/stream/strtol/charconv=%.2f/%.2f/%.2f/%.2f seconds.\n",
            performance_type_to_str(boost::cnv::lexical_cast()),
            performance_type_to_str(boost::cnv::cstream()),
-           performance_type_to_str(boost::cnv::strtol()));
+           performance_type_to_str(boost::cnv::strtol()),
+           performance_type_to_str(boost::cnv::charconv()));
 
     //[small_string_results
     printf("strtol int-to std::string/small-string: %.2f/%.2f seconds.\n",
@@ -307,9 +327,13 @@ main(int, char const* [])
     printf("stream int-to std::string/small-string: %.2f/%.2f seconds.\n",
            local::to_str<std::string, int>(boost::cnv::cstream()),
            local::to_str<  my_string, int>(boost::cnv::cstream()));
+    printf("charconv int-to std::string/small-string: %.2f/%.2f seconds.\n",
+           local::to_str<std::string, int>(boost::cnv::charconv()),
+           local::to_str<  my_string, int>(boost::cnv::charconv()));
     //]
     performance_comparative(raw_str_to_int_spirit(), boost::cnv::spirit(),       "spirit");
     performance_comparative(raw_str_to_int_lxcast(), boost::cnv::lexical_cast(), "lxcast");
+    performance_comparative(raw_str_to_int_charconv(), boost::cnv::charconv(), "charconv");
 
     return boost::report_errors();
 }

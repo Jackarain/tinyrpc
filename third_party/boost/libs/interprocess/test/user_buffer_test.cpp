@@ -8,7 +8,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
 #include <algorithm>
 #include <vector>
 #include <list>
@@ -16,7 +15,7 @@
 #include <functional>
 #include <boost/interprocess/managed_external_buffer.hpp>
 #include <boost/interprocess/managed_heap_memory.hpp>
-#include <boost/interprocess/containers/list.hpp>
+#include <boost/container/list.hpp>
 #include <boost/interprocess/detail/type_traits.hpp>
 #include <boost/move/detail/type_traits.hpp>
 #include <boost/interprocess/allocators/node_allocator.hpp>
@@ -39,8 +38,8 @@ typedef node_allocator
    <int, wmanaged_heap_memory::segment_manager> heap_node_allocator_t;
 
 //Alias list types
-typedef list<int, user_node_allocator_t>    MyUserList;
-typedef list<int, heap_node_allocator_t>    MyHeapList;
+typedef boost::container::list<int, user_node_allocator_t>    MyUserList;
+typedef boost::container::list<int, heap_node_allocator_t>    MyHeapList;
 typedef std::list<int>                      MyStdList;
 
 //Function to check if both lists are equal
@@ -132,22 +131,18 @@ int main ()
    if(!CheckEqual(userlist, stdlist, heaplist)) return 1;
 
    std::vector<int> aux_vect;
-   #if !BOOST_WORKAROUND(BOOST_DINKUMWARE_STDLIB, == 1)
    aux_vect.assign(50, -1);
    userlist->assign(aux_vect.begin(), aux_vect.end());
    heaplist->assign(aux_vect.begin(), aux_vect.end());
    stdlist->assign(aux_vect.begin(), aux_vect.end());
    if(!CheckEqual(userlist, stdlist, heaplist)) return 1;
-   #endif
 
    userlist->sort();
    heaplist->sort();
    stdlist->sort();
    if(!CheckEqual(userlist, stdlist, heaplist)) return 1;
 
-   #if !BOOST_WORKAROUND(BOOST_DINKUMWARE_STDLIB, == 1)
    aux_vect.assign(50, 0);
-   #endif
    userlist->insert(userlist->begin(), aux_vect.begin(), aux_vect.end());
    heaplist->insert(heaplist->begin(), aux_vect.begin(), aux_vect.end());
    stdlist->insert(stdlist->begin(), aux_vect.begin(), aux_vect.end());
@@ -205,12 +200,12 @@ int main ()
    delete stdlist;
 
    //Fill heap buffer until is full
-   try{
+   BOOST_INTERPROCESS_TRY{
       while(1){
          heaplist->insert(heaplist->end(), 0);
       }
    }
-   catch(boost::interprocess::bad_alloc &){}
+   BOOST_INTERPROCESS_CATCH(boost::interprocess::bad_alloc &){} BOOST_INTERPROCESS_CATCH_END
 
    MyHeapList::size_type heap_list_size = heaplist->size();
 
@@ -238,12 +233,12 @@ int main ()
    }
 
    //Fill user buffer until is full
-   try{
+   BOOST_INTERPROCESS_TRY{
       while(1){
          userlist->insert(userlist->end(), 0);
       }
    }
-   catch(boost::interprocess::bad_alloc &){}
+   BOOST_INTERPROCESS_CATCH(boost::interprocess::bad_alloc &){} BOOST_INTERPROCESS_CATCH_END
 
    MyUserList::size_type user_list_size = userlist->size();
 
@@ -255,5 +250,3 @@ int main ()
 
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

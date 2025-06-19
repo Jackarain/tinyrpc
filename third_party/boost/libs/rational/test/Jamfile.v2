@@ -3,7 +3,10 @@
 #~ (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 import testing ;
-import ../../config/checks/config : requires ;
+import-search /boost/config/checks ;
+import config : requires ;
+
+project : requirements <library>/boost/rational//boost_rational ;
 
 test-suite rational
     :   [ run rational_example.cpp ]
@@ -21,4 +24,5 @@ test-suite rational
         [ compile-fail expected_fail_09.cpp ]
         [ compile-fail expected_fail_10.cpp ]
         [ compile-fail expected_fail_11.cpp ]
+        [ compile expected_compile_12.cpp ]
     ;

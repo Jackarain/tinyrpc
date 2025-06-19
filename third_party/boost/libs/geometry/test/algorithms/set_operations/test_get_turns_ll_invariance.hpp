@@ -1,16 +1,21 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014, Oracle and/or its affiliates.
+// Copyright (c) 2014-2022, Oracle and/or its affiliates.
+
+// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Licensed under the Boost Software License version 1.0.
 // http://www.boost.org/users/license.html
-
-// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
 
 #ifndef BOOST_GEOMETRY_TEST_GET_TURNS_LL_INVARIANCE_HPP
 #define BOOST_GEOMETRY_TEST_GET_TURNS_LL_INVARIANCE_HPP
 
 #include <vector>
+
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+#include <boost/range/size.hpp>
 
 #include <boost/geometry/algorithms/reverse.hpp>
 
@@ -44,6 +49,7 @@ private:
         static bool const include_no_turn = false;
         static bool const include_degenerate = EnableDegenerateTurns;
         static bool const include_opposite = false;
+        static bool const include_start_turn = false;
 
         template
         <
@@ -64,24 +70,29 @@ private:
     <
         typename Turns,
         typename LinearGeometry1,
-        typename LinearGeometry2
+        typename LinearGeometry2,
+        typename Strategy
     >
     static inline void compute_turns(Turns& turns,
                                      LinearGeometry1 const& linear1,
-                                     LinearGeometry2 const& linear2)
+                                     LinearGeometry2 const& linear2,
+                                     Strategy const& strategy)
     {
         turns.clear();
+        bg_detail::get_turns::no_interrupt_policy interrupt_policy;
         bg_detail::relate::turns::get_turns
             <
                 LinearGeometry1,
                 LinearGeometry2,
                 bg_detail::get_turns::get_turn_info_type
-                <
-                    LinearGeometry1,
-                    LinearGeometry2,
-                    assign_policy
-                >
-            >::apply(turns, linear1, linear2);
+                    <
+                        LinearGeometry1,
+                        LinearGeometry2,
+                        assign_policy
+                    >
+            >::apply(turns, linear1, linear2,
+                     interrupt_policy,
+                     strategy);
     }
 
 
@@ -91,10 +102,15 @@ public:
     static inline void apply(Linear1 const& lineargeometry1,
                              Linear2 const& lineargeometry2)
     {
+        typedef typename bg::strategies::relate::services::default_strategy
+            <
+                Linear1, Linear2
+            >::type strategy_type;
+
         typedef typename bg_detail::relate::turns::get_turns
             <
                 Linear1, Linear2
-            >::turn_info turn_info;
+            >::template turn_info_type<strategy_type>::type turn_info;
 
         typedef std::vector<turn_info> turns_container;
 
@@ -117,8 +133,9 @@ public:
         boost::geometry::reverse(linear2_reverse);
 
         turns_container turns_all, rturns_all;
-        compute_turns(turns_all, linear1, linear2);
-        compute_turns(rturns_all, linear1, linear2_reverse);
+        strategy_type strategy;
+        compute_turns(turns_all, linear1, linear2, strategy);
+        compute_turns(rturns_all, linear1, linear2_reverse, strategy);
 
         turns_container turns_wo_cont(turns_all);
         turns_container rturns_wo_cont(rturns_all);
@@ -138,10 +155,10 @@ public:
         std::sort(boost::begin(rturns_wo_cont), boost::end(rturns_wo_cont),
                   bg_turns::less_seg_fraction_other_op<std::greater<boost::geometry::signed_size_type> >());
 
-        remove_duplicate_turns::apply(turns_all);
-        remove_duplicate_turns::apply(turns_wo_cont);
-        remove_duplicate_turns::apply(rturns_all);
-        remove_duplicate_turns::apply(rturns_wo_cont);
+        remove_duplicate_turns::apply(turns_all, strategy);
+        remove_duplicate_turns::apply(turns_wo_cont, strategy);
+        remove_duplicate_turns::apply(rturns_all, strategy);
+        remove_duplicate_turns::apply(rturns_wo_cont, strategy);
 
 #ifdef BOOST_GEOMETRY_TEST_DEBUG
         std::cout << std::endl << std::endl;

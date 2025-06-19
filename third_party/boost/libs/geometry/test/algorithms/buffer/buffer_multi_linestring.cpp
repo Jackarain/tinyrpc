@@ -1,17 +1,17 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 // Unit Test
 
-// Copyright (c) 2012-2015 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2012-2019 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2016.
-// Modifications copyright (c) 2016, Oracle and/or its affiliates.
+// This file was modified by Oracle on 2016-2021.
+// Modifications copyright (c) 2016-2021, Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#include <test_buffer.hpp>
+#include "test_buffer.hpp"
 
 static std::string const simplex = "MULTILINESTRING((0 0,4 5),(5 4,10 0))";
 static std::string const two_bends = "MULTILINESTRING((0 0,4 5,7 4,10 6),(1 5,5 9,8 6))";
@@ -37,7 +37,7 @@ static std::string const mysql_2015_04_10a = "MULTILINESTRING((-58 19, 61 88),(1
 static std::string const mysql_2015_04_10b = "MULTILINESTRING((-58 19, 61 88),                                                     (-63 -5, -262141 -536870908, -3 87, 77 -69))";
 
 static std::string const mysql_2015_09_08a = "MULTILINESTRING((7 -4, -3 -5), (72057594037927936 15, 72057594037927940 70368744177660, 32771 36028797018963964, 8589934589 2305843009213693953, 7 2, 9.300367e+307 9.649737e+307, -4092 -274877906946, 5 10, -3 4))";
-static std::string const mysql_2015_09_08b = "MULTILINESTRING((-9 -10, 0 -1, 5 -10, -6 7, -7 7, 5.041061e+307 9.926906e+307, 6.870356e+307 1.064454e+307, 35184372088830 288230376151711743, 183673728842483250000000000000000000000.000000 244323751784861950000000000000000000000.000000), (-23530 -7131, -6 1, 1 1, 2 -6, 32766 -4194302, -4 -6), (134217725 0, 50336782742294697000000000000000000000.000000 36696596077212901000000000000000000000.000000, 7434 16486, 3.025467e+307 8.926790e+307), (2147483646 67108868, 71328904281592545000000000000000000000.000000 225041650340452780000000000000000000000.000000, -7 4, 1.667154e+307 3.990414e+307))"; 
+static std::string const mysql_2015_09_08b = "MULTILINESTRING((-9 -10, 0 -1, 5 -10, -6 7, -7 7, 5.041061e+307 9.926906e+307, 6.870356e+307 1.064454e+307, 35184372088830 288230376151711743, 183673728842483250000000000000000000000.000000 244323751784861950000000000000000000000.000000), (-23530 -7131, -6 1, 1 1, 2 -6, 32766 -4194302, -4 -6), (134217725 0, 50336782742294697000000000000000000000.000000 36696596077212901000000000000000000000.000000, 7434 16486, 3.025467e+307 8.926790e+307), (2147483646 67108868, 71328904281592545000000000000000000000.000000 225041650340452780000000000000000000000.000000, -7 4, 1.667154e+307 3.990414e+307))";
 
 static std::string const mysql_23023665_1 = "MULTILINESTRING((-5 15, 7 15, 19 -10, -11 -2),(2 13, 2 -9))";
 
@@ -65,6 +65,7 @@ void test_all()
     typedef bg::model::linestring<P> linestring;
     typedef bg::model::multi_linestring<linestring> multi_linestring_type;
     typedef bg::model::polygon<P, Clockwise> polygon;
+    typedef typename bg::coordinate_type<P>::type coor_type;
 
     bg::strategy::buffer::join_miter join_miter;
     bg::strategy::buffer::join_round join_round(100);
@@ -140,8 +141,8 @@ void test_all()
         test_one<multi_linestring_type, polygon>("mikado4_small", mikado4, join_round32, end_flat, 1930.785, 10.0);
     }
 
+    if (! BOOST_GEOMETRY_CONDITION((std::is_same<coor_type, float>::value)))
     {
-#if ! defined(BOOST_GEOMETRY_NO_ROBUSTNESS)
         // Coordinates in one linestring vary so much that
         // length = geometry::math::sqrt(dx * dx + dy * dy); returns a value of inf for length
         // That geometry is skipped for the buffer
@@ -156,7 +157,6 @@ void test_all()
         test_one<multi_linestring_type, polygon>("mysql_2015_04_10b",
             mysql_2015_04_10b, join_round32, end_round32,
             ut_settings::ignore_area(), 0.98, ut_settings::assertions_only());
-#endif
 
         // Two other cases with <inf> for length calculation
         test_one<multi_linestring_type, polygon>("mysql_2015_09_08a",
@@ -172,11 +172,7 @@ void test_all()
     test_one<multi_linestring_type, polygon>("mysql_23023665_1",
             mysql_23023665_1, join_round32, end_round32, 1, 1, 186.5504, 1.0);
     test_one<multi_linestring_type, polygon>("touching1_1",
-            touching1, join_round32, end_round32, 2, 0, 78.70773, 1.0
-#if ! defined(BOOST_GEOMETRY_NO_ROBUSTNESS)
-            , ut_settings::ignore_validity() // false positive, due to rescaling. As we remove it, it is gone
-#endif
-                                             );
+            touching1, join_round32, end_round32, 2, 0, 78.70773, 1.0);
     test_one<multi_linestring_type, polygon>("touching2_1",
             touching2, join_round32, end_round32, 1, 1, 107.8991, 1.0);
     test_one<multi_linestring_type, polygon>("mysql_23023665_1_09",
@@ -199,25 +195,38 @@ void test_all()
     test_one<multi_linestring_type, polygon>("mysql_23023665_1_20",
             mysql_23023665_1, join_round32, end_flat, 1, 1, 350.1135, 2.0);
 
-#if defined(BOOST_GEOMETRY_NO_ROBUSTNESS)
-    {
-        ut_settings settings(10.0);
-        test_one<multi_linestring_type, polygon>("ticket_13444_1",
-                ticket_13444, join_round32, end_round32, 3, 0, 11801.7832, 1.0, settings);
-        test_one<multi_linestring_type, polygon>("ticket_13444_3",
-                ticket_13444, join_round32, end_round32, 3, 1, 34132.0882, 3.0, settings);
-        test_one<multi_linestring_type, polygon>("ticket_13444_5",
-                ticket_13444, join_round32, end_round32, 2, 1, 50525.1110, 5.0, settings);
-    }
-#endif
+    test_one<multi_linestring_type, polygon>("ticket_13444_1",
+            ticket_13444, join_round32, end_round32, 3, 0, 11799.2681, 1.0);
+    test_one<multi_linestring_type, polygon>("ticket_13444_3",
+            ticket_13444, join_round32, end_round32, 3, 1, 34132.0882, 3.0);
+    test_one<multi_linestring_type, polygon>("ticket_13444_5",
+            ticket_13444, join_round32, end_round32, 2, 1, 50525.1110, 5.0);
 
+    {
+        // This issue was detected for CCW order and only CW is tested by default.
+        using polygon_ccw = bg::model::polygon<P, ! Clockwise>;
+        test_one
+            <
+                multi_linestring_type, polygon_ccw
+            >("mysql_33353637_macos11",
+              "MULTILINESTRING((0 10,10 0),(10 0,0 0),(0 0,10 10))",
+              bg::strategy::buffer::join_miter(10),
+              end_round32,
+              1, 0, 35307.0646,
+              100.0);
+    }
 }
 
 
 int test_main(int, char* [])
 {
-    test_all<true, bg::model::point<double, 2, bg::cs::cartesian> >();
-    test_all<false, bg::model::point<double, 2, bg::cs::cartesian> >();
+    BoostGeometryWriteTestConfiguration();
+
+    test_all<true, bg::model::point<default_test_type, 2, bg::cs::cartesian> >();
+
+#if ! defined(BOOST_GEOMETRY_TEST_ONLY_ONE_ORDER)
+    test_all<false, bg::model::point<default_test_type, 2, bg::cs::cartesian> >();
+#endif
 
     return 0;
 }

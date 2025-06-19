@@ -1,3 +1,9 @@
+//  Copyright (c) 2018 Robert Ramey
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+
 #include <stdexcept>
 #include <iostream>
 #include <array>
@@ -32,7 +38,7 @@ int main(int, const char *[]){
         i_index = 43; // throw exception here!
         std::cout << "error NOT detected!" << std::endl; // so we never arrive here
     }
-    catch(std::exception & e){
+    catch(const std::exception & e){
         std::cout <<  "error detected:" << e.what() << std::endl;
     }
     return 0;

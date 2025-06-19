@@ -1,8 +1,8 @@
 //
-// async_ops.hpp
-// ~~~~~~~~~~~~~
+// archetypes/async_ops.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -11,403 +11,448 @@
 #ifndef ARCHETYPES_ASYNC_OPS_HPP
 #define ARCHETYPES_ASYNC_OPS_HPP
 
+#include <functional>
 #include <boost/asio/associated_allocator.hpp>
 #include <boost/asio/associated_executor.hpp>
 #include <boost/asio/async_result.hpp>
+#include <boost/asio/bind_allocator.hpp>
 #include <boost/asio/error.hpp>
-
-#if defined(BOOST_ASIO_HAS_BOOST_BIND)
-# include <boost/bind.hpp>
-#else // defined(BOOST_ASIO_HAS_BOOST_BIND)
-# include <functional>
-#endif // defined(BOOST_ASIO_HAS_BOOST_BIND)
+#include <boost/asio/post.hpp>
 
 namespace archetypes {
 
-#if defined(BOOST_ASIO_HAS_BOOST_BIND)
-namespace bindns = boost;
-#else // defined(BOOST_ASIO_HAS_BOOST_BIND)
 namespace bindns = std;
-#endif // defined(BOOST_ASIO_HAS_BOOST_BIND)
+
+struct initiate_op_0
+{
+  template <typename Handler>
+  void operator()(Handler&& handler)
+  {
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
+
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    boost::asio::post(ex,
+        boost::asio::bind_allocator(a, static_cast<Handler&&>(handler)));
+  }
+};
 
 template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void())
-async_op_0(BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+auto async_op_0(CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken, void()>(
+      initiate_op_0(), token))
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void()>::completion_handler_type handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void()> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  ex.post(BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler), a);
-
-  return completion.result.get();
+  return boost::asio::async_initiate<CompletionToken, void()>(
+      initiate_op_0(), token);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
-async_op_ec_0(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ec_0
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code)>::completion_handler_type handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code()), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(boost::asio::error::operation_aborted)), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code())));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(
+                boost::asio::error::operation_aborted))));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ec_0(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(boost::system::error_code)>(
+        initiate_op_ec_0(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(boost::system::error_code)>(
+      initiate_op_ec_0(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(std::exception_ptr))
-async_op_ex_0(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ex_0
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr)>::completion_handler_type handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::exception_ptr()), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::make_exception_ptr(std::runtime_error("blah"))), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::exception_ptr())));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::make_exception_ptr(std::runtime_error("blah")))));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ex_0(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(std::exception_ptr)>(
+        initiate_op_ex_0(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(std::exception_ptr)>(
+      initiate_op_ex_0(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(int))
-async_op_1(BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_1
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(int)>::completion_handler_type handler_type;
+  template <typename Handler>
+  void operator()(Handler&& handler)
+  {
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  boost::asio::async_completion<CompletionToken,
-    void(int)> completion(token);
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
 
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
+    boost::asio::post(ex,
+        boost::asio::bind_allocator(a,
+          bindns::bind(static_cast<Handler&&>(handler), 42)));
+  }
+};
 
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  ex.post(
-      bindns::bind(
-        BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-        42), a);
-
-  return completion.result.get();
+template <typename CompletionToken>
+auto async_op_1(CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken, void(int)>(
+      initiate_op_1(), token))
+{
+  return boost::asio::async_initiate<CompletionToken, void(int)>(
+      initiate_op_1(), token);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-    void(boost::system::error_code, int))
-async_op_ec_1(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ec_1
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(), 42), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(boost::asio::error::operation_aborted),
-          0), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(), 42)));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(
+                boost::asio::error::operation_aborted), 0)));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ec_1(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(boost::system::error_code, int)>(
+        initiate_op_ec_1(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(boost::system::error_code, int)>(
+      initiate_op_ec_1(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(std::exception_ptr, int))
-async_op_ex_1(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ex_1
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::exception_ptr(), 42), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::make_exception_ptr(std::runtime_error("blah")), 0), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::exception_ptr(), 42)));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::make_exception_ptr(std::runtime_error("blah")), 0)));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ex_1(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(std::exception_ptr, int)>(
+        initiate_op_ex_1(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(std::exception_ptr, int)>(
+      initiate_op_ex_1(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(int, double))
-async_op_2(BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_2
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(int, double)>::completion_handler_type handler_type;
+  template <typename Handler>
+  void operator()(Handler&& handler)
+  {
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  boost::asio::async_completion<CompletionToken,
-    void(int, double)> completion(token);
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
 
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
+    boost::asio::post(ex,
+        boost::asio::bind_allocator(a,
+          bindns::bind(static_cast<Handler&&>(handler), 42, 2.0)));
+  }
+};
 
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  ex.post(
-      bindns::bind(
-        BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-        42, 2.0), a);
-
-  return completion.result.get();
+template <typename CompletionToken>
+auto async_op_2(CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken, void(int, double)>(
+      initiate_op_2(), token))
+{
+  return boost::asio::async_initiate<CompletionToken, void(int, double)>(
+      initiate_op_2(), token);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-    void(boost::system::error_code, int, double))
-async_op_ec_2(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ec_2
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int, double)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int, double)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(), 42, 2.0), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(boost::asio::error::operation_aborted),
-          0, 0.0), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(), 42, 2.0)));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(boost::asio::error::operation_aborted),
+              0, 0.0)));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ec_2(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(boost::system::error_code, int, double)>(
+        initiate_op_ec_2(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(boost::system::error_code, int, double)>(
+      initiate_op_ec_2(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-    void(std::exception_ptr, int, double))
-async_op_ex_2(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ex_2
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int, double)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int, double)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::exception_ptr(), 42, 2.0), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::make_exception_ptr(std::runtime_error("blah")), 0, 0.0), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::exception_ptr(), 42, 2.0)));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::make_exception_ptr(std::runtime_error("blah")), 0, 0.0)));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ex_2(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(std::exception_ptr, int, double)>(
+        initiate_op_ex_2(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(std::exception_ptr, int, double)>(
+      initiate_op_ex_2(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(int, double, char))
-async_op_3(BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_3
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(int, double, char)>::completion_handler_type handler_type;
+  template <typename Handler>
+  void operator()(Handler&& handler)
+  {
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  boost::asio::async_completion<CompletionToken,
-    void(int, double, char)> completion(token);
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
 
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
+    boost::asio::post(ex,
+        boost::asio::bind_allocator(a,
+          bindns::bind(static_cast<Handler&&>(handler), 42, 2.0, 'a')));
+  }
+};
 
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  ex.post(
-      bindns::bind(
-        BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-        42, 2.0, 'a'), a);
-
-  return completion.result.get();
+template <typename CompletionToken>
+auto async_op_3(CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken, void(int, double, char)>(
+      initiate_op_3(), token))
+{
+  return boost::asio::async_initiate<CompletionToken, void(int, double, char)>(
+      initiate_op_3(), token);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-    void(boost::system::error_code, int, double, char))
-async_op_ec_3(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ec_3
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int, double, char)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(boost::system::error_code, int, double, char)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(), 42, 2.0, 'a'), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          boost::system::error_code(boost::asio::error::operation_aborted),
-          0, 0.0, 'z'), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(), 42, 2.0, 'a')));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              boost::system::error_code(boost::asio::error::operation_aborted),
+              0, 0.0, 'z')));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ec_3(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(boost::system::error_code, int, double, char)>(
+        initiate_op_ec_3(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(boost::system::error_code, int, double, char)>(
+      initiate_op_ec_3(), token, ok);
 }
 
-template <typename CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-    void(std::exception_ptr, int, double, char))
-async_op_ex_3(bool ok, BOOST_ASIO_MOVE_ARG(CompletionToken) token)
+struct initiate_op_ex_3
 {
-  typedef typename boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int, double, char)>::completion_handler_type
-      handler_type;
-
-  boost::asio::async_completion<CompletionToken,
-    void(std::exception_ptr, int, double, char)> completion(token);
-
-  typename boost::asio::associated_allocator<handler_type>::type a
-    = boost::asio::get_associated_allocator(completion.completion_handler);
-
-  typename boost::asio::associated_executor<handler_type>::type ex
-    = boost::asio::get_associated_executor(completion.completion_handler);
-
-  if (ok)
+  template <typename Handler>
+  void operator()(Handler&& handler, bool ok)
   {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::exception_ptr(), 42, 2.0, 'a'), a);
-  }
-  else
-  {
-    ex.post(
-        bindns::bind(
-          BOOST_ASIO_MOVE_CAST(handler_type)(completion.completion_handler),
-          std::make_exception_ptr(std::runtime_error("blah")),
-          0, 0.0, 'z'), a);
-  }
+    typename boost::asio::associated_allocator<Handler>::type a
+      = boost::asio::get_associated_allocator(handler);
 
-  return completion.result.get();
+    typename boost::asio::associated_executor<Handler>::type ex
+      = boost::asio::get_associated_executor(handler);
+
+    if (ok)
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::exception_ptr(), 42, 2.0, 'a')));
+    }
+    else
+    {
+      boost::asio::post(ex,
+          boost::asio::bind_allocator(a,
+            bindns::bind(static_cast<Handler&&>(handler),
+              std::make_exception_ptr(std::runtime_error("blah")),
+              0, 0.0, 'z')));
+    }
+  }
+};
+
+template <typename CompletionToken>
+auto async_op_ex_3(bool ok, CompletionToken&& token)
+  -> decltype(
+    boost::asio::async_initiate<CompletionToken,
+      void(std::exception_ptr, int, double, char)>(
+        initiate_op_ex_3(), token, ok))
+{
+  return boost::asio::async_initiate<CompletionToken,
+    void(std::exception_ptr, int, double, char)>(
+      initiate_op_ex_3(), token, ok);
 }
 
 } // namespace archetypes

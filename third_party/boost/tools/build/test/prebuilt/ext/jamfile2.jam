@@ -1,0 +1,17 @@
+import modules ;
+LIBNAME = [ modules.peek : LIBNAME ] ;
+
+project ext ;
+
+lib a :
+    : <file>debug/$(LIBNAME:E=LIBNAME-not-defined) <variant>debug
+    :
+    : <include>debug
+    ;
+
+lib a :
+    : <file>release/$(LIBNAME:E=LIBNAME-not-defined) <variant>release
+    :
+    : <include>release
+    ;
+

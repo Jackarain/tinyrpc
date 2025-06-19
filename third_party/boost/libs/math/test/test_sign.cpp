@@ -1,5 +1,6 @@
-#define BOOST_TEST_MAIN// Copyright John Maddock 2008
+// Copyright John Maddock 2008
 //  (C) Copyright Paul A. Bristow 2011 (added tests for changesign)
+// Copyright Matt Borland 2024
 // Use, modification and distribution are subject to the
 // Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt
@@ -12,7 +13,7 @@
 #include <boost/test/unit_test.hpp> // Boost.Test
 #include <boost/test/results_collector.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <iostream>
    using std::cout;
@@ -76,7 +77,7 @@ void test_spots(RealType /*T*/, const char* /*type_name*/)
       BOOST_CHECK_EQUAL((boost::math::copysign)(c, a), RealType(-1));
       BOOST_CHECK_EQUAL((boost::math::changesign)(a), -a);
    }
-#if !defined(__SUNPRO_CC) && !defined(BOOST_INTEL)
+#if !defined(__SUNPRO_CC) && !defined(__INTEL_COMPILER)
    if(std::numeric_limits<RealType>::has_quiet_NaN)
    {
       a = std::numeric_limits<RealType>::quiet_NaN();
@@ -147,7 +148,9 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_spots(0.0, "double"); // Test double. OK at decdigits 7, tolerance = 1e07 %
    // long double support for the sign functions is considered "core" so we always test it
    // even when long double support is turned off via BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
+#ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_spots(0.0L, "long double"); // Test long double.
+#endif
 #ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
    test_spots(boost::math::concepts::real_concept(0), "real_concept"); // Test real_concept.
 #endif

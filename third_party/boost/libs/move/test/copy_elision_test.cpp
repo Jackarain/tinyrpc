@@ -2,7 +2,6 @@
 // Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include <boost/move/detail/config_begin.hpp>
 #include <iostream>
 #include <boost/core/lightweight_test.hpp>
 
@@ -148,7 +147,7 @@ X ternary( bool y )
 
 int main(int argc, char* argv[])
 {
-   (void)argv;
+    ::boost::movelib::ignore(argv);
     // Double parens prevent "most vexing parse"
     CHECK_COPIES( X a(( lvalue() )), 1U, 1U, "Direct initialization from lvalue");
     CHECK_COPIES( X a(( rvalue() )), 0U, 1U, "Direct initialization from rvalue");
@@ -173,5 +172,3 @@ int main(int argc, char* argv[])
     CHECK_COPIES( X a = ternary( argc != 1000 ), 0U, 2U, "Return result of ternary operation again" );
     return boost::report_errors();
 }
-
-#include <boost/move/detail/config_end.hpp>

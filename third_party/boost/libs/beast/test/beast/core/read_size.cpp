@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -14,7 +14,7 @@
 #include <boost/beast/core/flat_static_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/static_buffer.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 
 #include <boost/asio/streambuf.hpp>
 
@@ -40,7 +40,7 @@ public:
         check<flat_static_buffer<1024>>();
         check<multi_buffer>();
         check<static_buffer<1024>>();
-        check<boost::asio::streambuf>();
+        check<net::streambuf>();
     }
 };
 

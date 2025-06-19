@@ -2,7 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <!--
-  Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+  Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 
   Distributed under the Boost Software License, Version 1.0. (See accompanying
   file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,7 +20,7 @@
 
 <xsl:template match="/doxygen">
 <xsl:text>[/
- / Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ / Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
  /
  / Distributed under the Boost Software License, Version 1.0. (See accompanying
  / file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -66,6 +66,7 @@
 
   <xsl:value-of select="$newline"/>
   <xsl:text>[endsect]</xsl:text>
+  <xsl:value-of select="$newline"/>
 
 </xsl:template>
 
@@ -119,6 +120,12 @@
       <xsl:call-template name="make-id">
         <xsl:with-param name="name"
          select="concat(substring-before($name, '&gt;'), '_gt_', substring-after($name, '&gt;'))"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="contains($name, '&amp;')">
+      <xsl:call-template name="make-id">
+        <xsl:with-param name="name"
+         select="concat(substring-before($name, '&amp;'), '_amp_', substring-after($name, '&amp;'))"/>
       </xsl:call-template>
     </xsl:when>
     <xsl:when test="contains($name, '+')">
@@ -333,6 +340,21 @@
     <xsl:value-of select="@refid"/>
   </xsl:variable>
   <xsl:choose>
+    <xsl:when test="$refid = 'index'">
+      <xsl:text>[link boost_asio.tutorial </xsl:text>
+      <xsl:value-of select="."/>
+      <xsl:text>]</xsl:text>
+    </xsl:when>
+    <xsl:when test="$refid = 'asynchronous_operation'">
+      <xsl:text>[link boost_asio.overview.model.async_ops </xsl:text>
+      <xsl:value-of select="."/>
+      <xsl:text>]</xsl:text>
+    </xsl:when>
+    <xsl:when test="$refid = 'completion_token'">
+      <xsl:text>[link boost_asio.overview.model.completion_tokens </xsl:text>
+      <xsl:value-of select="."/>
+      <xsl:text>]</xsl:text>
+    </xsl:when>
     <xsl:when test="count(/doxygen/compounddef[@id=$refid]) &gt; 0">
       <xsl:text>[link boost_asio.tutorial.</xsl:text>
       <xsl:choose>
@@ -377,12 +399,7 @@
     </xsl:call-template>
   </xsl:variable>
   <xsl:choose>
-    <xsl:when test="$refid='index_1index'">
-      <xsl:text>[link boost_asio.tutorial </xsl:text>
-      <xsl:value-of select="$text"/>
-      <xsl:text>]</xsl:text>
-    </xsl:when>
-    <xsl:when test="@external='reference.tags'">
+    <xsl:when test="contains(@external, 'reference.tags')">
       <xsl:variable name="anchor">
         <xsl:call-template name="refid-to-anchor">
           <xsl:with-param name="text" select="$refid"/>

@@ -3,6 +3,12 @@
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#include <boost/config.hpp>
+
+#if defined( BOOST_NO_EXCEPTIONS )
+#   error This program requires exception handling.
+#endif
+
 #include "helper2.hpp"
 #include <boost/throw_exception.hpp>
 
@@ -20,7 +26,7 @@ boost
             }
 
         derives_boost_exception::
-        ~derives_boost_exception() throw()
+        ~derives_boost_exception() BOOST_NOEXCEPT_OR_NOTHROW
             {
             }
 
@@ -32,7 +38,7 @@ boost
             }
 
         derives_boost_exception_virtually::
-        ~derives_boost_exception_virtually() throw()
+        ~derives_boost_exception_virtually() BOOST_NOEXCEPT_OR_NOTHROW
             {
             }
 
@@ -44,7 +50,7 @@ boost
             }
 
         derives_std_exception::
-        ~derives_std_exception() throw()
+        ~derives_std_exception() BOOST_NOEXCEPT_OR_NOTHROW
             {
             }
 

@@ -46,7 +46,7 @@ void test_display_expr()
 
     {
         std::stringstream sout;
-        char const * Cname = BOOST_SP_TYPEID(C).name();
+        char const * Cname = BOOST_CORE_TYPEID(C).name();
         proto::display_expr(i + C(), sout);
         BOOST_CHECK_EQUAL(sout.str(), std::string(
           "plus(\n"

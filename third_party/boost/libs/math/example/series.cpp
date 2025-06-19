@@ -4,8 +4,11 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/math/tools/series.hpp>
+#include <boost/math/tools/assert.hpp>
+
 #include <iostream>
 #include <complex>
+#include <cassert>
 
 //[series_log1p
 template <class T>
@@ -21,7 +24,7 @@ struct log1p_series
    {
       // This is the function operator invoked by the summation
       // algorithm, the first call to this operator should return
-      // the first term of the series, the second call the second 
+      // the first term of the series, the second call the second
       // term and so on.
       m_prod *= m_mult;
       return m_prod / ++k;
@@ -39,12 +42,12 @@ template <class T>
 T log1p(T x)
 {
    // We really should add some error checking on x here!
-   assert(std::fabs(x) < 1);
+   BOOST_MATH_ASSERT(std::fabs(x) < 1);
 
    // Construct the series functor:
    log1p_series<T> s(x);
    // Set a limit on how many iterations we permit:
-   boost::uintmax_t max_iter = 1000;
+   std::uintmax_t max_iter = 1000;
    // Add it up, with enough precision for full machine precision:
    return boost::math::tools::sum_series(s, std::numeric_limits<T>::epsilon(), max_iter);
 }
@@ -64,7 +67,7 @@ struct log1p_series<std::complex<T> >
    {
       // This is the function operator invoked by the summation
       // algorithm, the first call to this operator should return
-      // the first term of the series, the second call the second 
+      // the first term of the series, the second call the second
       // term and so on.
       m_prod *= m_mult;
       return m_prod / T(++k);
@@ -81,12 +84,12 @@ template <class T>
 std::complex<T> log1p(std::complex<T> x)
 {
    // We really should add some error checking on x here!
-   assert(abs(x) < 1);
+   BOOST_MATH_ASSERT(abs(x) < 1);
 
    // Construct the series functor:
    log1p_series<std::complex<T> > s(x);
    // Set a limit on how many iterations we permit:
-   boost::uintmax_t max_iter = 1000;
+   std::uintmax_t max_iter = 1000;
    // Add it up, with enough precision for full machine precision:
    return boost::math::tools::sum_series(s, std::complex<T>(std::numeric_limits<T>::epsilon()), max_iter);
 }

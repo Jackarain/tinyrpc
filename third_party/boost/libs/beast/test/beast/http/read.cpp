@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,12 +18,24 @@
 #include <boost/beast/http/dynamic_body.hpp>
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/http/string_body.hpp>
-#include <boost/beast/experimental/test/stream.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <boost/beast/test/yield_to.hpp>
-#include <boost/beast/unit_test/suite.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/asio/bind_cancellation_slot.hpp>
+#include <boost/asio/error.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/connect_pipe.hpp>
+#include <boost/asio/readable_pipe.hpp>
+#include <boost/asio/writable_pipe.hpp>
 #include <atomic>
+
+#if BOOST_ASIO_HAS_CO_AWAIT
+#include <boost/asio/use_awaitable.hpp>
+#endif
 
 namespace boost {
 namespace beast {
@@ -38,16 +50,14 @@ public:
     void
     failMatrix(char const* s, yield_context do_yield)
     {
-        using boost::asio::buffer;
-        using boost::asio::buffer_copy;
         static std::size_t constexpr limit = 100;
         std::size_t n;
         auto const len = strlen(s);
         for(n = 0; n < limit; ++n)
         {
             multi_buffer b;
-            b.commit(buffer_copy(
-                b.prepare(len), buffer(s, len)));
+            b.commit(net::buffer_copy(
+                b.prepare(len), net::buffer(s, len)));
             test::fail_count fc(n);
             test::stream ts{ioc_, fc};
             test_parser<isRequest> p(fc);
@@ -62,8 +72,8 @@ public:
         {
             static std::size_t constexpr pre = 10;
             multi_buffer b;
-            b.commit(buffer_copy(
-                b.prepare(pre), buffer(s, pre)));
+            b.commit(net::buffer_copy(
+                b.prepare(pre), net::buffer(s, pre)));
             test::fail_count fc(n);
             test::stream ts{ioc_, fc,
                 std::string(s + pre, len - pre)};
@@ -78,8 +88,8 @@ public:
         for(n = 0; n < limit; ++n)
         {
             multi_buffer b;
-            b.commit(buffer_copy(
-                b.prepare(len), buffer(s, len)));
+            b.commit(net::buffer_copy(
+                b.prepare(len), net::buffer(s, len)));
             test::fail_count fc(n);
             test::stream ts{ioc_, fc};
             test_parser<isRequest> p(fc);
@@ -93,8 +103,8 @@ public:
         for(n = 0; n < limit; ++n)
         {
             multi_buffer b;
-            b.commit(buffer_copy(
-                b.prepare(len), buffer(s, len)));
+            b.commit(net::buffer_copy(
+                b.prepare(len), net::buffer(s, len)));
             test::fail_count fc(n);
             test::stream ts{ioc_, fc};
             test_parser<isRequest> p(fc);
@@ -109,8 +119,8 @@ public:
         {
             static std::size_t constexpr pre = 10;
             multi_buffer b;
-            b.commit(buffer_copy(
-                b.prepare(pre), buffer(s, pre)));
+            b.commit(net::buffer_copy(
+                b.prepare(pre), net::buffer(s, pre)));
             test::fail_count fc(n);
             test::stream ts(ioc_, fc,
                 std::string{s + pre, len - pre});
@@ -373,9 +383,10 @@ public:
         {
             // Make sure handlers are not destroyed
             // after calling io_context::stop
-            boost::asio::io_context ioc;
+            net::io_context ioc;
             test::stream ts{ioc,
                 "GET / HTTP/1.1\r\n\r\n"};
+            ts.close(); // make sure the read completes
             BEAST_EXPECT(handler::count() == 0);
             multi_buffer b;
             request<dynamic_body> m;
@@ -392,7 +403,7 @@ public:
             // Make sure uninvoked handlers are
             // destroyed when calling ~io_context
             {
-                boost::asio::io_context ioc;
+                net::io_context ioc;
                 test::stream ts{ioc,
                     "GET / HTTP/1.1\r\n\r\n"};
                 BEAST_EXPECT(handler::count() == 0);
@@ -431,7 +442,6 @@ public:
     void
     readgrind(string_view s, Pred&& pred)
     {
-        using boost::asio::buffer;
         for(std::size_t n = 1; n < s.size() - 1; ++n)
         {
             Parser p;
@@ -493,35 +503,290 @@ public:
     void
     testAsioHandlerInvoke()
     {
+        using strand = net::strand<
+            net::io_context::executor_type>;
+
         // make sure things compile, also can set a
         // breakpoint in asio_handler_invoke to make sure
         // it is instantiated.
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request_parser<dynamic_body> p;
-            async_read_some(ts, b, p, s.wrap(copyable_handler{}));
+            async_read_some(ts, b, p,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request_parser<dynamic_body> p;
-            async_read(ts, b, p, s.wrap(copyable_handler{}));
+            async_read(ts, b, p,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
         {
-            boost::asio::io_context ioc;
-            boost::asio::io_service::strand s{ioc};
+            net::io_context ioc;
+            strand s{ioc.get_executor()};
             test::stream ts{ioc};
             flat_buffer b;
             request<dynamic_body> m;
-            async_read(ts, b, m, s.wrap(copyable_handler{}));
+            async_read(ts, b, m,
+                net::bind_executor(
+                    s, copyable_handler{}));
         }
     }
 
+#if BOOST_ASIO_HAS_CO_AWAIT
+    void testAwaitableCompiles(
+        test::stream& stream,
+        flat_buffer& dynbuf,
+        parser<true, string_body>& request_parser,
+        request<http::string_body>& request,
+        parser<false, string_body>& response_parser,
+        response<http::string_body>& response)
+    {
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read(stream, dynbuf, request, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read(stream, dynbuf, request_parser, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read(stream, dynbuf, response, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read(stream, dynbuf, response_parser, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read_some(stream, dynbuf, request_parser, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read_some(stream, dynbuf, response_parser, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read_header(stream, dynbuf, request_parser, net::use_awaitable))>);
+
+        static_assert(std::is_same_v<
+            net::awaitable<std::size_t>, decltype(
+            http::async_read_header(stream, dynbuf, response_parser, net::use_awaitable))>);
+    }
+#endif
+
+    void testReadSomeHeader(net::yield_context yield)
+    {
+        std::string hdr =
+            "GET /foo HTTP/1.1" "\r\n"
+            "Connection: Keep-Alive" "\r\n"
+            "Content-Length: 6"
+            "\r\n"
+            "\r\n";
+        std::string body =
+            "Hello!";
+
+        {
+            // bytes_transferred returns length of header
+            request_parser<string_body> p;
+            test::stream s(ioc_);
+
+            s.append(string_view(hdr));
+            s.append(string_view(body));
+            flat_buffer fb;
+            error_code ec;
+            auto bt = async_read_header(s, fb, p, yield[ec]);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECT(bt == hdr.size());
+
+            // next read should be zero-size, success
+            bt = async_read_header(s, fb, p, yield[ec]);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECTS(bt == 0, std::to_string(0));
+        }
+
+        {
+            // incomplete header consumes all parsable header bytes
+            request_parser<string_body> p;
+            test::stream s(ioc_);
+
+            s.append(hdr.substr(0, hdr.size() - 1));
+            s.close();
+            flat_buffer fb;
+            error_code ec;
+            auto bt = async_read_header(s, fb, p, yield[ec]);
+            BEAST_EXPECTS(ec == error::partial_message, ec.message());
+            BEAST_EXPECTS(bt + fb.size() == hdr.size() - 1,
+                std::to_string(bt + fb.size()) +
+                " expected " +
+                std::to_string(hdr.size() - 1));
+        }
+
+        {
+            // read consumes and reports correct number of bytes
+            request_parser<string_body> p;
+            test::stream s(ioc_);
+
+            s.append(hdr);
+            s.append(body);
+            s.append(hdr);
+            s.append(body);
+            s.append(hdr);
+            s.append(body);
+
+            flat_buffer fb;
+            error_code ec;
+            auto bt = async_read_header(s, fb, p, yield[ec]);
+            BEAST_EXPECTS("ec", ec.message());
+            BEAST_EXPECT(bt == hdr.size());
+            auto bt2 = async_read_some(s, fb, p, yield[ec]);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECT(bt2  == body.size());
+            BEAST_EXPECTS(fb.size() / 2 == hdr.size() + body.size(),
+                std::to_string(fb.size() / 2) + " != " + std::to_string(hdr.size() + body.size()));
+
+            request_parser<string_body> p2;
+            bt = async_read(s, fb, p2, yield[ec]);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECTS(bt  == hdr.size() + body.size(),
+                std::to_string(bt) +
+                " expected " +
+                std::to_string(hdr.size() + body.size()));
+            BEAST_EXPECTS(fb.size() == hdr.size() + body.size(),
+                std::to_string(fb.size()) + " != " + std::to_string(hdr.size() + body.size()));
+
+
+        }
+    }
+
+    void testReadSomeHeader()
+    {
+        net::io_context ioc;
+
+        std::string hdr =
+            "GET /foo HTTP/1.1" "\r\n"
+            "Connection: Keep-Alive" "\r\n"
+            "Content-Length: 6"
+            "\r\n"
+            "\r\n";
+        std::string body =
+            "Hello!";
+
+        {
+            // bytes_transferred returns length of header
+            request_parser<string_body> p;
+            test::stream s(ioc);
+            s.append(string_view(hdr));
+            s.append(string_view(body));
+            flat_buffer fb;
+            error_code ec;
+            auto bt = read_header(s, fb, p, ec);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECT(bt == hdr.size());
+
+            // next read should be zero-size, success
+            bt = read_header(s, fb, p, ec);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECTS(bt == 0, std::to_string(0));
+        }
+
+        {
+            // bytes_transferred returns length of header
+            request_parser<string_body> p;
+            test::stream s(ioc);
+            s.append(string_view(hdr));
+            s.append(string_view(body));
+            std::string res ;
+            auto fb = asio::dynamic_buffer(res);
+            error_code ec;
+            auto bt = read_header(s, fb, p, ec);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECT(bt == hdr.size());
+
+            // next read should be zero-size, success
+            bt = read_header(s, fb, p, ec);
+            BEAST_EXPECTS(!ec, ec.message());
+            BEAST_EXPECTS(bt == 0, std::to_string(0));
+        }
+
+        {
+            // incomplete header consumes all parsable header bytes
+            request_parser<string_body> p;
+            test::stream s(ioc);
+
+            s.append(hdr.substr(0, hdr.size() - 1));
+            s.close();
+            flat_buffer fb;
+            error_code ec;
+            auto bt = read_header(s, fb, p, ec);
+            BEAST_EXPECTS(ec == error::partial_message, ec.message());
+            BEAST_EXPECTS(bt + fb.size() == hdr.size() - 1,
+                          std::to_string(bt + fb.size()) +
+                          " expected " +
+                          std::to_string(hdr.size() - 1));
+        }
+    }
+
+    void
+    testCancellation(yield_context do_yield)
+    {
+        // this is tested on a pipe
+        // because the test::stream doesn't implement cancellation 
+        {
+            response<string_body> m;
+            error_code ec;
+            net::writable_pipe ts{ioc_};
+            net::readable_pipe tr{ioc_};
+            net::connect_pipe(tr, ts);
+            net::cancellation_signal cl;
+            net::post(ioc_, [&]{cl.emit(net::cancellation_type::all);});
+            net::steady_timer timeout(ioc_, std::chrono::seconds(5));
+            timeout.async_wait(
+                [&](error_code ec)
+                {
+                    BEAST_EXPECT(ec == net::error::operation_aborted);
+                    if (!ec) // this means the cancel failed!
+                        ts.close();
+                });
+            multi_buffer b;
+            async_read(tr, b, m, net::bind_cancellation_slot(cl.slot(), do_yield[ec]));
+            timeout.cancel();
+            BEAST_EXPECT(ec == net::error::operation_aborted);
+        }
+        {
+            response<string_body> m;
+            error_code ec;
+            net::writable_pipe ts{ioc_};
+            net::readable_pipe tr{ioc_};
+            net::connect_pipe(tr, ts);
+            net::cancellation_signal cl;
+            net::post(ioc_, [&]{cl.emit(net::cancellation_type::all);});
+            net::steady_timer timeout(ioc_, std::chrono::seconds(5));
+            timeout.async_wait(
+                [&](error_code ec)
+                {
+                    // using BEAST_EXPECT HERE is a race condition, since the test suite might
+                    BEAST_EXPECT(ec == net::error::operation_aborted);
+                    if (!ec) // this means the cancel failed!
+                        ts.close();
+                });
+            multi_buffer b;
+            async_read(tr, b, m, net::bind_cancellation_slot(cl.slot(), do_yield[ec]));
+            timeout.cancel();
+            BEAST_EXPECT(ec == net::error::operation_aborted);
+        }
+        // the timer handler may be invoked after the test suite is complete if we don't post.
+        asio::post(ioc_, do_yield);
+    }
     void
     run() override
     {
@@ -545,7 +810,22 @@ public:
         testRegression430();
         testReadGrind();
         testAsioHandlerInvoke();
+#if BOOST_ASIO_HAS_CO_AWAIT
+        boost::ignore_unused(&read_test::testAwaitableCompiles);
+#endif
+        yield_to([&](yield_context yield)
+                 {
+                     testReadSomeHeader(yield);
+                 });
+        testReadSomeHeader();
+        yield_to(
+            [&](yield_context yield)
+            {
+                testCancellation(yield);
+            });
     }
+
+
 };
 
 BEAST_DEFINE_TESTSUITE(beast,http,read);

@@ -3,7 +3,7 @@
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
-//   http://www.boost.org/LICENCE_1_0.txt)
+//   https://www.boost.org/LICENSE_1_0.txt)
 //
 // benchmark for random_generators in different forms
 //
@@ -78,12 +78,12 @@ boost::timer::cpu_times timed_generator(size_t count)
     return t.elapsed();
 }
 
-int main(int, char*[])
+int main()
 {
     std::cout << "Operating system entropy provider: "
               << boost::uuids::detail::random_provider().name() << std::endl;
 
-#if !defined(BOOST_NO_STRESS_TEST)
+#if defined(BOOST_NO_STRESS_TEST)
 
     //
     // Determine the cutoff point where it is more wall-clock efficient to
@@ -183,5 +183,3 @@ int main(int, char*[])
 
     return 0;
 }
-
-

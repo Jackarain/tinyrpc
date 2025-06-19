@@ -1,21 +1,3 @@
-#include <boost/config.hpp>
-
-#if defined(BOOST_MSVC)
-
-#pragma warning(disable: 4786)  // identifier truncated in debug info
-#pragma warning(disable: 4710)  // function not inlined
-#pragma warning(disable: 4711)  // function selected for automatic inline expansion
-#pragma warning(disable: 4514)  // unreferenced inline removed
-#pragma warning(disable: 4355)  // 'this' : used in base member initializer list
-#pragma warning(disable: 4511)  // copy constructor could not be generated
-#pragma warning(disable: 4512)  // assignment operator could not be generated
-
-#if (BOOST_MSVC >= 1310)
-#pragma warning(disable: 4675)  // resolved overload found with Koenig lookup
-#endif
-
-#endif
-
 //
 //  intrusive_ptr_test.cpp
 //
@@ -26,9 +8,9 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/detail/lightweight_test.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/detail/atomic_count.hpp>
+#include <boost/smart_ptr/detail/atomic_count.hpp>
+#include <boost/core/lightweight_test.hpp>
 #include <boost/config.hpp>
 #include <algorithm>
 #include <functional>
@@ -42,7 +24,7 @@ class base
 {
 private:
 
-    boost::detail::atomic_count use_count_;
+    mutable boost::detail::atomic_count use_count_;
 
     base(base const &);
     base & operator=(base const &);
@@ -68,55 +50,20 @@ public:
         return use_count_;
     }
 
-#if !defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-
-    inline friend void intrusive_ptr_add_ref(base * p)
+    inline friend void intrusive_ptr_add_ref(base const * p)
     {
         ++p->use_count_;
     }
 
-    inline friend void intrusive_ptr_release(base * p)
+    inline friend void intrusive_ptr_release(base const * p)
     {
         if(--p->use_count_ == 0) delete p;
     }
-
-#else
-
-    void add_ref()
-    {
-        ++use_count_;
-    }
-
-    void release()
-    {
-        if(--use_count_ == 0) delete this;
-    }
-
-#endif
 };
 
 long base::instances = 0;
 
 } // namespace N
-
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-
-namespace boost
-{
-
-inline void intrusive_ptr_add_ref(N::base * p)
-{
-    p->add_ref();
-}
-
-inline void intrusive_ptr_release(N::base * p)
-{
-    p->release();
-}
-
-} // namespace boost
-
-#endif
 
 //
 
@@ -188,9 +135,6 @@ void pointer_constructor()
 
         BOOST_TEST( N::base::instances == 1 );
 
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::intrusive_ptr_add_ref;
-#endif
         intrusive_ptr_add_ref(p);
         BOOST_TEST(p->use_count() == 1);
 
@@ -303,14 +247,211 @@ namespace n_assignment
 
 void copy_assignment()
 {
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> p1;
+
+        p1 = p1;
+
+        BOOST_TEST(p1 == p1);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        boost::intrusive_ptr<X> p2;
+
+        p1 = p2;
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        boost::intrusive_ptr<X> p3(p1);
+
+        p1 = p3;
+
+        BOOST_TEST(p1 == p3);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        BOOST_TEST(N::base::instances == 0);
+
+        boost::intrusive_ptr<X> p4(new X);
+
+        BOOST_TEST(N::base::instances == 1);
+
+        p1 = p4;
+
+        BOOST_TEST(N::base::instances == 1);
+
+        BOOST_TEST(p1 == p4);
+
+        BOOST_TEST(p1->use_count() == 2);
+
+        p1 = p2;
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(N::base::instances == 1);
+
+        p4 = p3;
+
+        BOOST_TEST(p4 == p3);
+        BOOST_TEST(N::base::instances == 0);
+    }
 }
 
 void conversion_assignment()
 {
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> p1;
+
+        boost::intrusive_ptr<Y> p2;
+
+        p1 = p2;
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        BOOST_TEST(N::base::instances == 0);
+
+        boost::intrusive_ptr<Y> p4(new Y);
+
+        BOOST_TEST(N::base::instances == 1);
+        BOOST_TEST(p4->use_count() == 1);
+
+        boost::intrusive_ptr<X> p5(p4);
+        BOOST_TEST(p4->use_count() == 2);
+
+        p1 = p4;
+
+        BOOST_TEST(N::base::instances == 1);
+
+        BOOST_TEST(p1 == p4);
+
+        BOOST_TEST(p1->use_count() == 3);
+        BOOST_TEST(p4->use_count() == 3);
+
+        p1 = p2;
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(N::base::instances == 1);
+        BOOST_TEST(p4->use_count() == 2);
+
+        p4 = p2;
+        p5 = p2;
+
+        BOOST_TEST(p4 == p2);
+        BOOST_TEST(N::base::instances == 0);
+    }
 }
 
 void pointer_assignment()
 {
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> p1;
+
+        p1 = p1.get();
+
+        BOOST_TEST(p1 == p1);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        boost::intrusive_ptr<X> p2;
+
+        p1 = p2.get();
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        boost::intrusive_ptr<X> p3(p1);
+
+        p1 = p3.get();
+
+        BOOST_TEST(p1 == p3);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        BOOST_TEST(N::base::instances == 0);
+
+        boost::intrusive_ptr<X> p4(new X);
+
+        BOOST_TEST(N::base::instances == 1);
+
+        p1 = p4.get();
+
+        BOOST_TEST(N::base::instances == 1);
+
+        BOOST_TEST(p1 == p4);
+
+        BOOST_TEST(p1->use_count() == 2);
+
+        p1 = p2.get();
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(N::base::instances == 1);
+
+        p4 = p3.get();
+
+        BOOST_TEST(p4 == p3);
+        BOOST_TEST(N::base::instances == 0);
+    }
+
+    {
+        boost::intrusive_ptr<X> p1;
+
+        boost::intrusive_ptr<Y> p2;
+
+        p1 = p2.get();
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(p1? false: true);
+        BOOST_TEST(!p1);
+        BOOST_TEST(p1.get() == 0);
+
+        BOOST_TEST(N::base::instances == 0);
+
+        boost::intrusive_ptr<Y> p4(new Y);
+
+        BOOST_TEST(N::base::instances == 1);
+        BOOST_TEST(p4->use_count() == 1);
+
+        boost::intrusive_ptr<X> p5(p4);
+        BOOST_TEST(p4->use_count() == 2);
+
+        p1 = p4.get();
+
+        BOOST_TEST(N::base::instances == 1);
+
+        BOOST_TEST(p1 == p4);
+
+        BOOST_TEST(p1->use_count() == 3);
+        BOOST_TEST(p4->use_count() == 3);
+
+        p1 = p2.get();
+
+        BOOST_TEST(p1 == p2);
+        BOOST_TEST(N::base::instances == 1);
+        BOOST_TEST(p4->use_count() == 2);
+
+        p4 = p2.get();
+        p5 = p2.get();
+
+        BOOST_TEST(p4 == p2);
+        BOOST_TEST(N::base::instances == 0);
+    }
 }
 
 void test()
@@ -402,9 +543,6 @@ void test()
 
         BOOST_TEST( N::base::instances == 1 );
 
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::intrusive_ptr_add_ref;
-#endif
         intrusive_ptr_add_ref( p );
         BOOST_TEST( p->use_count() == 1 );
 
@@ -470,9 +608,6 @@ void test()
         X * p = new X;
         BOOST_TEST( p->use_count() == 0 );
 
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::intrusive_ptr_add_ref;
-#endif
         intrusive_ptr_add_ref( p );
         BOOST_TEST( p->use_count() == 1 );
 
@@ -500,10 +635,6 @@ void test()
         BOOST_TEST(px? false: true);
         BOOST_TEST(!px);
 
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::get_pointer;
-#endif
-
         BOOST_TEST(get_pointer(px) == px.get());
     }
 
@@ -511,10 +642,6 @@ void test()
         boost::intrusive_ptr<X> px(0);
         BOOST_TEST(px? false: true);
         BOOST_TEST(!px);
-
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::get_pointer;
-#endif
 
         BOOST_TEST(get_pointer(px) == px.get());
     }
@@ -525,10 +652,6 @@ void test()
         BOOST_TEST(!!px);
         BOOST_TEST(&*px == px.get());
         BOOST_TEST(px.operator ->() == px.get());
-
-#if defined(BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP)
-        using boost::get_pointer;
-#endif
 
         BOOST_TEST(get_pointer(px) == px.get());
     }
@@ -707,15 +830,137 @@ namespace n_static_cast
 
 void test()
 {
+    {
+        boost::intrusive_ptr<X> px(new Y);
+
+        boost::intrusive_ptr<Y> py = boost::static_pointer_cast<Y>(px);
+        BOOST_TEST(px.get() == py.get());
+        BOOST_TEST(px->use_count() == 2);
+        BOOST_TEST(py->use_count() == 2);
+
+        boost::intrusive_ptr<X> px2(py);
+        BOOST_TEST(px2.get() == px.get());
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<Y> py = boost::static_pointer_cast<Y>( boost::intrusive_ptr<X>(new Y) );
+        BOOST_TEST(py.get() != 0);
+        BOOST_TEST(py->use_count() == 1);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
 }
 
 } // namespace n_static_cast
+
+namespace n_const_cast
+{
+
+void test()
+{
+    {
+        boost::intrusive_ptr<X const> px;
+
+        boost::intrusive_ptr<X> px2 = boost::const_pointer_cast<X>(px);
+        BOOST_TEST(px2.get() == 0);
+    }
+
+    {
+        boost::intrusive_ptr<X> px2 = boost::const_pointer_cast<X>( boost::intrusive_ptr<X const>() );
+        BOOST_TEST(px2.get() == 0);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X const> px(new X);
+
+        boost::intrusive_ptr<X> px2 = boost::const_pointer_cast<X>(px);
+        BOOST_TEST(px2.get() == px.get());
+        BOOST_TEST(px2->use_count() == 2);
+        BOOST_TEST(px->use_count() == 2);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> px = boost::const_pointer_cast<X>( boost::intrusive_ptr<X const>(new X) );
+        BOOST_TEST(px.get() != 0);
+        BOOST_TEST(px->use_count() == 1);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+}
+
+} // namespace n_const_cast
 
 namespace n_dynamic_cast
 {
 
 void test()
 {
+    {
+        boost::intrusive_ptr<X> px;
+
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>(px);
+        BOOST_TEST(py.get() == 0);
+    }
+
+    {
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>( boost::intrusive_ptr<X>() );
+        BOOST_TEST(py.get() == 0);
+    }
+
+    {
+        boost::intrusive_ptr<X> px(static_cast<X*>(0));
+
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>(px);
+        BOOST_TEST(py.get() == 0);
+    }
+
+    {
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>( boost::intrusive_ptr<X>(static_cast<X*>(0)) );
+        BOOST_TEST(py.get() == 0);
+    }
+
+    {
+        boost::intrusive_ptr<X> px(new X);
+
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>(px);
+        BOOST_TEST(py.get() == 0);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>( boost::intrusive_ptr<X>(new X) );
+        BOOST_TEST(py.get() == 0);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> px(new Y);
+
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>(px);
+        BOOST_TEST(py.get() == px.get());
+        BOOST_TEST(py->use_count() == 2);
+        BOOST_TEST(px->use_count() == 2);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
+
+    {
+        boost::intrusive_ptr<X> px(new Y);
+
+        boost::intrusive_ptr<Y> py = boost::dynamic_pointer_cast<Y>( boost::intrusive_ptr<X>(new Y) );
+        BOOST_TEST(py.get() != 0);
+        BOOST_TEST(py->use_count() == 1);
+    }
+
+    BOOST_TEST( N::base::instances == 0 );
 }
 
 } // namespace n_dynamic_cast
@@ -779,6 +1024,7 @@ int main()
     n_swap::test();
     n_comparison::test();
     n_static_cast::test();
+    n_const_cast::test();
     n_dynamic_cast::test();
 
     n_transitive::test();

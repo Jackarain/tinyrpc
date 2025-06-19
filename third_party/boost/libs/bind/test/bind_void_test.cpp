@@ -18,20 +18,11 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
+#include <boost/core/lightweight_test.hpp>
 
-#if defined(BOOST_MSVC) && (BOOST_MSVC < 1300)
-#pragma warning(push, 3)
-#endif
-
-#include <iostream>
-
-#if defined(BOOST_MSVC) && (BOOST_MSVC < 1300)
-#pragma warning(pop)
-#endif
-
-#include <boost/detail/lightweight_test.hpp>
+using namespace boost::placeholders;
 
 //
 
@@ -109,7 +100,7 @@ void function_test()
 
 struct Y
 {
-    short operator()(short & r) const { return global_result = ++r; }
+    short operator()(short & r) const { return static_cast<short>( global_result = ++r ); }
     int operator()(int a, int b) const { return global_result = a + 10 * b; }
     long operator() (long a, long b, long c) const { return global_result = a + 10 * b + 100 * c; }
     void operator() (long a, long b, long c, long d) const { global_result = a + 10 * b + 100 * c + 1000 * d; }

@@ -7,7 +7,7 @@
 #include <boost/math/concepts/real_concept.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
@@ -136,7 +136,7 @@ void test_bessel_prime(T, const char* name)
    // three items, input value a, input value b and J'(a, b):
    // 
     // function values calculated on http://functions.wolfram.com/
-    static const boost::array<boost::array<typename table_type<T>::type, 3>, 8> j0_data = {{
+    static const std::array<std::array<typename table_type<T>::type, 3>, 8> j0_data = {{
        {{ SC_(0.0), SC_(0.0), SC_(0.0) }},
         {{ SC_(0.0), SC_(1.0), SC_(-0.440050585744933515959682203718914913127) }},
         {{ SC_(0.0), SC_(-2.0), SC_(0.576724807756873387202448242269137086920) }},
@@ -146,7 +146,7 @@ void test_bessel_prime(T, const char* name)
         {{ SC_(0.0), SC_(1e-10), SC_(-0.499999999999999999999375000000000000000000e-10) }},
         {{ SC_(0.0), SC_(-1e+01), SC_(0.0434727461688614366697487680258592883062724) }},
     }};
-    static const boost::array<boost::array<T, 3>, 6> j0_tricky = {{
+    static const std::array<std::array<T, 3>, 6> j0_tricky = {{
         // Big numbers make the accuracy of std::sin the limiting factor:
        {{ SC_(0.0), SC_(1e+03), SC_(-0.00472831190708952391757607190121691628542) }},
         {{ SC_(0.0), SC_(1e+05), SC_(-0.0018467575628825677163621239671142157437) }},
@@ -157,7 +157,7 @@ void test_bessel_prime(T, const char* name)
         {{ SC_(0.0), T(12364320)/(1024 * 1024), SC_(0.2324598316641066033541448467171088144257742) }}
     }};    
 
-    static const boost::array<boost::array<typename table_type<T>::type, 3>, 8> j1_data = {{
+    static const std::array<std::array<typename table_type<T>::type, 3>, 8> j1_data = {{
         {{ SC_(1.0), SC_(0.0), SC_(0.5) }},
         {{ SC_(1.0), SC_(1.0), SC_(0.325147100813033035490035322383748307781902) }},
         {{ SC_(1.0), SC_(-2.0), SC_(-0.064471624737201025549396666484619917634997) }},
@@ -167,34 +167,35 @@ void test_bessel_prime(T, const char* name)
         {{ SC_(1.0), SC_(1e-10), SC_(0.499999999999999999998125000000000000000001) }},
         {{ SC_(1.0), SC_(-1e+01), SC_(-0.250283039068234478864735739287914682660226) }},
     }};
-    static const boost::array<boost::array<T, 3>, 5> j1_tricky = {{
+    static const std::array<std::array<T, 3>, 5> j1_tricky = {{
         // Big numbers make the accuracy of std::sin the limiting factor:
         {{ SC_(1.0), SC_(1e+03), SC_(0.024781957840513085037413155043792491869881) }},
         {{ SC_(1.0), SC_(1e+05), SC_(-0.0017192195838116010182477650983128728897) }},
         // test at the regular Bessel roots:
-        {{ SC_(1.0), T(4017834)/(1024*1024), SC_(-0.4027594878673806944036073218740057200193405151367) }},
-        {{ SC_(1.0), T(7356375)/(1024*1024), SC_(0.3001157854852247730548242543591186404228210449219) }},
-        {{ SC_(1.0), T(10667654)/(1024*1024), SC_(-0.2497048893045206718888096020236844196915626525879) }},
+        // calculated as (BesselJ[0, (4017834)/(1024*1024)] - BesselJ[2, (4017834)/(1024*1024)]) / 2 etc...
+        {{ SC_(1.0), T(4017834)/(1024*1024), SC_(-0.402759487867380763351480272317936413309077788308634756237208644) }},
+        {{ SC_(1.0), T(7356375)/(1024*1024), SC_(0.3001157854852255749972773530255671995928674390130509220099020091) }},
+        {{ SC_(1.0), T(10667654)/(1024*1024), SC_(-0.249704889304504742750238623220064969087694831235737808091251358) }},
     }};
 
-    static const boost::array<boost::array<typename table_type<T>::type, 3>, 17> jn_data = {{
-        {{ SC_(-1.0), SC_(1.25), SC_(-0.2374074770153809244011000600949046202003956) }},
+    static const std::array<std::array<typename table_type<T>::type, 3>, 17> jn_data = {{
+        {{ SC_(-1.0), SC_(1.25), SC_(-0.237407477015380891294270728091739255408276776418956604373517363) }},
         {{ SC_(2.0), SC_(0.0), SC_(0.0) }},
         {{ SC_(-2.0), SC_(0.0), SC_(0.0) }},
-        {{ SC_(2.0), SC_(1e-02), SC_(0.00249995833352864539930612069540679799606337) }},
-        {{ SC_(5.0), SC_(10.0), SC_(-0.102571922008611714904101858221407144485) }},
-        {{ SC_(5.0), SC_(-10.0), SC_(-0.102571922008611714904101858221407144485) }},
-        {{ SC_(-5.0), SC_(1e+06), SC_(-0.0003310524513007044105585859534523271988) }},
-        {{ SC_(5.0), SC_(1e+06), SC_(0.0003310524513007044105585859534523271988) }},
-        {{ SC_(-5.0), SC_(-1.0), SC_(-0.001227850313053782886909720690402218190791576) }},
-        {{ SC_(10.0), SC_(10.0), SC_(0.08436957863176118824849051273337698304165) }},
-        {{ SC_(10.0), SC_(-10.0), SC_(-0.08436957863176118824849051273337698304165) }},
-        {{ SC_(10.0), SC_(-5.0), SC_(-0.00258467784485473925206548854676116157568106) }},
-        {{ SC_(-10.0), SC_(1e+06), SC_(-0.0007259518037193243350387875733893635962) }},
-        {{ SC_(10.0), SC_(1e+06), SC_(-0.0007259518037193243350387875733893635962) }},
-        {{ SC_(1e+02), SC_(8e+01), SC_(3.5036060582489177538508950593467499997755e-06) }},
-        {{ SC_(1e+03), SC_(1e+05), SC_(-0.0021724469777608393409850758227465776486) }},
-        {{ SC_(10.0), SC_(1e-100), SC_(2.69114445546737213403880070546737213403880070547e-909) }},
+        {{ SC_(2.0), SC_(1e-02), SC_(0.0024999583335286453993061206954067979960633680470591696456970138) }},
+        {{ SC_(5.0), SC_(10.0), SC_(-0.102571922008611714904101858221407144485053455162064084296429679) }},
+        {{ SC_(5.0), SC_(-10.0), SC_(-0.102571922008611714904101858221407144485053455162064084296429679) }},
+        {{ SC_(-5.0), SC_(1e+06), SC_(-0.000331052451300704410558585953452327198846151723732312153110559) }},
+        {{ SC_(5.0), SC_(1e+06), SC_(0.000331052451300704410558585953452327198846151723732312153110559) }},
+        {{ SC_(-5.0), SC_(-1.0), SC_(-0.001227850313053782886909720690402218190791576453229129020988612) }},
+        {{ SC_(10.0), SC_(10.0), SC_(0.0843695786317611882484905127333769830416507936391564732626938971) }},
+        {{ SC_(10.0), SC_(-10.0), SC_(-0.0843695786317611882484905127333769830416507936391564732626938971) }},
+        {{ SC_(10.0), SC_(-5.0), SC_(-0.002584677844854739252065488546761161575681058069442826487392210) }},
+        {{ SC_(-10.0), SC_(1e+06), SC_(-0.000725951803719324335038787573389363596244265216142949209996916) }},
+        {{ SC_(10.0), SC_(1e+06), SC_(-0.000725951803719324335038787573389363596244265216142949209996916) }},
+        {{ SC_(100.0), SC_(80.0), SC_(3.5036060582489177538508950593467499997755458120649269214352e-6) }},
+        {{ SC_(1000.0), SC_(100000.0), SC_(-0.002172446977760839340985075822746577648557209118811950682915414) }},
+        {{ SC_(10.0), SC_(1e-100), SC_(2.691144455467372134038800705467372134038800705467372134038e-909) }},
     }};
     do_test_cyl_bessel_j_prime<T>(j0_data, name, "Bessel J0': Mathworld Data");
     do_test_cyl_bessel_j_prime<T>(j0_tricky, name, "Bessel J0': Mathworld Data (Tricky cases)");
@@ -208,7 +209,7 @@ void test_bessel_prime(T, const char* name)
     do_test_cyl_bessel_j_prime_int<T>(j1_tricky, name, "Bessel J1': Mathworld Data (tricky cases) (Integer Version)");
     do_test_cyl_bessel_j_prime_int<T>(jn_data, name, "Bessel JN': Mathworld Data (Integer Version)");
 
-    static const boost::array<boost::array<T, 3>, 21> jv_data = {{
+    static const std::array<std::array<T, 3>, 21> jv_data = {{
          {{ T(22.5), T(0), SC_(0.0) }},
          {{ T(2457)/1024, T(1)/1024, SC_(9.35477929043111040277363766198320562099360690e-6) }},
          {{ SC_(5.5), T(3217)/1024, SC_(0.042165579369684463582791278988393873) }},
@@ -232,7 +233,7 @@ void test_bessel_prime(T, const char* name)
          {{ SC_(-8.5), boost::math::constants::pi<T>() * 4, SC_(-0.014516314554743677558496402742690038592728) }},
     }};
     do_test_cyl_bessel_j_prime<T>(jv_data, name, "Bessel J': Mathworld Data");
-    static const boost::array<boost::array<T, 3>, 4> jv_large_data = {{
+    static const std::array<std::array<T, 3>, 4> jv_large_data = {{
 #if LDBL_MAX_10_EXP > 308
       {{ SC_(-0.5), static_cast<T>(std::ldexp(0.5, -683)), SC_(-2.8687031947358902542073388638943588627056993e308) }},
 #else
@@ -272,5 +273,6 @@ void test_bessel_prime(T, const char* name)
     BOOST_MATH_CHECK_THROW(boost::math::cyl_bessel_j_prime(T(-2.5), T(0)), std::domain_error);
     BOOST_MATH_CHECK_THROW(boost::math::cyl_bessel_j_prime(T(-2.5), T(-2)), std::domain_error);
     BOOST_MATH_CHECK_THROW(boost::math::cyl_bessel_j_prime(T(2.5), T(-2)), std::domain_error);
+    BOOST_MATH_CHECK_THROW(boost::math::sph_bessel_prime(2, T(-2)), std::domain_error);
 }
 

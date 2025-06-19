@@ -1,22 +1,20 @@
 
 // Copyright 2006-2010 Daniel James.
+// Copyright (C) 2022-2023 Christian Mazakas
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// clang-format off
-#include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
-#include "../helpers/postfix.hpp"
-// clang-format on
+#include "../helpers/unordered.hpp"
 
-#include "../helpers/test.hpp"
-#include "../objects/test.hpp"
-#include "../helpers/random_values.hpp"
-#include "../helpers/tracker.hpp"
 #include "../helpers/equivalent.hpp"
 #include "../helpers/input_iterator.hpp"
 #include "../helpers/invariants.hpp"
+#include "../helpers/random_values.hpp"
+#include "../helpers/test.hpp"
+#include "../helpers/tracker.hpp"
+#include "../objects/test.hpp"
+
+#include <vector>
 
 namespace constructor_tests {
 
@@ -171,6 +169,16 @@ namespace constructor_tests {
       BOOST_TEST(test::equivalent(x.get_allocator(), al));
       test::check_equivalent_keys(x);
     }
+
+    UNORDERED_SUB_TEST("Construct 12")
+    {
+      test::check_instances check_;
+
+      test::random_values<T> v(1000, generator);
+      T x(v.begin(), v.end(), al);
+      BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      test::check_container(x, v);
+    }
   }
 
   template <class T>
@@ -316,68 +324,312 @@ namespace constructor_tests {
       test::check_equivalent_keys(x);
     }
 
-#if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
-    std::initializer_list<typename T::value_type> list;
+    typedef typename T::value_type value_type;
+
+    std::initializer_list<value_type> list;
+
+    test::random_values<T> v(3, generator);
+    std::vector<value_type> vec(v.begin(), v.end());
+    BOOST_ASSERT(vec.size() >= 3);
+
+    // create a new vector here because erase() requires assignability which is
+    // deleted for some of the test types
+    //
+    std::vector<value_type> expected(vec.begin(), vec.begin() + 3);
 
     UNORDERED_SUB_TEST("Initializer list construct 1")
     {
       test::check_instances check_;
 
-      T x(list);
-      BOOST_TEST(x.empty());
-      BOOST_TEST(test::equivalent(x.hash_function(), hf));
-      BOOST_TEST(test::equivalent(x.key_eq(), eq));
-      BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      {
+        T x(list);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(test::equivalent(x.hash_function(), hf));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      }
+
+      {
+        T x{vec[0], vec[1], vec[2]};
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST_GT(x.bucket_count(), 0u);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        test::check_container(x, expected);
+      }
     }
 
     UNORDERED_SUB_TEST("Initializer list construct 2")
     {
       test::check_instances check_;
 
-      T x(list, 1000);
-      BOOST_TEST(x.empty());
-      BOOST_TEST(x.bucket_count() >= 1000);
-      BOOST_TEST(test::equivalent(x.hash_function(), hf));
-      BOOST_TEST(test::equivalent(x.key_eq(), eq));
-      BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      {
+        T x(list, 1000);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 1000);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      }
+
+      {
+        T x({vec[0], vec[1], vec[2]}, 1000);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 1000);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        test::check_container(x, expected);
+      }
     }
 
     UNORDERED_SUB_TEST("Initializer list construct 3")
     {
-      test::check_instances check_;
+      {
+        test::check_instances check_;
 
-      T x(list, 10, hf1);
-      BOOST_TEST(x.empty());
-      BOOST_TEST(x.bucket_count() >= 10);
-      BOOST_TEST(test::equivalent(x.hash_function(), hf1));
-      BOOST_TEST(test::equivalent(x.key_eq(), eq));
-      BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        T x(list, 10, hf1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      }
+
+      {
+        test::check_instances check_;
+
+        T x({vec[0], vec[1], vec[2]}, 10, hf1);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        test::check_container(x, expected);
+      }
     }
 
     UNORDERED_SUB_TEST("Initializer list construct 4")
     {
-      test::check_instances check_;
+      {
+        test::check_instances check_;
 
-      T x(list, 10, hf1, eq1);
-      BOOST_TEST(x.empty());
-      BOOST_TEST(x.bucket_count() >= 10);
-      BOOST_TEST(test::equivalent(x.hash_function(), hf1));
-      BOOST_TEST(test::equivalent(x.key_eq(), eq1));
-      BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        T x(list, 10, hf1, eq1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+      }
+
+      {
+        test::check_instances check_;
+
+        T x({vec[0], vec[1], vec[2]}, 10, hf1, eq1);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al));
+        test::check_container(x, expected);
+      }
     }
 
     UNORDERED_SUB_TEST("Initializer list construct 5")
     {
+      {
+        test::check_instances check_;
+
+        T x(list, 10, hf1, eq1, al1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+      }
+
+      {
+        test::check_instances check_;
+
+        T x({vec[0], vec[1], vec[2]}, 10, hf1, eq1, al1);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.key_eq(), eq1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+        test::check_container(x, expected);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Initializer list construct 6")
+    {
+      {
+        test::check_instances check_;
+
+        T x(list, 10, al1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+      }
+
+      {
+        test::check_instances check_;
+
+        T x({vec[0], vec[1], vec[2]}, 10, al1);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+        test::check_container(x, expected);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Initializer list construct 7")
+    {
+      {
+        test::check_instances check_;
+
+        T x(list, 10, hf1, al1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+      }
+
+      {
+        test::check_instances check_;
+
+        T x({vec[0], vec[1], vec[2]}, 10, hf1, al1);
+        BOOST_TEST_NOT(x.empty());
+        BOOST_TEST(x.bucket_count() >= 10);
+        BOOST_TEST(test::equivalent(x.hash_function(), hf1));
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+        test::check_container(x, expected);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Initializer list construct 8")
+    {
       test::check_instances check_;
 
-      T x(list, 10, hf1, eq1, al1);
-      BOOST_TEST(x.empty());
-      BOOST_TEST(x.bucket_count() >= 10);
-      BOOST_TEST(test::equivalent(x.hash_function(), hf1));
-      BOOST_TEST(test::equivalent(x.key_eq(), eq1));
-      BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+      {
+        T x(list, al1);
+        BOOST_TEST(x.empty());
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+      }
+
+      {
+        T x({vec[0], vec[1], vec[2]}, al1);
+        BOOST_TEST(test::equivalent(x.get_allocator(), al1));
+        test::check_container(x, expected);
+      }
     }
+  }
+
+  template <class T>
+  void no_alloc_default_construct_test(T*, test::random_generator)
+  {
+
+#ifdef BOOST_UNORDERED_FOA_TESTS
+    using allocator_type = typename T::allocator_type;
+    using value_type =
+      typename boost::allocator_value_type<allocator_type>::type;
+    using pointer = typename boost::allocator_pointer<allocator_type>::type;
+    static_assert(std::is_same<pointer, value_type*>::value,
+      "only raw pointers for this test");
 #endif
+
+    UNORDERED_SUB_TEST("Construct 1")
+    {
+      T x;
+      BOOST_TEST_EQ(x.bucket_count(), 0u);
+      BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+    }
+
+    UNORDERED_SUB_TEST("Construct 2")
+    {
+      {
+        T x(0);
+        BOOST_TEST_EQ(x.bucket_count(), 0u);
+        BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+      }
+
+      {
+        T x(1);
+        BOOST_TEST_GT(x.bucket_count(), 0u);
+        BOOST_TEST_GT(test::detail::tracker.count_allocations, 0u);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Construct 3")
+    {
+      test::random_values<T> v;
+      T x(v.begin(), v.end());
+      BOOST_TEST_EQ(x.bucket_count(), 0u);
+      BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+    }
+
+    UNORDERED_SUB_TEST("Construct 4")
+    {
+      {
+        test::random_values<T> v;
+        T x(v.begin(), v.end(), 0);
+        BOOST_TEST_EQ(x.bucket_count(), 0u);
+        BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+      }
+
+      {
+        test::random_values<T> v;
+        T x(v.begin(), v.end(), 1);
+        BOOST_TEST_GT(x.bucket_count(), 0u);
+        BOOST_TEST_GT(test::detail::tracker.count_allocations, 0u);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Construct 5")
+    {
+      typename T::allocator_type al;
+
+      {
+        T x(al);
+        BOOST_TEST_EQ(x.bucket_count(), 0u);
+        BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+      }
+    }
+
+    UNORDERED_SUB_TEST("Construct 6")
+    {
+      typename T::allocator_type al;
+
+      T x(0, al);
+      BOOST_TEST_EQ(x.bucket_count(), 0u);
+      BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+    }
+
+    UNORDERED_SUB_TEST("Initializer list 1")
+    {
+      std::initializer_list<typename T::value_type> list;
+      T x(list);
+      BOOST_TEST_EQ(x.bucket_count(), 0u);
+      BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+    }
+
+    UNORDERED_SUB_TEST("Initializer list 2")
+    {
+      {
+        std::initializer_list<typename T::value_type> list;
+        T x(list, 0);
+        BOOST_TEST_EQ(x.bucket_count(), 0u);
+        BOOST_TEST_EQ(test::detail::tracker.count_allocations, 0u);
+      }
+
+      {
+        std::initializer_list<typename T::value_type> list;
+        T x(list, 1);
+        BOOST_TEST_GT(x.bucket_count(), 0u);
+        BOOST_TEST_GT(test::detail::tracker.count_allocations, 0u);
+      }
+    }
   }
 
   template <class T>
@@ -394,6 +646,48 @@ namespace constructor_tests {
     test::check_equivalent_keys(x);
   }
 
+  using test::default_generator;
+  using test::generate_collisions;
+  using test::limited_range;
+
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  boost::unordered_flat_map<test::object, test::object, test::hash,
+    test::equal_to, std::allocator<test::object> >* test_map_std_alloc;
+
+  boost::unordered_flat_set<test::object, test::hash, test::equal_to,
+    test::allocator1<test::object> >* test_set_raw_ptr;
+  boost::unordered_node_set<test::object, test::hash, test::equal_to,
+    test::allocator1<test::object> >* test_node_set_raw_ptr;
+  boost::unordered_flat_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_map_raw_ptr;
+  boost::unordered_node_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator1<test::object> >* test_node_map_raw_ptr;
+
+  boost::unordered_flat_set<test::object, test::hash, test::equal_to,
+    test::allocator1<test::object> >* test_set;
+  boost::unordered_node_set<test::object, test::hash, test::equal_to,
+    test::allocator1<test::object> >* test_node_set;
+  boost::unordered_flat_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_map;
+  boost::unordered_node_map<test::object, test::object, test::hash,
+    test::equal_to, test::allocator2<test::object> >* test_node_map;
+
+  UNORDERED_TEST(constructor_tests1,
+    ((test_map_std_alloc)(test_set)(test_node_set)(test_map)(test_node_map))(
+      (default_generator)(generate_collisions)(limited_range)))
+
+  UNORDERED_TEST(constructor_tests2,
+    ((test_set)(test_node_set)(test_map)(test_node_map))(
+      (default_generator)(generate_collisions)(limited_range)))
+
+  UNORDERED_TEST(map_constructor_test,
+    ((test_map_std_alloc)(test_map)(test_node_map))(
+      (default_generator)(generate_collisions)(limited_range)))
+
+  UNORDERED_TEST(no_alloc_default_construct_test,
+    ((test_set_raw_ptr)(test_node_set_raw_ptr)(test_map_raw_ptr)(test_node_map_raw_ptr))(
+      (default_generator)(generate_collisions)(limited_range)))
+#else
   boost::unordered_map<test::object, test::object, test::hash, test::equal_to,
     std::allocator<test::object> >* test_map_std_alloc;
 
@@ -405,10 +699,6 @@ namespace constructor_tests {
     test::allocator2<test::object> >* test_map;
   boost::unordered_multimap<test::object, test::object, test::hash,
     test::equal_to, test::allocator1<test::object> >* test_multimap;
-
-  using test::default_generator;
-  using test::generate_collisions;
-  using test::limited_range;
 
   UNORDERED_TEST(constructor_tests1,
     ((test_map_std_alloc)(test_set)(test_multiset)(test_map)(test_multimap))(
@@ -422,25 +712,36 @@ namespace constructor_tests {
     ((test_map_std_alloc)(test_map)(test_multimap))(
       (default_generator)(generate_collisions)(limited_range)))
 
-#if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
+  UNORDERED_TEST(no_alloc_default_construct_test,
+    ((test_set)(test_multiset)(test_map)(test_multimap))(
+      (default_generator)(generate_collisions)(limited_range)))
+#endif
 
   UNORDERED_AUTO_TEST (test_default_initializer_list) {
     std::initializer_list<int> init;
+#ifdef BOOST_UNORDERED_FOA_TESTS
+    boost::unordered_flat_set<int> x1 = init;
+    boost::unordered_node_set<int> x2 = init;
+    BOOST_TEST(x2.empty());
+#else
     boost::unordered_set<int> x1 = init;
+#endif
     BOOST_TEST(x1.empty());
   }
 
+  UNORDERED_AUTO_TEST (test_initializer_list) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+    boost::unordered_flat_set<int> x1 = {2, 10, 45, -5};
+    boost::unordered_node_set<int> x2 = {2, 10, 45, -5};
+    BOOST_TEST(x2.find(10) != x2.end());
+    BOOST_TEST(x2.find(46) == x2.end());
+#else
+    boost::unordered_set<int> x1 = {2, 10, 45, -5};
 #endif
 
-#if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
-
-  UNORDERED_AUTO_TEST (test_initializer_list) {
-    boost::unordered_set<int> x1 = {2, 10, 45, -5};
     BOOST_TEST(x1.find(10) != x1.end());
     BOOST_TEST(x1.find(46) == x1.end());
   }
-
-#endif
-}
+} // namespace constructor_tests
 
 RUN_TESTS_QUIET()

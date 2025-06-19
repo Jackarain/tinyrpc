@@ -9,6 +9,9 @@
 #include <boost/accumulators/statistics/sum.hpp>
 #include <boost/accumulators/statistics/weighted_sum.hpp>
 #include <boost/accumulators/statistics/variates/covariate.hpp>
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace boost;
 using namespace unit_test;
@@ -38,6 +41,32 @@ void test_stat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// test_persistency
+//
+void test_persistency()
+{
+    std::stringstream ss;
+    {
+        accumulator_set<int, stats<tag::sum, tag::sum_of_weights, tag::sum_of_variates<int, tag::covariate1> >, int> acc;
+        acc(1, weight = 2, covariate1 = 3);
+        acc(2, weight = 4, covariate1 = 6);
+        acc(3, weight = 6, covariate1 = 9);
+        BOOST_CHECK_EQUAL(28, sum(acc));
+        BOOST_CHECK_EQUAL(12, sum_of_weights(acc));
+        BOOST_CHECK_EQUAL(18, sum_of_variates(acc));
+
+        boost::archive::text_oarchive oa(ss);
+        acc.serialize(oa, 0);
+    }
+    accumulator_set<int, stats<tag::sum, tag::sum_of_weights, tag::sum_of_variates<int, tag::covariate1> >, int> acc;
+    boost::archive::text_iarchive ia(ss);
+    acc.serialize(ia, 0);
+    BOOST_CHECK_EQUAL(28, sum(acc));
+    BOOST_CHECK_EQUAL(12, sum_of_weights(acc));
+    BOOST_CHECK_EQUAL(18, sum_of_variates(acc));
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // init_unit_test_suite
 //
 test_suite* init_unit_test_suite( int argc, char* argv[] )
@@ -45,6 +74,7 @@ test_suite* init_unit_test_suite( int argc, char* argv[] )
     test_suite *test = BOOST_TEST_SUITE("sum test");
 
     test->add(BOOST_TEST_CASE(&test_stat));
+    test->add(BOOST_TEST_CASE(&test_persistency));
 
     return test;
 }

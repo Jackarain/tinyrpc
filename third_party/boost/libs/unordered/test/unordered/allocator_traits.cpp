@@ -65,9 +65,9 @@
   {                                                                            \
     return (std::numeric_limits<size_type>::max)();                            \
   }                                                                            \
-  bool operator==(name<T> const&) { return true; }                             \
-  bool operator!=(name<T> const&) { return false; }                            \
-/**/
+  bool operator==(name<T> const&) const { return true; }                       \
+  bool operator!=(name<T> const&) const { return false; }                      \
+  /**/
 
 struct yes_type
 {
@@ -111,12 +111,8 @@ void test_empty_allocator()
 {
   typedef empty_allocator<int> allocator;
   typedef boost::unordered::detail::allocator_traits<allocator> traits;
-#if BOOST_UNORDERED_USE_ALLOCATOR_TRAITS == 1
   BOOST_STATIC_ASSERT((boost::is_same<traits::size_type,
     std::make_unsigned<std::ptrdiff_t>::type>::value));
-#else
-  BOOST_STATIC_ASSERT((boost::is_same<traits::size_type, std::size_t>::value));
-#endif
   BOOST_STATIC_ASSERT(
     (boost::is_same<traits::difference_type, std::ptrdiff_t>::value));
   BOOST_STATIC_ASSERT((boost::is_same<traits::pointer, int*>::value));
@@ -153,12 +149,8 @@ void test_allocator1()
 {
   typedef allocator1<int> allocator;
   typedef boost::unordered::detail::allocator_traits<allocator> traits;
-#if BOOST_UNORDERED_USE_ALLOCATOR_TRAITS == 1
   BOOST_STATIC_ASSERT((boost::is_same<traits::size_type,
     std::make_unsigned<std::ptrdiff_t>::type>::value));
-#else
-  BOOST_STATIC_ASSERT((boost::is_same<traits::size_type, std::size_t>::value));
-#endif
   BOOST_STATIC_ASSERT(
     (boost::is_same<traits::difference_type, std::ptrdiff_t>::value));
   BOOST_STATIC_ASSERT((boost::is_same<traits::pointer, int*>::value));
@@ -255,7 +247,9 @@ template <typename T> struct allocator3
   allocator3<T> select_on_container_copy_construction() const
   {
     ++selected;
-    return allocator3<T>();
+    allocator3<T> a;
+    a.x = 0;
+    return a;
   }
 };
 

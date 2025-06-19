@@ -1,3 +1,9 @@
+//  Copyright (c) 2018 Robert Ramey
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+
 #include <cassert>
 #include <stdexcept>
 #include <sstream>
@@ -67,7 +73,7 @@ int main(int, const char *[]){
         total_minutes = test3(17, 83);
         std::cout << "total minutes = " << total_minutes << std::endl;
     }
-    catch(std::exception e){
+    catch(const std::exception & e){
         std::cout << "parameter error detected" << std::endl;
     }
 
@@ -75,7 +81,7 @@ int main(int, const char *[]){
         total_minutes = test3(17, 10);
         std::cout << "total minutes = " << total_minutes << std::endl;
     }
-    catch(std::exception e){
+    catch(const std::exception & e){
         // should never arrive here
         std::cout << "parameter error erroneously detected" << std::endl;
         return 1;

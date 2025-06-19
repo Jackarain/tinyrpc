@@ -8,7 +8,6 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <iostream>
-#include <exception>
 #include <boost/core/demangle.hpp>
 
 #include <boost/safe_numerics/safe_integer.hpp>
@@ -52,7 +51,7 @@ bool test_multiply(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                 std::cout
                     << " *** erroneously detected error in multiplication"
@@ -60,7 +59,7 @@ bool test_multiply(
                 try{
                     t1 * v2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }
@@ -93,7 +92,7 @@ bool test_multiply(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                 std::cout
                     << " *** erroneously detected error in multiplication"
@@ -101,7 +100,7 @@ bool test_multiply(
                 try{
                     v1 * t2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }
@@ -132,7 +131,7 @@ bool test_multiply(
             }
             std::cout << std::endl;
         }
-        catch(std::exception){
+        catch(const std::exception &){
             if(expected_result == '.'){
                 std::cout
                     << " *** erroneously detected error in multiplication"
@@ -140,7 +139,7 @@ bool test_multiply(
                 try{
                     t1 * t2;
                 }
-                catch(std::exception){}
+                catch(const std::exception &){}
                 return false;
             }
         }

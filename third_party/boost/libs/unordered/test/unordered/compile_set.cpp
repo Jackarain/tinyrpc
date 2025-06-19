@@ -1,16 +1,13 @@
 
 // Copyright 2006-2009 Daniel James.
+// Copyright 2022-2023 Christian Mazakas.
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 // This test creates the containers with members that meet their minimum
 // requirements. Makes sure everything compiles and is defined correctly.
 
-// clang-format off
-#include "../helpers/prefix.hpp"
-#include <boost/unordered_set.hpp>
-#include "../helpers/postfix.hpp"
-// clang-format on
+#include "../helpers/unordered.hpp"
 
 #include "../helpers/test.hpp"
 #include "../objects/minimal.hpp"
@@ -18,38 +15,107 @@
 
 // Explicit instantiation to catch compile-time errors
 
-#define INSTANTIATE(type)                                                      \
-  template class boost::unordered::detail::instantiate_##type
+#ifdef BOOST_UNORDERED_FOA_TESTS
 
-INSTANTIATE(set)<int, boost::hash<int>, std::equal_to<int>,
-  test::minimal::allocator<int> >;
-INSTANTIATE(multiset)<int const, boost::hash<int>, std::equal_to<int>,
+// emulates what was already done for previous tests but without leaking to
+// the detail namespace
+//
+template <typename T, typename H, typename P, typename A>
+class instantiate_flat_set
+{
+  typedef boost::unordered_flat_set<T, H, P, A> container;
+  container x;
+};
+
+template class instantiate_flat_set<int, boost::hash<int>, std::equal_to<int>,
   test::minimal::allocator<int> >;
 
-INSTANTIATE(set)<test::minimal::assignable const,
+template class instantiate_flat_set<test::minimal::assignable const,
   test::minimal::hash<test::minimal::assignable>,
   test::minimal::equal_to<test::minimal::assignable>,
   test::minimal::allocator<int> >;
-INSTANTIATE(multiset)<test::minimal::assignable,
+
+template <typename T, typename H, typename P, typename A>
+class instantiate_node_set
+{
+  typedef boost::unordered_node_set<T, H, P, A> container;
+  container x;
+};
+
+template class instantiate_node_set<int, boost::hash<int>, std::equal_to<int>,
+  test::minimal::allocator<int> >;
+
+template class instantiate_node_set<test::minimal::assignable const,
   test::minimal::hash<test::minimal::assignable>,
   test::minimal::equal_to<test::minimal::assignable>,
   test::minimal::allocator<int> >;
 
-UNORDERED_AUTO_TEST (test0) {
+#else
+
+template <typename T, typename H, typename P, typename A> class instantiate_set
+{
+  typedef boost::unordered_set<T, H, P, A> container;
+  container x;
+  typename container::node_type node_type;
+  typename container::insert_return_type insert_return_type;
+};
+
+template <typename T, typename H, typename P, typename A>
+class instantiate_multiset
+{
+  typedef boost::unordered_multiset<T, H, P, A> container;
+  container x;
+  typename container::node_type node_type;
+};
+
+template class instantiate_set<int, boost::hash<int>, std::equal_to<int>,
+  test::minimal::allocator<int> >;
+template class instantiate_multiset<int const, boost::hash<int>,
+  std::equal_to<int>, test::minimal::allocator<int> >;
+
+template class instantiate_set<test::minimal::assignable const,
+  test::minimal::hash<test::minimal::assignable>,
+  test::minimal::equal_to<test::minimal::assignable>,
+  test::minimal::allocator<int> >;
+template class instantiate_multiset<test::minimal::assignable,
+  test::minimal::hash<test::minimal::assignable>,
+  test::minimal::equal_to<test::minimal::assignable>,
+  test::minimal::allocator<int> >;
+
+#endif
+
+template <class X> static void type_traits_impl()
+{
+  BOOST_STATIC_ASSERT(boost::is_same<int const&,
+    typename std::iterator_traits<typename X::iterator>::reference>::value);
+}
+
+UNORDERED_AUTO_TEST (type_traits) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  type_traits_impl<boost::unordered_flat_set<int> >();
+  type_traits_impl<boost::unordered_node_set<int> >();
+#else
+  type_traits_impl<boost::unordered_set<int> >();
+  type_traits_impl<boost::unordered_multiset<int> >();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void test0_impl()
+{
   test::minimal::constructor_param x;
 
   test::minimal::assignable assignable(x);
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
+  Set<int> int_set;
 
-  boost::unordered_set<int> int_set;
-
-  boost::unordered_set<int, boost::hash<int>, std::equal_to<int>,
+  Set<int, boost::hash<int>, std::equal_to<int>,
     test::minimal::cxx11_allocator<int> >
     int_set2;
 
-  boost::unordered_set<test::minimal::assignable,
-    test::minimal::hash<test::minimal::assignable>,
+  Set<test::minimal::assignable, test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
     test::minimal::allocator<test::minimal::assignable> >
     set;
@@ -57,36 +123,32 @@ UNORDERED_AUTO_TEST (test0) {
   container_test(int_set, 0);
   container_test(int_set2, 0);
   container_test(set, assignable);
-
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-
-  boost::unordered_multiset<int> int_multiset;
-
-  boost::unordered_multiset<int, boost::hash<int>, std::equal_to<int>,
-    test::minimal::cxx11_allocator<int> >
-    int_multiset2;
-
-  boost::unordered_multiset<test::minimal::assignable,
-    test::minimal::hash<test::minimal::assignable>,
-    test::minimal::equal_to<test::minimal::assignable>,
-    test::minimal::allocator<test::minimal::assignable> >
-    multiset;
-
-  container_test(int_multiset, 0);
-  container_test(int_multiset2, 0);
-  container_test(multiset, assignable);
 }
 
-UNORDERED_AUTO_TEST (equality_tests) {
+UNORDERED_AUTO_TEST (test0) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  test0_impl<boost::unordered_flat_set>();
+  test0_impl<boost::unordered_node_set>();
+#else
+  test0_impl<boost::unordered_set>();
+  test0_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void equality_tests_impl()
+{
   typedef test::minimal::copy_constructible_equality_comparable value_type;
 
-  boost::unordered_set<int> int_set;
+  Set<int> int_set;
 
-  boost::unordered_set<int, boost::hash<int>, std::equal_to<int>,
+  Set<int, boost::hash<int>, std::equal_to<int>,
     test::minimal::cxx11_allocator<int> >
     int_set2;
 
-  boost::unordered_set<test::minimal::copy_constructible_equality_comparable,
+  Set<test::minimal::copy_constructible_equality_comparable,
     test::minimal::hash<test::minimal::copy_constructible_equality_comparable>,
     test::minimal::equal_to<
       test::minimal::copy_constructible_equality_comparable>,
@@ -96,36 +158,30 @@ UNORDERED_AUTO_TEST (equality_tests) {
   equality_test(int_set);
   equality_test(int_set2);
   equality_test(set);
-
-  boost::unordered_multiset<int> int_multiset;
-
-  boost::unordered_multiset<int, boost::hash<int>, std::equal_to<int>,
-    test::minimal::cxx11_allocator<int> >
-    int_multiset2;
-
-  boost::unordered_multiset<
-    test::minimal::copy_constructible_equality_comparable,
-    test::minimal::hash<test::minimal::copy_constructible_equality_comparable>,
-    test::minimal::equal_to<
-      test::minimal::copy_constructible_equality_comparable>,
-    test::minimal::allocator<value_type> >
-    multiset;
-
-  equality_test(int_multiset);
-  equality_test(int_multiset2);
-  equality_test(multiset);
 }
 
-UNORDERED_AUTO_TEST (test1) {
+UNORDERED_AUTO_TEST (equality_tests) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  equality_tests_impl<boost::unordered_flat_set>();
+  equality_tests_impl<boost::unordered_node_set>();
+#else
+  equality_tests_impl<boost::unordered_set>();
+  equality_tests_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void test1_unique_impl()
+{
+
   boost::hash<int> hash;
   std::equal_to<int> equal_to;
   int value = 0;
+  Set<int> set;
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set." << std::endl;
-
-  boost::unordered_set<int> set;
-
-  boost::unordered_set<int, boost::hash<int>, std::equal_to<int>,
+  Set<int, boost::hash<int>, std::equal_to<int>,
     test::minimal::cxx11_allocator<int> >
     set2;
 
@@ -136,25 +192,49 @@ UNORDERED_AUTO_TEST (test1) {
   unordered_unique_test(set2, value);
   unordered_set_test(set2, value);
   unordered_copyable_test(set2, value, value, hash, equal_to);
-
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset." << std::endl;
-
-  boost::unordered_multiset<int> multiset;
-
-  boost::unordered_multiset<int, boost::hash<int>, std::equal_to<int>,
-    test::minimal::cxx11_allocator<int> >
-    multiset2;
-
-  unordered_equivalent_test(multiset, value);
-  unordered_set_test(multiset, value);
-  unordered_copyable_test(multiset, value, value, hash, equal_to);
-
-  unordered_equivalent_test(multiset2, value);
-  unordered_set_test(multiset2, value);
-  unordered_copyable_test(multiset2, value, value, hash, equal_to);
 }
 
-UNORDERED_AUTO_TEST (test2) {
+#ifndef BOOST_UNORDERED_FOA_TESTS
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void test1_equivalent_impl()
+{
+
+  boost::hash<int> hash;
+  std::equal_to<int> equal_to;
+  int value = 0;
+  Set<int> set;
+
+  Set<int, boost::hash<int>, std::equal_to<int>,
+    test::minimal::cxx11_allocator<int> >
+    set2;
+
+  unordered_equivalent_test(set, value);
+  unordered_set_test(set, value);
+  unordered_copyable_test(set, value, value, hash, equal_to);
+
+  unordered_equivalent_test(set2, value);
+  unordered_set_test(set2, value);
+  unordered_copyable_test(set2, value, value, hash, equal_to);
+}
+#endif
+
+UNORDERED_AUTO_TEST (test1) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  test1_unique_impl<boost::unordered_flat_set>();
+  test1_unique_impl<boost::unordered_node_set>();
+#else
+  test1_unique_impl<boost::unordered_set>();
+  test1_equivalent_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void test2_unique_impl()
+{
   test::minimal::constructor_param x;
 
   test::minimal::assignable assignable(x);
@@ -162,10 +242,7 @@ UNORDERED_AUTO_TEST (test2) {
   test::minimal::hash<test::minimal::assignable> hash(x);
   test::minimal::equal_to<test::minimal::assignable> equal_to(x);
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
-
-  boost::unordered_set<test::minimal::assignable,
-    test::minimal::hash<test::minimal::assignable>,
+  Set<test::minimal::assignable, test::minimal::hash<test::minimal::assignable>,
     test::minimal::equal_to<test::minimal::assignable>,
     test::minimal::allocator<test::minimal::assignable> >
     set;
@@ -174,64 +251,89 @@ UNORDERED_AUTO_TEST (test2) {
   unordered_set_test(set, assignable);
   unordered_copyable_test(set, assignable, assignable, hash, equal_to);
   unordered_set_member_test(set, assignable);
-
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-
-  boost::unordered_multiset<test::minimal::assignable,
-    test::minimal::hash<test::minimal::assignable>,
-    test::minimal::equal_to<test::minimal::assignable>,
-    test::minimal::allocator<test::minimal::assignable> >
-    multiset;
-
-  unordered_equivalent_test(multiset, assignable);
-  unordered_set_test(multiset, assignable);
-  unordered_copyable_test(multiset, assignable, assignable, hash, equal_to);
-  unordered_set_member_test(multiset, assignable);
 }
 
-UNORDERED_AUTO_TEST (movable1_tests) {
+#ifndef BOOST_UNORDERED_FOA_TESTS
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void test2_equivalent_impl()
+{
+  test::minimal::constructor_param x;
+
+  test::minimal::assignable assignable(x);
+  test::minimal::copy_constructible copy_constructible(x);
+  test::minimal::hash<test::minimal::assignable> hash(x);
+  test::minimal::equal_to<test::minimal::assignable> equal_to(x);
+
+  Set<test::minimal::assignable, test::minimal::hash<test::minimal::assignable>,
+    test::minimal::equal_to<test::minimal::assignable>,
+    test::minimal::allocator<test::minimal::assignable> >
+    set;
+
+  unordered_equivalent_test(set, assignable);
+  unordered_set_test(set, assignable);
+  unordered_copyable_test(set, assignable, assignable, hash, equal_to);
+  unordered_set_member_test(set, assignable);
+}
+#endif
+
+UNORDERED_AUTO_TEST (test2) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  test2_unique_impl<boost::unordered_flat_set>();
+  test2_unique_impl<boost::unordered_node_set>();
+#else
+  test2_unique_impl<boost::unordered_set>();
+  test2_equivalent_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void movable1_tests_impl()
+{
   test::minimal::constructor_param x;
 
   test::minimal::movable1 movable1(x);
   test::minimal::hash<test::minimal::movable1> hash(x);
   test::minimal::equal_to<test::minimal::movable1> equal_to(x);
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
-
-  boost::unordered_set<test::minimal::movable1,
-    test::minimal::hash<test::minimal::movable1>,
+  Set<test::minimal::movable1, test::minimal::hash<test::minimal::movable1>,
     test::minimal::equal_to<test::minimal::movable1>,
     test::minimal::allocator<test::minimal::movable1> >
     set;
 
+  // TODO: find out why Daniel had this commented out and if we need it and the
+  // corresponding equivalent impl
+  //
   // unordered_unique_test(set, movable1);
   unordered_set_test(set, movable1);
   unordered_movable_test(set, movable1, movable1, hash, equal_to);
-
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-
-  boost::unordered_multiset<test::minimal::movable1,
-    test::minimal::hash<test::minimal::movable1>,
-    test::minimal::equal_to<test::minimal::movable1>,
-    test::minimal::allocator<test::minimal::movable1> >
-    multiset;
-
-  // unordered_equivalent_test(multiset, movable1);
-  unordered_set_test(multiset, movable1);
-  unordered_movable_test(multiset, movable1, movable1, hash, equal_to);
 }
 
-UNORDERED_AUTO_TEST (movable2_tests) {
+UNORDERED_AUTO_TEST (movable1_tests) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  movable1_tests_impl<boost::unordered_flat_set>();
+  movable1_tests_impl<boost::unordered_node_set>();
+#else
+  movable1_tests_impl<boost::unordered_set>();
+  movable1_tests_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void movable2_tests_impl()
+{
   test::minimal::constructor_param x;
 
   test::minimal::movable2 movable2(x);
   test::minimal::hash<test::minimal::movable2> hash(x);
   test::minimal::equal_to<test::minimal::movable2> equal_to(x);
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
-
-  boost::unordered_set<test::minimal::movable2,
-    test::minimal::hash<test::minimal::movable2>,
+  Set<test::minimal::movable2, test::minimal::hash<test::minimal::movable2>,
     test::minimal::equal_to<test::minimal::movable2>,
     test::minimal::allocator<test::minimal::movable2> >
     set;
@@ -239,44 +341,46 @@ UNORDERED_AUTO_TEST (movable2_tests) {
   // unordered_unique_test(set, movable2);
   unordered_set_test(set, movable2);
   unordered_movable_test(set, movable2, movable2, hash, equal_to);
-
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-
-  boost::unordered_multiset<test::minimal::movable2,
-    test::minimal::hash<test::minimal::movable2>,
-    test::minimal::equal_to<test::minimal::movable2>,
-    test::minimal::allocator<test::minimal::movable2> >
-    multiset;
-
-  // unordered_equivalent_test(multiset, movable2);
-  unordered_set_test(multiset, movable2);
-  unordered_movable_test(multiset, movable2, movable2, hash, equal_to);
 }
 
-UNORDERED_AUTO_TEST (destructible_tests) {
+UNORDERED_AUTO_TEST (movable2_tests) {
+
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  movable2_tests_impl<boost::unordered_flat_set>();
+  movable2_tests_impl<boost::unordered_node_set>();
+#else
+  movable2_tests_impl<boost::unordered_set>();
+  movable2_tests_impl<boost::unordered_multiset>();
+#endif
+}
+
+template <template <class T, class H = boost::hash<T>,
+  class P = std::equal_to<T>, class A = std::allocator<T> >
+  class Set>
+static void destructible_tests_impl()
+{
   test::minimal::constructor_param x;
 
   test::minimal::destructible destructible(x);
   test::minimal::hash<test::minimal::destructible> hash(x);
   test::minimal::equal_to<test::minimal::destructible> equal_to(x);
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_set.\n";
-
-  boost::unordered_set<test::minimal::destructible,
+  Set<test::minimal::destructible,
     test::minimal::hash<test::minimal::destructible>,
     test::minimal::equal_to<test::minimal::destructible> >
     set;
 
   unordered_destructible_test(set);
+}
 
-  BOOST_LIGHTWEIGHT_TEST_OSTREAM << "Test unordered_multiset.\n";
-
-  boost::unordered_multiset<test::minimal::destructible,
-    test::minimal::hash<test::minimal::destructible>,
-    test::minimal::equal_to<test::minimal::destructible> >
-    multiset;
-
-  unordered_destructible_test(multiset);
+UNORDERED_AUTO_TEST (destructible_tests) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  destructible_tests_impl<boost::unordered_flat_set>();
+  destructible_tests_impl<boost::unordered_node_set>();
+#else
+  destructible_tests_impl<boost::unordered_set>();
+  destructible_tests_impl<boost::unordered_multiset>();
+#endif
 }
 
 // Test for ambiguity when using key convertible from iterator
@@ -297,6 +401,19 @@ std::size_t hash_value(lwg2059_key x)
 bool operator==(lwg2059_key x, lwg2059_key y) { return x.value == y.value; }
 
 UNORDERED_AUTO_TEST (lwg2059) {
+#ifdef BOOST_UNORDERED_FOA_TESTS
+  {
+    boost::unordered_flat_set<lwg2059_key> x;
+    x.emplace(lwg2059_key(10));
+    x.erase(x.begin());
+  }
+
+  {
+    boost::unordered_node_set<lwg2059_key> x;
+    x.emplace(lwg2059_key(10));
+    x.erase(x.begin());
+  }
+#else
   {
     boost::unordered_set<lwg2059_key> x;
     x.emplace(lwg2059_key(10));
@@ -308,6 +425,7 @@ UNORDERED_AUTO_TEST (lwg2059) {
     x.emplace(lwg2059_key(10));
     x.erase(x.begin());
   }
+#endif
 }
 
 RUN_TESTS()

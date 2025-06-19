@@ -1,6 +1,6 @@
 {
   "key": "process",
-  "name": "process",
+  "name": "Process",
   "authors": [
     "Merino Vidal", "Ilya Sokolov", "Felipe Tanus", 
     "Jeff Flinn", "Thomas Jarosch", "Boris Schaeling", "Klemens D. Morgenstern"
@@ -11,5 +11,6 @@
   "description": "Library to create processes in a portable way.",
   "category": [
     "System"
-  ]
+  ],
+  "cxxstd": "11"
 }

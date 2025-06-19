@@ -35,7 +35,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <boost/type.hpp>
-#include <boost/bind.hpp>
 #include <boost/limits.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -44,8 +43,9 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time/date_defs.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/mpl/if.hpp>
+#include <boost/type_traits/conditional.hpp>
 #include <boost/type_traits/is_unsigned.hpp>
+#include <boost/type_traits/integral_constant.hpp>
 #include <boost/spirit/home/qi/numeric/numeric_utils.hpp>
 #include <boost/log/detail/code_conversion.hpp>
 #include <boost/log/detail/singleton.hpp>
@@ -53,6 +53,7 @@
 #include <boost/log/core.hpp>
 #include <boost/log/sinks.hpp>
 #include <boost/log/exceptions.hpp>
+#include <boost/log/sinks/auto_newline_mode.hpp>
 #include <boost/log/sinks/frontend_requirements.hpp>
 #include <boost/log/expressions/filter.hpp>
 #include <boost/log/expressions/formatter.hpp>
@@ -94,8 +95,8 @@ template< typename IntT, typename CharT >
 inline IntT param_cast_to_int(const char* param_name, std::basic_string< CharT > const& value)
 {
     IntT res = 0;
-    typedef typename mpl::if_<
-        is_unsigned< IntT >,
+    typedef typename conditional<
+        is_unsigned< IntT >::value,
         qi::extract_uint< IntT, 10, 1, -1 >,
         qi::extract_int< IntT, 10, 1, -1 >
     >::type extract;
@@ -146,6 +147,26 @@ inline bool param_cast_to_bool(const char* param_name, std::basic_string< CharT 
         {
             return param_cast_to_int< unsigned int >(param_name, value) != 0;
         }
+    }
+}
+
+//! Extracts an \c auto_newline_mode value from parameter value
+template< typename CharT >
+inline sinks::auto_newline_mode param_cast_to_auto_newline_mode(const char* param_name, std::basic_string< CharT > const& value)
+{
+    typedef CharT char_type;
+    typedef boost::log::aux::char_constants< char_type > constants;
+
+    if (value == constants::auto_newline_mode_disabled())
+        return sinks::disabled_auto_newline;
+    else if (value == constants::auto_newline_mode_always_insert())
+        return sinks::always_insert;
+    else if (value == constants::auto_newline_mode_insert_if_missing())
+        return sinks::insert_if_missing;
+    else
+    {
+        BOOST_LOG_THROW_DESCR(invalid_value,
+            "Auto newline mode \"" + boost::log::aux::to_narrow(value) + "\" is not supported");
     }
 }
 
@@ -347,7 +368,7 @@ protected:
 private:
     //! The function initializes formatter for the sinks that support formatting
     template< typename SinkT >
-    static shared_ptr< SinkT > init_formatter(shared_ptr< SinkT > const& sink, settings_section const& params, mpl::true_)
+    static shared_ptr< SinkT > init_formatter(shared_ptr< SinkT > const& sink, settings_section const& params, true_type)
     {
         // Formatter
         if (optional< string_type > format_param = params["Format"])
@@ -360,7 +381,7 @@ private:
         return sink;
     }
     template< typename SinkT >
-    static shared_ptr< SinkT > init_formatter(shared_ptr< SinkT > const& sink, settings_section const& params, mpl::false_)
+    static shared_ptr< SinkT > init_formatter(shared_ptr< SinkT > const& sink, settings_section const& params, false_type)
     {
         return sink;
     }
@@ -394,6 +415,12 @@ private:
             shared_ptr< backend_t > backend = boost::make_shared< backend_t >();
             backend->add_stream(shared_ptr< typename backend_t::stream_type >(&constants::get_console_log_stream(), boost::null_deleter()));
 
+            // Auto newline mode
+            if (optional< string_type > auto_newline_param = params["AutoNewline"])
+            {
+                backend->set_auto_newline_mode(param_cast_to_auto_newline_mode("AutoNewline", auto_newline_param.get()));
+            }
+
             // Auto flush
             if (optional< string_type > auto_flush_param = params["AutoFlush"])
             {
@@ -406,7 +433,7 @@ private:
 
 public:
     //! The function constructs a sink that writes log records to the console
-    shared_ptr< sinks::sink > create_sink(settings_section const& params)
+    shared_ptr< sinks::sink > create_sink(settings_section const& params) BOOST_OVERRIDE
     {
         return base_type::select_backend_character_type(params, impl());
     }
@@ -426,7 +453,7 @@ public:
 
 public:
     //! The function constructs a sink that writes log records to a text file
-    shared_ptr< sinks::sink > create_sink(settings_section const& params)
+    shared_ptr< sinks::sink > create_sink(settings_section const& params) BOOST_OVERRIDE
     {
         typedef sinks::text_file_backend backend_t;
         shared_ptr< backend_t > backend = boost::make_shared< backend_t >();
@@ -438,6 +465,12 @@ public:
         }
         else
             BOOST_LOG_THROW_DESCR(missing_value, "File name is not specified");
+
+        // Target file name
+        if (optional< string_type > target_file_name_param = params["TargetFileName"])
+        {
+            backend->set_target_file_name_pattern(filesystem::path(target_file_name_param.get()));
+        }
 
         // File rotation size
         if (optional< string_type > rotation_size_param = params["RotationSize"])
@@ -461,6 +494,12 @@ public:
         if (optional< string_type > enable_final_rotation_param = params["EnableFinalRotation"])
         {
             backend->enable_final_rotation(param_cast_to_bool("EnableFinalRotation", enable_final_rotation_param.get()));
+        }
+
+        // Auto newline mode
+        if (optional< string_type > auto_newline_param = params["AutoNewline"])
+        {
+            backend->set_auto_newline_mode(param_cast_to_auto_newline_mode("AutoNewline", auto_newline_param.get()));
         }
 
         // Auto flush
@@ -539,7 +578,7 @@ public:
 
 public:
     //! The function constructs a sink that writes log records to syslog
-    shared_ptr< sinks::sink > create_sink(settings_section const& params)
+    shared_ptr< sinks::sink > create_sink(settings_section const& params) BOOST_OVERRIDE
     {
         // Construct the backend
         typedef sinks::syslog_backend backend_t;
@@ -801,7 +840,8 @@ BOOST_LOG_SETUP_API void init_from_settings(basic_settings_section< CharT > cons
     if (section sink_params = setts["Sinks"])
     {
         sinks_repo_t& sinks_repo = sinks_repo_t::get();
-        std::vector< shared_ptr< sinks::sink > > new_sinks;
+        typedef std::vector< shared_ptr< sinks::sink > > sink_list_t;
+        sink_list_t new_sinks;
 
         for (typename section::const_iterator it = sink_params.begin(), end = sink_params.end(); it != end; ++it)
         {
@@ -814,7 +854,9 @@ BOOST_LOG_SETUP_API void init_from_settings(basic_settings_section< CharT > cons
             }
         }
 
-        std::for_each(new_sinks.begin(), new_sinks.end(), boost::bind(&core::add_sink, core::get(), _1));
+        core_ptr core = boost::log::core::get();
+        for (sink_list_t::const_iterator it = new_sinks.begin(), end = new_sinks.end(); it != end; ++it)
+            core->add_sink(*it);
     }
 }
 
@@ -824,7 +866,7 @@ template< typename CharT >
 BOOST_LOG_SETUP_API void register_sink_factory(const char* sink_name, shared_ptr< sink_factory< CharT > > const& factory)
 {
     sinks_repository< CharT >& repo = sinks_repository< CharT >::get();
-    BOOST_LOG_EXPR_IF_MT(lock_guard< log::aux::light_rw_mutex > lock(repo.m_Mutex);)
+    BOOST_LOG_EXPR_IF_MT(log::aux::exclusive_lock_guard< log::aux::light_rw_mutex > lock(repo.m_Mutex);)
     repo.m_Factories[sink_name] = factory;
 }
 

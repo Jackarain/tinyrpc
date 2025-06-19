@@ -2,7 +2,7 @@
 // serial_port.cpp
 // ~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -34,22 +34,18 @@ struct write_some_handler
 {
   write_some_handler() {}
   void operator()(const boost::system::error_code&, std::size_t) {}
-#if defined(BOOST_ASIO_HAS_MOVE)
   write_some_handler(write_some_handler&&) {}
 private:
   write_some_handler(const write_some_handler&);
-#endif // defined(BOOST_ASIO_HAS_MOVE)
 };
 
 struct read_some_handler
 {
   read_some_handler() {}
   void operator()(const boost::system::error_code&, std::size_t) {}
-#if defined(BOOST_ASIO_HAS_MOVE)
   read_some_handler(read_some_handler&&) {}
 private:
   read_some_handler(const read_some_handler&);
-#endif // defined(BOOST_ASIO_HAS_MOVE)
 };
 
 void test()
@@ -60,6 +56,7 @@ void test()
   try
   {
     io_context ioc;
+    const io_context::executor_type ioc_ex = ioc.get_executor();
     char mutable_char_buffer[128] = "";
     const char const_char_buffer[128] = "";
     serial_port::baud_rate serial_port_option;
@@ -71,48 +68,49 @@ void test()
     serial_port port1(ioc);
     serial_port port2(ioc, "null");
     serial_port::native_handle_type native_port1 = port1.native_handle();
+#if defined(BOOST_ASIO_MSVC) && (_MSC_VER < 1910)
+    // Skip this on older MSVC due to mysterious ambiguous overload errors.
+#else
     serial_port port3(ioc, native_port1);
+#endif
 
-#if defined(BOOST_ASIO_HAS_MOVE)
-    serial_port port4(std::move(port3));
-#endif // defined(BOOST_ASIO_HAS_MOVE)
+    serial_port port4(ioc_ex);
+    serial_port port5(ioc_ex, "null");
+    serial_port::native_handle_type native_port2 = port1.native_handle();
+    serial_port port6(ioc_ex, native_port2);
+
+    serial_port port7(std::move(port6));
+
+    basic_serial_port<io_context::executor_type> port8(ioc);
+    serial_port port9(std::move(port8));
 
     // basic_serial_port operators.
 
-#if defined(BOOST_ASIO_HAS_MOVE)
     port1 = serial_port(ioc);
     port1 = std::move(port2);
-#endif // defined(BOOST_ASIO_HAS_MOVE)
+    port1 = std::move(port8);
 
-    // basic_io_object functions.
+    // I/O object functions.
 
     serial_port::executor_type ex = port1.get_executor();
     (void)ex;
-
-#if !defined(BOOST_ASIO_NO_DEPRECATED)
-    io_context& ioc_ref = port1.get_io_context();
-    (void)ioc_ref;
-
-    io_context& ioc_ref2 = port1.get_io_service();
-    (void)ioc_ref2;
-#endif // !defined(BOOST_ASIO_NO_DEPRECATED)
 
     // basic_serial_port functions.
 
     serial_port::lowest_layer_type& lowest_layer = port1.lowest_layer();
     (void)lowest_layer;
 
-    const serial_port& port5 = port1;
-    const serial_port::lowest_layer_type& lowest_layer2 = port5.lowest_layer();
+    const serial_port& port10 = port1;
+    const serial_port::lowest_layer_type& lowest_layer2 = port10.lowest_layer();
     (void)lowest_layer2;
 
     port1.open("null");
     port1.open("null", ec);
 
-    serial_port::native_handle_type native_port2 = port1.native_handle();
-    port1.assign(native_port2);
     serial_port::native_handle_type native_port3 = port1.native_handle();
-    port1.assign(native_port3, ec);
+    port1.assign(native_port3);
+    serial_port::native_handle_type native_port4 = port1.native_handle();
+    port1.assign(native_port4, ec);
 
     bool is_open = port1.is_open();
     (void)is_open;
@@ -120,8 +118,8 @@ void test()
     port1.close();
     port1.close(ec);
 
-    serial_port::native_handle_type native_port4 = port1.native_handle();
-    (void)native_port4;
+    serial_port::native_handle_type native_port5 = port1.native_handle();
+    (void)native_port5;
 
     port1.cancel();
     port1.cancel(ec);
@@ -167,5 +165,5 @@ void test()
 BOOST_ASIO_TEST_SUITE
 (
   "serial_port",
-  BOOST_ASIO_TEST_CASE(serial_port_compile::test)
+  BOOST_ASIO_COMPILE_TEST_CASE(serial_port_compile::test)
 )

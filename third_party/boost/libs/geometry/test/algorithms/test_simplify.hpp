@@ -2,6 +2,12 @@
 // Unit Test
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
+
+// This file was modified by Oracle on 2021-2023.
+// Modifications copyright (c) 2021-2023 Oracle and/or its affiliates.
+// Contributed and/or modified by Vissarion Fysikopoulos, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -18,10 +24,24 @@
 #include <boost/geometry/algorithms/equals.hpp>
 #include <boost/geometry/algorithms/simplify.hpp>
 #include <boost/geometry/algorithms/distance.hpp>
+#include <boost/geometry/geometries/geometry_collection.hpp>
+#include <boost/geometry/strategies/concepts/simplify_concept.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
 #include <boost/geometry/io/wkt/wkt.hpp>
 #include <boost/variant/variant.hpp>
 
+
+template <typename Geometry, typename Tag = typename bg::tag<Geometry>::type>
+struct boost_variant_type
+{
+    using type = boost::variant<Geometry, typename bg::point_type<Geometry>::type>;
+};
+
+template <typename Geometry>
+struct boost_variant_type<Geometry, bg::point_tag>
+{
+    using type = boost::variant<Geometry>;
+};
 
 template
 <
@@ -87,30 +107,6 @@ struct test_inserter<bg::linestring_tag>
 
             test_equality<Geometry>::apply(simplified, expected);
         }
-
-#ifdef TEST_PULL89
-        {
-            typedef typename bg::point_type<Geometry>::type point_type;
-            typedef typename bg::strategy::distance::detail::projected_point_ax<>::template result_type<point_type, point_type>::type distance_type;
-            typedef bg::strategy::distance::detail::projected_point_ax_less<distance_type> less_comparator;
-
-            distance_type max_distance(distance);
-            less_comparator less(max_distance);
-
-            bg::strategy::simplify::detail::douglas_peucker
-                <
-                    point_type,
-                    bg::strategy::distance::detail::projected_point_ax<>,
-                    less_comparator
-                > strategy(less);
-
-            Geometry simplified;
-            bg::detail::simplify::simplify_insert(geometry,
-                std::back_inserter(simplified), max_distance, strategy);
-
-            test_equality<Geometry>::apply(simplified, expected);
-        }
-#endif
     }
 };
 
@@ -158,7 +154,8 @@ void test_geometry(std::string const& wkt,
     bg::read_wkt(wkt, geometry);
     bg::read_wkt(expected_wkt, expected);
 
-    boost::variant<Geometry> v(geometry);
+    using variant_t = typename boost_variant_type<Geometry>::type;
+    variant_t v(geometry);
 
     // Define default strategy for testing
     typedef bg::strategy::simplify::douglas_peucker
@@ -167,41 +164,32 @@ void test_geometry(std::string const& wkt,
             bg::strategy::distance::projected_point<double>
         > dp;
 
+    BOOST_CONCEPT_ASSERT((bg::concepts::SimplifyStrategy<dp, point_type>));
+
     check_geometry(geometry, expected, distance);
     check_geometry(v, expected, distance);
 
-
-    BOOST_CONCEPT_ASSERT( (bg::concepts::SimplifyStrategy<dp, point_type>) );
-
     check_geometry(geometry, expected, distance, dp());
     check_geometry(v, expected, distance, dp());
+
+    // For now check GC here because it's not supported by equals()
+    {
+        using gc_t = bg::model::geometry_collection<variant_t>;
+        gc_t gc{v};
+        gc_t gc_simplified;
+        bg::simplify(gc, gc_simplified, distance);
+        bg::detail::visit_breadth_first([&](auto const& g)
+        {
+            test_equality<Geometry>::apply(g, expected);
+            return false;
+        }, gc_simplified);
+    }
 
     // Check inserter (if applicable)
     test_inserter
         <
             typename bg::tag<Geometry>::type
         >::apply(geometry, expected, distance);
-
-#ifdef TEST_PULL89
-    // Check using non-default less comparator in douglass_peucker
-    typedef typename bg::strategy::distance::detail::projected_point_ax<>::template result_type<point_type, point_type>::type distance_type;
-    typedef bg::strategy::distance::detail::projected_point_ax_less<distance_type> less_comparator;
-
-    distance_type const max_distance(distance);
-    less_comparator const less(max_distance);
-
-    typedef bg::strategy::simplify::detail::douglas_peucker
-        <
-            point_type,
-            bg::strategy::distance::detail::projected_point_ax<>,
-            less_comparator
-        > douglass_peucker_with_less;
-
-    BOOST_CONCEPT_ASSERT( (bg::concepts::SimplifyStrategy<douglass_peucker_with_less, point_type>) );
-
-    check_geometry(geometry, expected, distance, douglass_peucker_with_less(less));
-    check_geometry(v, expected, distance, douglass_peucker_with_less(less));
-#endif
 }
 
 template <typename Geometry, typename Strategy, typename DistanceMeasure>
@@ -217,7 +205,7 @@ void test_geometry(std::string const& wkt,
     bg::correct_closure(geometry);
     bg::correct_closure(expected);
 
-    boost::variant<Geometry> v(geometry);
+    typename boost_variant_type<Geometry>::type v(geometry);
 
     BOOST_CONCEPT_ASSERT( (bg::concepts::SimplifyStrategy<Strategy,
                            typename bg::point_type<Geometry>::type>) );

@@ -23,6 +23,12 @@
 //R #line 25 "t_2_006.cpp"
 //R #pragma STDC preprocessed pragma body
 #pragma STDC PRAGMA_BODY
+// also test pragma without a body (allowed per https://eel.is/c++draft/cpp.pragma)
+//R #line 30 "t_2_006.cpp"
+//R #pragma
+//R auto x = 0;
+#pragma
+auto x = 0;
 
 //H 10: t_2_006.cpp(12): #define
 //H 08: t_2_006.cpp(12): PRAGMA_BODY=preprocessed pragma body
@@ -36,3 +42,4 @@
 //H 01: t_2_006.cpp(12): PRAGMA_BODY
 //H 02: preprocessed pragma body
 //H 03: preprocessed pragma body
+//H 10: t_2_006.cpp(30): #pragma

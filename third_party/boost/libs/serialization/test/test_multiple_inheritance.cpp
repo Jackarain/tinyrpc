@@ -1,12 +1,12 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // test_multiple_inheritance.cpp
 
-// (C) Copyright 2009 Robert Ramey. 
+// (C) Copyright 2009 Robert Ramey.
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-// test of serialization library for multiple inheritence situations
+// test of serialization library for multiple inheritance situations
 
 #include <cassert>
 #include <fstream>
@@ -14,7 +14,7 @@
 #include <boost/config.hpp>
 #include <cstdio> // remove
 #if defined(BOOST_NO_STDC_NAMESPACE)
-namespace std{ 
+namespace std{
     using ::remove;
 }
 #endif
@@ -31,7 +31,7 @@ struct Base1 {
     Base1(){}
     Base1(int x) : m_x(1 + x) {}
     virtual ~Base1() {}
-    bool operator==(Base1 & rhs) const {
+    bool operator==(const Base1 & rhs) const {
         return m_x == rhs.m_x;
     }
     // serialize
@@ -49,7 +49,7 @@ struct Base2 {
     Base2(){}
     Base2(int x) : m_x(2 + x) {}
     virtual ~Base2() {}
-    bool operator==(Base2 & rhs) const {
+    bool operator==(const Base2 & rhs) const {
         return m_x == rhs.m_x;
     }
     // serialize
@@ -63,17 +63,17 @@ struct Base2 {
 //BOOST_CLASS_EXPORT(Base2)
 
 struct Sub :
-    public Base1, 
-    public Base2 
+    public Base1,
+    public Base2
 {
     int m_x;
     Sub(){}
     Sub(int x) :
         Base1(x),
         Base2(x),
-        m_x(x) 
+        m_x(x)
     {}
-    bool operator==(Sub & rhs) const {
+    bool operator==(const Sub & rhs) const {
         if(! Base2::operator==(rhs))
             return false;
         if(! Base1::operator==(rhs))

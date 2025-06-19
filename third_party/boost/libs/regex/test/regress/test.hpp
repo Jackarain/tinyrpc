@@ -27,6 +27,23 @@
 #pragma warning(disable:1418 981 383 1419 7)
 #endif
 
+#ifndef BOOST_WORKAROUND
+#define BOOST_WORKAROUND(x, y) false
+#endif
+#ifdef BOOST_REGEX_STANDALONE
+#include <cstdint>
+
+namespace boost { using std::uint32_t; }
+
+#define BOOST_JOIN(X, Y) BOOST_DO_JOIN(X, Y)
+#define BOOST_DO_JOIN(X, Y) BOOST_DO_JOIN2(X,Y)
+#define BOOST_DO_JOIN2(X, Y) X##Y
+
+#define BOOST_STRINGIZE(X) BOOST_DO_STRINGIZE(X)
+#define BOOST_DO_STRINGIZE(X) #X
+
+#endif
+
 #include <typeinfo>
 #include "test_not_regex.hpp"
 #include "test_regex_search.hpp"
@@ -99,11 +116,11 @@ void do_test(const charT& c, const tagT& tag)
    boost::call_once(f, proc);
 #endif
    if(test_locale::cpp_locale_state() == test_locale::test_with_locale)
-      e1.imbue(test_locale::cpp_locale());
+      (void)e1.imbue(test_locale::cpp_locale());
    if(test_locale::cpp_locale_state() != test_locale::no_test)
       test(e1, tag);
 #endif
-#if !BOOST_WORKAROUND(__BORLANDC__, < 0x560)
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, < 0x560)
 #if BOOST_WORKAROUND(BOOST_MSVC, <= 1200) && defined(TEST_THREADS)
    // typeid appears to fail in multithreaded environments:
    test_info<charT>::set_typename("");

@@ -3,6 +3,10 @@
 
 // Copyright (c) 2011-2013 Adam Wulkiewicz, Lodz, Poland.
 
+// This file was modified by Oracle on 2020.
+// Modifications copyright (c) 2020 Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -78,7 +82,7 @@ void test_ctor_nc(size_t n)
     BOOST_CHECK(s.size() == n);
     BOOST_CHECK(s.capacity() == N);
     BOOST_CHECK_THROW( s.at(n), std::out_of_range );
-    if ( !boost::has_trivial_constructor<T>::value )
+    if ( ! std::is_trivially_constructible<T>::value )
     {
         for ( size_t i = 0 ; i < n ; ++i )
             BOOST_CHECK(T() == s[i]);
@@ -117,7 +121,7 @@ void test_resize_nc(size_t n)
     BOOST_CHECK(s.capacity() == N);
     BOOST_CHECK_THROW( s.at(n), std::out_of_range );
 
-    if ( !boost::has_trivial_constructor<T>::value )
+    if ( ! std::is_trivially_constructible<T>::value )
     {
         for ( size_t i = 0 ; i < n ; ++i )
             BOOST_CHECK(T() == s[i]);
@@ -174,7 +178,7 @@ void test_pop_back_nd()
     varray<T, N> s;
 
     for ( size_t i = 0 ; i < N ; ++i )
-        s.push_back(T(i));    
+        s.push_back(T(i));
 
     for ( size_t i = N ; i > 1 ; --i )
     {
@@ -296,7 +300,7 @@ template <typename T, size_t N>
 void test_erase_nd()
 {
     varray<T, N> s;
-    
+
     for ( size_t i = 0 ; i < N ; ++i )
         s.push_back(T(i));
 
@@ -311,7 +315,7 @@ void test_erase_nd()
                 BOOST_CHECK(s1[j] == T(j));
             for ( size_t j = i+1 ; j < N ; ++j )
                 BOOST_CHECK(s1[j-1] == T(j));
-        }        
+        }
     }
     // erase(first, last)
     {
@@ -326,7 +330,7 @@ void test_erase_nd()
                 BOOST_CHECK(s1[j] == T(j));
             for ( size_t j = i+n ; j < N ; ++j )
                 BOOST_CHECK(s1[j-n] == T(j));
-        }        
+        }
     }
 }
 
@@ -359,7 +363,7 @@ void test_insert_nd(T const& val)
             BOOST_CHECK(s1[i] == val);
             for ( size_t j = 0 ; j < h-i ; ++j )
                 BOOST_CHECK(s1[j+i+1] == T(j+i));
-        }        
+        }
     }
     // insert(pos, n, val)
     {
@@ -375,7 +379,7 @@ void test_insert_nd(T const& val)
                 BOOST_CHECK(s1[j+i] == val);
             for ( size_t j = 0 ; j < h-i ; ++j )
                 BOOST_CHECK(s1[j+i+n] == T(j+i));
-        }        
+        }
     }
     // insert(pos, first, last)
     {
@@ -391,7 +395,7 @@ void test_insert_nd(T const& val)
                 BOOST_CHECK(s1[j+i] == T(100 + j));
             for ( size_t j = 0 ; j < h-i ; ++j )
                 BOOST_CHECK(s1[j+i+n] == T(j+i));
-        }        
+        }
     }
     {
         size_t n = size_t(h/1.5f);
@@ -406,7 +410,7 @@ void test_insert_nd(T const& val)
                 BOOST_CHECK(s1[j+i] == T(100 + j));
             for ( size_t j = 0 ; j < h-i ; ++j )
                 BOOST_CHECK(s1[j+i+n] == T(j+i));
-        }        
+        }
     }
     {
         size_t n = size_t(h/1.5f);
@@ -423,7 +427,7 @@ void test_insert_nd(T const& val)
                 BOOST_CHECK(s1[j+i] == T(100 + j));
             for ( size_t j = 0 ; j < h-i ; ++j )
                 BOOST_CHECK(s1[j+i+n] == T(j+i));
-        }        
+        }
     }
 }
 

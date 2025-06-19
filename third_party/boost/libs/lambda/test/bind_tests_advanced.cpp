@@ -13,7 +13,8 @@
 // -----------------------------------------------------------------------
 
 
-#include <boost/test/minimal.hpp>    // see "Header Implementation Option"
+#include <boost/core/lightweight_test.hpp>
+#define BOOST_CHECK BOOST_TEST
 
 #include "boost/lambda/lambda.hpp"
 #include "boost/lambda/bind.hpp"
@@ -125,15 +126,33 @@ void test_unlambda() {
 
   BOOST_CHECK(call_with_100(bl::bind(std_functor(std::bind1st(std::plus<int>(), 1)), _1)) == 101);
 
+#elif BOOST_CXX_VERSION > 201703L
+
+  // In C++20, standard functors no longer have ::result_type
+  BOOST_CHECK(call_with_100(bl::bind(std::bind(std::plus<int>(), 1, std::placeholders::_1), _1)) == 101);
+
+#elif defined(BOOST_MSVC) && BOOST_MSVC < 1900
+
+  // Mysterious failures under msvc-12.0 and below
+
 #else
 
   BOOST_CHECK(call_with_100(bl::bind(std_functor(std::bind(std::plus<int>(), 1, std::placeholders::_1)), _1)) == 101);
 
 #endif
 
+#if BOOST_CXX_VERSION <= 201703L
+
   // std_functor insturcts LL that the functor defines a result_type typedef
   // rather than a sig template.
   bl::bind(std_functor(std::plus<int>()), _1, _2)(i, i);
+
+#else
+
+  // In C++20, standard functors no longer have ::result_type
+  bl::bind(std::plus<int>(), _1, _2)(i, i);
+
+#endif
 }
 
 
@@ -413,7 +432,7 @@ void test_abstract()
   BOOST_CHECK(bind(&base::foo, *_1)(&b) == 1);
 }
 
-int test_main(int, char *[]) {
+int main() {
 
   test_nested_binds();
   test_unlambda();
@@ -424,5 +443,5 @@ int test_main(int, char *[]) {
   test_break_const(); 
   test_sig();
   test_abstract();
-  return 0;
+  return boost::report_errors();
 }

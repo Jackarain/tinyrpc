@@ -17,13 +17,13 @@
       typedef Policy   policy_type;
 
       // Constructor:
-      students_t_distribution(const RealType& v);
+      BOOST_MATH_GPU_ENABLED students_t_distribution(const RealType& v);
 
       // Accessor:
-      RealType degrees_of_freedom()const;
+      BOOST_MATH_GPU_ENABLED RealType degrees_of_freedom()const;
 
       // degrees of freedom estimation:
-      static RealType find_degrees_of_freedom(
+      BOOST_MATH_GPU_ENABLED static RealType find_degrees_of_freedom(
          RealType difference_from_mean,
          RealType alpha,
          RealType beta,
@@ -42,12 +42,11 @@ Given N independent measurements, let
 
 [equation students_t_dist]
 
-where /M/ is the population mean, [' ''' &#x3BC; '''] is the sample mean, and /s/ is the
-sample variance.
+where /M/ is the population mean, [mu] is the sample mean, and /s/ is the sample variance.
 
 [@https://en.wikipedia.org/wiki/Student%27s_t-distribution Student's t-distribution]
 is defined as the distribution of the random
-variable t which is  - very loosely - the "best" that we can do not
+variable t which is  - very loosely - the "best" that we can do while not
 knowing the true standard deviation of the sample.  It has the PDF:
 
 [equation students_t_ref1]
@@ -63,7 +62,7 @@ illustrates how the PDF varies with the degrees of freedom [nu]:
 
 [h4 Member Functions]
 
-   students_t_distribution(const RealType& v);
+   BOOST_MATH_GPU_ENABLED students_t_distribution(const RealType& v);
 
 Constructs a Student's t-distribution with /v/ degrees of freedom.
 
@@ -72,11 +71,11 @@ otherwise calls __domain_error.  Note that
 non-integral degrees of freedom are supported,
 and are meaningful under certain circumstances.
 
-   RealType degrees_of_freedom()const;
+   BOOST_MATH_GPU_ENABLED RealType degrees_of_freedom()const;
 
 returns the number of degrees of freedom of this distribution.
 
-   static RealType find_degrees_of_freedom(
+   BOOST_MATH_GPU_ENABLED static RealType find_degrees_of_freedom(
       RealType difference_from_mean,
       RealType alpha,
       RealType beta,
@@ -111,6 +110,8 @@ NIST Engineering Statistics Handbook].
 
 All the [link math_toolkit.dist_ref.nmp usual non-member accessor functions] that are generic to all
 distributions are supported: __usual_accessors.
+For this distribution all non-member accessor functions are marked with `BOOST_MATH_GPU_ENABLED` and can
+be run on both host and device.
 
 The domain of the random variable is \[-[infin], +[infin]\].
 
@@ -133,12 +134,12 @@ In the following table /v/ is the degrees of freedom of the distribution,
 
 [table
 [[Function][Implementation Notes]]
-[[pdf][Using the relation: pdf = (v \/ (v + t[super 2]))[super (1+v)\/2 ] / (sqrt(v) * __beta(v\/2, 0.5))   ]]
+[[pdf][Using the relation: [role serif_italic pdf = (v \/ (v + t[super 2]))[super (1+v)\/2 ] / (sqrt(v) * __beta(v\/2, 0.5))] ]]
 [[cdf][Using the relations:
 
-p = 1 - z /iff t > 0/
+[role serif_italic p = 1 - z /iff t > 0/]
 
-p = z     /otherwise/
+[role serif_italic p = z     /otherwise/]
 
 where z is given by:
 
@@ -146,13 +147,13 @@ __ibeta(v \/ 2, 0.5, v \/ (v + t[super 2])) \/ 2 ['iff v < 2t[super 2]]
 
 __ibetac(0.5, v \/ 2, t[super 2 ] / (v + t[super 2]) \/ 2   /otherwise/]]
 [[cdf complement][Using the relation: q = cdf(-t) ]]
-[[quantile][Using the relation: t = sign(p - 0.5) * sqrt(v * y \/ x)
+[[quantile][Using the relation: [role serif_italic t = sign(p - 0.5) * sqrt(v * y \/ x)]
 
 where:
 
-x = __ibeta_inv(v \/ 2, 0.5, 2 * min(p, q))
+[role serif_italic x = __ibeta_inv(v \/ 2, 0.5, 2 * min(p, q)) ]
 
-y = 1 - x
+[role serif_italic y = 1 - x]
 
 The quantities /x/ and /y/ are both returned by __ibeta_inv
 without the subtraction implied above.]]

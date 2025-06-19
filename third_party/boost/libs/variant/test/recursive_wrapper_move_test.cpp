@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include "boost/config.hpp"
-#include "boost/test/minimal.hpp"
+#include "boost/core/lightweight_test.hpp"
 
 #ifdef __cpp_inheriting_constructors
 // Test is based on reported issue:
@@ -15,7 +15,6 @@
 // is_noexcept_move_constructible
 
 #include <string>
-#include <iterator>
 
 #include <boost/variant.hpp>
 #include <boost/array.hpp>
@@ -70,9 +69,9 @@ void run() {
 void run() {}
 #endif
 
-int test_main(int , char* [])
+int main()
 {
-   run();
-   return 0;
+    run();
+    return boost::report_errors();
 }
 

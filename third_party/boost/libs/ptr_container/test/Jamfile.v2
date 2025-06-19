@@ -11,36 +11,30 @@
 
 import testing ;
 
-rule sc-test ( name : extra-sources * )
-{
-    return [ 
-      run $(name).cpp /boost/test//boost_unit_test_framework/<link>static $(extra-sources) ]
-    ;
-}
+project : requirements
+    <library>/boost/ptr_container//boost_ptr_container
+    <library>/boost/test//boost_unit_test_framework/<link>static ;
 
+run ptr_inserter.cpp /boost/assign//boost_assign ;
+run ptr_vector.cpp /boost/assign//boost_assign /boost/lexical_cast//boost_lexical_cast ;
+run ptr_list.cpp /boost/assign//boost_assign /boost/lexical_cast//boost_lexical_cast ;
+run ptr_deque.cpp /boost/assign//boost_assign /boost/lexical_cast//boost_lexical_cast ;
+run ptr_set.cpp /boost/lexical_cast//boost_lexical_cast ;
+run ptr_map.cpp /boost/lexical_cast//boost_lexical_cast ;
+run ptr_map_adapter.cpp /boost/lexical_cast//boost_lexical_cast ;
+run ptr_array.cpp /boost/lexical_cast//boost_lexical_cast ;
+run tree_test.cpp /boost/lexical_cast//boost_lexical_cast ;
+run incomplete_type_test.cpp /boost/lexical_cast//boost_lexical_cast ;
+run view_example.cpp ;
+run iterator_test.cpp ;
+run tut1.cpp ;
+run indirect_fun.cpp /boost/assign//boost_assign ;
+run serialization.cpp /boost/serialization//boost_serialization : : : <undefined-sanitizer>norecover:<build>no ;
+run no_exceptions.cpp /boost/assign//boost_assign /boost/lexical_cast//boost_lexical_cast ;
 
-test-suite ptr_container :
-    [ sc-test ptr_inserter ]
-    [ sc-test ptr_vector ]
-    [ sc-test ptr_list ]
-    [ sc-test ptr_deque ]
-    [ sc-test ptr_set ]  
-    [ sc-test ptr_map ]
-    [ sc-test ptr_map_adapter ]
-    [ sc-test ptr_array ]
-    [ sc-test tree_test ]   
-    [ sc-test incomplete_type_test ]
-    [ run view_example.cpp ]
-    [ sc-test iterator_test ]
-    [ run tut1.cpp ]   
-    [ sc-test indirect_fun ]  
-    [ sc-test serialization : /boost/serialization//boost_serialization ]  
-    [ sc-test no_exceptions ]    
-    
-    [ sc-test ptr_unordered_set ]
-    [ sc-test ptr_unordered_map ]        
-    [ sc-test ptr_circular_buffer ]    
-    [ compile const_element_containers.cpp ]
- #   [ sc-test null_filter_iterator ]    
-  
-    ;
+run ptr_unordered_set.cpp /boost/lexical_cast//boost_lexical_cast ;
+run ptr_unordered_map.cpp /boost/lexical_cast//boost_lexical_cast ;
+run ptr_circular_buffer.cpp /boost/assign//boost_assign /boost/lexical_cast//boost_lexical_cast ;
+compile const_element_containers.cpp ;
+
+compile issue_23.cpp ;

@@ -7,7 +7,7 @@
 // See http://www.boost.org/libs/interprocess for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/interprocess/detail/config_begin.hpp>
+
 #include <boost/interprocess/detail/workaround.hpp>
 
 #if defined(BOOST_INTERPROCESS_WINDOWS) || defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
@@ -28,15 +28,7 @@ int main(int argc, char *argv[])
 
    if(argc == 1){  //Parent process
       //Create a native windows shared memory object.
-      //<-
-      #if 1
       windows_shared_memory shm (create_only, test::get_process_id_name(), read_write, 1000);
-      #else
-      //->
-      windows_shared_memory shm (create_only, "MySharedMemory", read_write, 1000);
-      //<-
-      #endif
-      //->
 
       //Map the whole shared memory in this process
       mapped_region region(shm, read_write);
@@ -55,15 +47,7 @@ int main(int argc, char *argv[])
    }
    else{
       //Open already created shared memory object.
-      //<-
-      #if 1
       windows_shared_memory shm (open_only, argv[2], read_only);
-      #else
-      //->
-      windows_shared_memory shm (open_only, "MySharedMemory", read_only);
-      //<-
-      #endif
-      //->
 
       //Map the whole shared memory in this process
       mapped_region region(shm, read_only);
@@ -88,4 +72,4 @@ int main()
 
 #endif //BOOST_INTERPROCESS_WINDOWS
 
-#include <boost/interprocess/detail/config_end.hpp>
+

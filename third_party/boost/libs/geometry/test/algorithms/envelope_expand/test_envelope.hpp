@@ -2,6 +2,11 @@
 // Unit Test
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
+
+// This file was modified by Oracle on 2021.
+// Modifications copyright (c) 2021, Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +21,7 @@
 
 #include <boost/geometry/algorithms/envelope.hpp>
 #include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/geometry_collection.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
 
 #include <boost/geometry/io/wkt/read.hpp>
@@ -28,16 +34,16 @@ struct check_result
 template <typename Box>
 struct check_result<Box, 2>
 {
-    typedef typename bg::coordinate_type<Box>::type ctype;
-    typedef typename boost::mpl::if_
-            <
-                boost::is_arithmetic<ctype>,
-                double,
-                ctype
-            >::type type;
+    using ctype = typename bg::coordinate_type<Box>::type;
+    using type = std::conditional_t
+        <
+            (std::is_integral<ctype>::value || std::is_floating_point<ctype>::value),
+            double,
+            ctype
+        >;
 
-    static void apply(Box const& b, const type& x1, const type& y1, const type& /*z1*/,
-                const type& x2, const type& y2, const type& /*z2*/)
+    static void apply(Box const& b, type const& x1, type const& y1, type const& /*z1*/,
+                type const& x2, type const& y2, type const& /*z2*/)
     {
         BOOST_CHECK_CLOSE((bg::get<bg::min_corner, 0>(b)), x1, 0.001);
         BOOST_CHECK_CLOSE((bg::get<bg::min_corner, 1>(b)), y1, 0.001);
@@ -50,16 +56,16 @@ struct check_result<Box, 2>
 template <typename Box>
 struct check_result<Box, 3>
 {
-    typedef typename bg::coordinate_type<Box>::type ctype;
-    typedef typename boost::mpl::if_
-            <
-                boost::is_arithmetic<ctype>,
-                double,
-                ctype
-            >::type type;
+    using ctype = typename bg::coordinate_type<Box>::type;
+    using type = std::conditional_t
+        <
+            (std::is_integral<ctype>::value || std::is_floating_point<ctype>::value),
+            double,
+            ctype
+        >;
 
-    static void apply(Box const& b, const type& x1, const type& y1, const type& z1,
-                const type& x2, const type& y2, const type& z2)
+    static void apply(Box const& b, type const& x1, type const& y1, type const& z1,
+                type const& x2, type const& y2, type const& z2)
     {
         BOOST_CHECK_CLOSE((bg::get<bg::min_corner, 0>(b)), x1, 0.001);
         BOOST_CHECK_CLOSE((bg::get<bg::min_corner, 1>(b)), y1, 0.001);
@@ -74,9 +80,9 @@ struct check_result<Box, 3>
 
 template <typename Geometry, typename T>
 void test_envelope(std::string const& wkt,
-                   const T& x1, const T& x2,
-                   const T& y1, const T& y2,
-                   const T& z1 = 0, const T& z2 = 0)
+                   T const& x1, T const& x2,
+                   T const& y1, T const& y2,
+                   T const& z1 = 0, T const& z2 = 0)
 {
     typedef bg::model::box<typename bg::point_type<Geometry>::type > box_type;
     box_type b;
@@ -92,6 +98,10 @@ void test_envelope(std::string const& wkt,
     check_result<box_type, bg::dimension<Geometry>::type::value>
             ::apply(b, x1, y1, z1, x2, y2, z2);
 
+    bg::model::geometry_collection<boost::variant<Geometry>> gc{v};
+    bg::envelope(gc, b);
+    check_result<box_type, bg::dimension<Geometry>::type::value>
+            ::apply(b, x1, y1, z1, x2, y2, z2);
 }
 
 

@@ -44,7 +44,10 @@ int test()
   using std::is_trivial;
   using std::is_trivially_copyable;
   using std::is_standard_layout;
+#if !((__cplusplus > 201703) || (defined(_MSVC_LANG) && (_MSVC_LANG > 201703)))
+  // deprecated in C++20 (including preview editions):
   using std::is_pod;
+#endif
 #if !((__cplusplus > 201700) || (defined(_MSVC_LANG) && (_MSVC_LANG > 201700)))
   // deprecated in C++ 17:
   using std::is_literal_type;
@@ -96,8 +99,11 @@ int test()
   using std::remove_all_extents;
   using std::remove_pointer;
   using std::add_pointer;
+#if !((__cplusplus > 202002L) || (defined(_MSVC_LANG) && (_MSVC_LANG > 202002L)))
+  // deprecated in C++23:
   using std::aligned_storage;
   using std::aligned_union;
+#endif
   using std::decay;
   using std::enable_if;
   using std::conditional;

@@ -17,38 +17,23 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/graph/erdos_renyi_generator.hpp>
-#include <boost/test/minimal.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/graph/iteration_macros.hpp>
 #include <boost/graph/isomorphism.hpp>
-#include <algorithm> // for random_shuffle
+#include <algorithm>
+#include <random>
 #include <boost/serialization/vector.hpp>
 #include <boost/mpi/collectives/broadcast.hpp>
 #include <boost/config.hpp>
 
-#if defined(BOOST_NO_CXX98_RANDOM_SHUFFLE)
-
-#include <random>
-
-std::default_random_engine gen;
-
-template<typename RandomIt> void random_shuffle( RandomIt first, RandomIt last )
-{
-    std::shuffle( first, last, gen );
-}
-
-#else
-
-using std::random_shuffle;
-
-#endif // #if defined(BOOST_NO_CXX98_RANDOM_SHUFFLE)
-
+#define BOOST_TEST_MODULE mpi_graph_topology
+#include <boost/test/included/unit_test.hpp>
 
 using boost::mpi::communicator;
 using boost::mpi::graph_communicator;
 using namespace boost;
 
-int test_main(int argc, char* argv[])
+BOOST_AUTO_TEST_CASE(graph_topology)
 {
   boost::function_requires< IncidenceGraphConcept<graph_communicator> >();
   boost::function_requires< AdjacencyGraphConcept<graph_communicator> >();
@@ -57,8 +42,7 @@ int test_main(int argc, char* argv[])
 
   double prob = 0.1;
 
-  boost::mpi::environment env(argc, argv);
-
+  boost::mpi::environment env;
   communicator world;
 
   // Random number generator
@@ -93,7 +77,11 @@ int test_main(int argc, char* argv[])
     BGL_FORALL_VERTICES(v, graph, Graph)
       put(graph_alt_index, v, index++);
 
-    ::random_shuffle(graph_alt_index_vec.begin(), graph_alt_index_vec.end());
+    {
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::shuffle(graph_alt_index_vec.begin(), graph_alt_index_vec.end(), gen);
+    }
   }
   broadcast(world, graph_alt_index_vec, 0);
 
@@ -137,6 +125,4 @@ int test_main(int argc, char* argv[])
   if (graph_comm.rank() == 0)
     std::cout << "Verifying isomorphism..." << std::endl;
   BOOST_CHECK(verify_isomorphism(graph, graph_comm, graph_alt_index));
-
-  return 0;
 }

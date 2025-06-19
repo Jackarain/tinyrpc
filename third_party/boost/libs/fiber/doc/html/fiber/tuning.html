@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Tuning</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="prev" href="performance.html" title="Performance">
@@ -28,7 +28,7 @@
 </h2></div></div></div>
 <h4>
 <a name="fiber.tuning.h0"></a>
-      <span class="phrase"><a name="fiber.tuning.disable_synchronization"></a></span><a class="link" href="tuning.html#fiber.tuning.disable_synchronization">Disable
+      <span><a name="fiber.tuning.disable_synchronization"></a></span><a class="link" href="tuning.html#fiber.tuning.disable_synchronization">Disable
       synchronization</a>
     </h4>
 <p>
@@ -39,7 +39,7 @@
     </p>
 <h4>
 <a name="fiber.tuning.h1"></a>
-      <span class="phrase"><a name="fiber.tuning.memory_allocation"></a></span><a class="link" href="tuning.html#fiber.tuning.memory_allocation">Memory
+      <span><a name="fiber.tuning.memory_allocation"></a></span><a class="link" href="tuning.html#fiber.tuning.memory_allocation">Memory
       allocation</a>
     </h4>
 <p>
@@ -53,15 +53,15 @@
     </p>
 <h4>
 <a name="fiber.tuning.h2"></a>
-      <span class="phrase"><a name="fiber.tuning.scheduling_strategies"></a></span><a class="link" href="tuning.html#fiber.tuning.scheduling_strategies">Scheduling
+      <span><a name="fiber.tuning.scheduling_strategies"></a></span><a class="link" href="tuning.html#fiber.tuning.scheduling_strategies">Scheduling
       strategies</a>
     </h4>
 <p>
       The fibers in a thread are coordinated by a fiber manager. Fibers trade control
       cooperatively, rather than preemptively. Depending on the work-load several
-      strategies of scheduling the fibers are possible <a href="#ftn.fiber.tuning.f0" class="footnote" name="fiber.tuning.f0"><sup class="footnote">[10]</sup></a> that can be implmented on behalf of <a class="link" href="scheduling.html#class_algorithm"><code class="computeroutput">algorithm</code></a>.
+      strategies of scheduling the fibers are possible <sup>[<a name="fiber.tuning.f0" href="#ftn.fiber.tuning.f0" class="footnote">10</a>]</sup> that can be implmented on behalf of <a class="link" href="scheduling.html#class_algorithm"><code class="computeroutput">algorithm</code></a>.
     </p>
-<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<div class="itemizedlist"><ul class="itemizedlist" type="disc">
 <li class="listitem">
           work-stealing: ready fibers are hold in a local queue, when the fiber-scheduler's
           local queue runs out of ready fibers, it randomly selects another fiber-scheduler
@@ -91,7 +91,7 @@
 </ul></div>
 <h4>
 <a name="fiber.tuning.h3"></a>
-      <span class="phrase"><a name="fiber.tuning.ttas_locks"></a></span><a class="link" href="tuning.html#fiber.tuning.ttas_locks">TTAS
+      <span><a name="fiber.tuning.ttas_locks"></a></span><a class="link" href="tuning.html#fiber.tuning.ttas_locks">TTAS
       locks</a>
     </h4>
 <p>
@@ -103,7 +103,7 @@
     </p>
 <h4>
 <a name="fiber.tuning.h4"></a>
-      <span class="phrase"><a name="fiber.tuning.spin_wait_loop"></a></span><a class="link" href="tuning.html#fiber.tuning.spin_wait_loop">Spin-wait
+      <span><a name="fiber.tuning.spin_wait_loop"></a></span><a class="link" href="tuning.html#fiber.tuning.spin_wait_loop">Spin-wait
       loop</a>
     </h4>
 <p>
@@ -113,7 +113,7 @@
       busy waiting on the lock, relaxing the CPU (via pause/yield mnemonic) gives
       the CPU a hint that the code is in a spin-wait loop.
     </p>
-<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<div class="itemizedlist"><ul class="itemizedlist" type="disc">
 <li class="listitem">
           prevents expensive pipeline flushes (speculatively executed load and compare
           instructions are not pushed to pipeline)
@@ -134,7 +134,7 @@
     </p>
 <h4>
 <a name="fiber.tuning.h5"></a>
-      <span class="phrase"><a name="fiber.tuning.exponential_back_off"></a></span><a class="link" href="tuning.html#fiber.tuning.exponential_back_off">Exponential
+      <span><a name="fiber.tuning.exponential_back_off"></a></span><a class="link" href="tuning.html#fiber.tuning.exponential_back_off">Exponential
       back-off</a>
     </h4>
 <p>
@@ -149,7 +149,7 @@
     </p>
 <h4>
 <a name="fiber.tuning.h6"></a>
-      <span class="phrase"><a name="fiber.tuning.speculative_execution__hardware_transactional_memory_"></a></span><a class="link" href="tuning.html#fiber.tuning.speculative_execution__hardware_transactional_memory_">Speculative
+      <span><a name="fiber.tuning.speculative_execution__hardware_transactional_memory_"></a></span><a class="link" href="tuning.html#fiber.tuning.speculative_execution__hardware_transactional_memory_">Speculative
       execution (hardware transactional memory)</a>
     </h4>
 <p>
@@ -182,7 +182,7 @@
 </table></div>
 <h4>
 <a name="fiber.tuning.h7"></a>
-      <span class="phrase"><a name="fiber.tuning.numa_systems"></a></span><a class="link" href="tuning.html#fiber.tuning.numa_systems">NUMA
+      <span><a name="fiber.tuning.numa_systems"></a></span><a class="link" href="tuning.html#fiber.tuning.numa_systems">NUMA
       systems</a>
     </h4>
 <p>
@@ -192,7 +192,7 @@
     </p>
 <h4>
 <a name="fiber.tuning.h8"></a>
-      <span class="phrase"><a name="fiber.tuning.parameters"></a></span><a class="link" href="tuning.html#fiber.tuning.parameters">Parameters</a>
+      <span><a name="fiber.tuning.parameters"></a></span><a class="link" href="tuning.html#fiber.tuning.parameters">Parameters</a>
     </h4>
 <div class="table">
 <a name="fiber.tuning.parameters_that_migh_be_defiend_at_compiler_s_command_line"></a><p class="title"><b>Table&#160;1.5.&#160;Parameters that migh be defiend at compiler's command line</b></p>
@@ -493,8 +493,8 @@
 </table></div>
 </div>
 <br class="table-break"><div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.tuning.f0" class="footnote"><p><a href="#fiber.tuning.f0" class="para"><sup class="para">[10] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.tuning.f0" href="#fiber.tuning.f0" class="para">10</a>] </sup>
         1024cores.net: <a href="http://www.1024cores.net/home/scalable-architecture/task-scheduling-strategies" target="_top">Task
         Scheduling Strategies</a>
       </p></div>

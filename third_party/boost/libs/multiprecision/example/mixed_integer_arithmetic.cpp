@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 //  Copyright 2012 John Maddock. Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_
+//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
 //
 // Compare arithmetic results using fixed_int to GMP results.
@@ -18,8 +18,8 @@ int main()
 {
    using namespace boost::multiprecision;
 
-   boost::uint64_t i = (std::numeric_limits<boost::uint64_t>::max)();
-   boost::uint64_t j = 1;
+   std::uint64_t i = (std::numeric_limits<std::uint64_t>::max)();
+   std::uint64_t j = 1;
 
    uint128_t ui128;
    uint256_t ui256;

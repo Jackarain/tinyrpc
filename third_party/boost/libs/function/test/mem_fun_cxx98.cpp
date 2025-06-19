@@ -16,7 +16,7 @@
 
 struct Y {
     Y(int y = 0) : y_(y) {}
-    bool operator==(const Y& rhs) { return y_ == rhs.y_; }
+    bool operator==(const Y& rhs) const { return y_ == rhs.y_; }
 private:
     int y_;
     };

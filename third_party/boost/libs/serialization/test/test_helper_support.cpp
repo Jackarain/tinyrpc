@@ -1,7 +1,7 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // test_helper_support.cpp
 
-// (C) Copyright 2008 Joaquin M Lopez Munoz. 
+// (C) Copyright 2008 Joaquin M Lopez Munoz.
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -15,13 +15,12 @@
 #include <cstdio> // remove
 #include <boost/config.hpp>
 #if defined(BOOST_NO_STDC_NAMESPACE)
-namespace std{ 
+namespace std{
     using ::remove;
 }
 #endif
 
 #include "test_tools.hpp"
-#include <boost/lexical_cast.hpp>
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/vector.hpp>
 #include <string>
@@ -108,7 +107,9 @@ int test_main( int /* argc */, char* /* argv */[] ){
 
     std::vector<my_string> v1;
     for(int i=0; i<1000; ++i){
-        v1.push_back(my_string(boost::lexical_cast<std::string>(i % 100)));
+        char sbuffer[10];
+        std::snprintf(sbuffer, sizeof(sbuffer), "%i", i % 100);
+        v1.push_back(my_string(sbuffer));
     }
     {
         test_ostream os(testfile, TEST_STREAM_FLAGS);

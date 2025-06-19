@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,12 +12,13 @@
 #include "test/beast/http/message_fuzz.hpp"
 
 #include <boost/beast/http.hpp>
+#include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/buffers_suffix.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -69,14 +70,13 @@ public:
     }
 
     template<class ConstBufferSequence,
-        bool isRequest, class Derived>
+        bool isRequest>
     static
     std::size_t
     feed(ConstBufferSequence const& buffers,
-        basic_parser<isRequest, Derived>& parser,
+        basic_parser<isRequest>& parser,
             error_code& ec)
     {
-        using boost::asio::buffer_size;
         beast::buffers_suffix<
             ConstBufferSequence> cb{buffers};
         std::size_t used = 0;
@@ -92,7 +92,7 @@ public:
             used += n;
             if(parser.is_done())
                 break;
-            if(buffer_size(cb) == 0)
+            if(buffer_bytes(cb) == 0)
                 break;
         }
         return used;
@@ -149,79 +149,131 @@ public:
 
     template<bool isRequest>
     struct null_parser :
-        basic_parser<isRequest, null_parser<isRequest>>
+        basic_parser<isRequest>
     {
-    };
-
-    template<bool isRequest, class Body, class Fields>
-    struct bench_parser : basic_parser<
-        isRequest, bench_parser<isRequest, Body, Fields>>
-    {
-        using mutable_buffers_type =
-            boost::asio::mutable_buffer;
-
         void
-        on_request_impl(verb, string_view,
-            string_view, int, error_code& ec)
+        on_request_impl(
+            verb, string_view, string_view,
+            int, error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         void
-        on_response_impl(int,
-            string_view,
-                int, error_code& ec)
+        on_response_impl(
+            int, string_view, int,
+            error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         void
-        on_field_impl(field,
-            string_view, string_view, error_code& ec)
+        on_field_impl(
+            field, string_view, string_view,
+            error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         void
-        on_header_impl(error_code& ec)
+        on_header_impl(error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         void
         on_body_init_impl(
             boost::optional<std::uint64_t> const&,
-            error_code& ec)
+            error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         std::size_t
-        on_body_impl(string_view s, error_code& ec)
+        on_body_impl(
+            string_view,
+            error_code&) override
         {
-            ec.assign(0, ec.category());
+            return 0;
+        }
+
+        void
+        on_chunk_header_impl(
+            std::uint64_t,
+            string_view,
+            error_code&) override
+        {
+        }
+
+        std::size_t
+        on_chunk_body_impl(
+            std::uint64_t,
+            string_view,
+            error_code&) override
+        {
+            return 0;
+        }
+
+        void
+        on_finish_impl(error_code&) override
+        {
+        }
+    };
+
+    template<bool isRequest, class Body, class Fields>
+    struct bench_parser : basic_parser<isRequest>
+    {
+        using mutable_buffers_type =
+            net::mutable_buffer;
+
+        void
+        on_request_impl(verb, string_view,
+            string_view, int, error_code&) override
+        {
+        }
+
+        void
+        on_response_impl(int,
+            string_view, int, error_code&) override
+        {
+        }
+
+        void
+        on_field_impl(field,
+            string_view, string_view, error_code&) override
+        {
+        }
+
+        void
+        on_header_impl(error_code&) override
+        {
+        }
+
+        void
+        on_body_init_impl(
+            boost::optional<std::uint64_t> const&,
+            error_code&) override
+        {
+        }
+
+        std::size_t
+        on_body_impl(
+            string_view s, error_code&) override
+        {
             return s.size();
         }
 
         void
         on_chunk_header_impl(std::uint64_t,
-            string_view, error_code& ec)
+            string_view, error_code&) override
         {
-            ec.assign(0, ec.category());
         }
 
         std::size_t
         on_chunk_body_impl(std::uint64_t,
-            string_view s, error_code& ec)
+            string_view s, error_code&) override
         {
-            ec.assign(0, ec.category());
             return s.size();
         }
 
         void
-        on_finish_impl(error_code& ec)
+        on_finish_impl(error_code&) override
         {
-            ec.assign(0, ec.category());
         }
     };
 

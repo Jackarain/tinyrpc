@@ -3,7 +3,20 @@
 //  Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#ifndef SYCL_LANGUAGE_VERSION
 #include <pch_light.hpp>
+#else
+#define BOOST_MATH_PROMOTE_DOUBLE_POLICY false
+#include <boost/math/tools/config.hpp>
+#endif
+
+#ifdef __clang__
+#  pragma clang diagnostic push 
+#  pragma clang diagnostic ignored "-Wliteral-range"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push 
+#  pragma GCC diagnostic ignored "-Woverflow"
+#endif
 
 #include "test_bessel_y.hpp"
 
@@ -152,6 +165,30 @@ void expected_results()
          ".*Yn.*",              // test data group
          ".*", 30000, 30000);         // test function
    //
+   // Cygwin:
+   //
+      add_expected_result(
+         "GNU.*",                       // compiler
+         ".*",                          // stdlib
+         "Cygwin*",                     // platform
+         largest_type,                  // test type(s)
+         ".*Yv.*Random.*",              // test data group
+         ".*", 400000, 300000);         // test function
+      add_expected_result(
+         "GNU.*",                       // compiler
+         ".*",                          // stdlib
+         "Cygwin*",                     // platform
+         largest_type,                  // test type(s)
+         ".*Y[01v].*",                  // test data group
+         ".*", 2000, 1000);             // test function
+      add_expected_result(
+         "GNU.*",                       // compiler
+         ".*",                          // stdlib
+         "Cygwin*",                     // platform
+         largest_type,                  // test type(s)
+         ".*Yn.*",                      // test data group
+         ".*", 30000, 30000);           // test function
+   //
    // Solaris version of long double has it's own error rates,
    // again just a touch higher than msvc's 64-bit double:
    //
@@ -164,7 +201,7 @@ void expected_results()
       ".*", 2000, 2000);         // test function
 
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
-   if((std::numeric_limits<double>::digits != std::numeric_limits<long double>::digits)
+   BOOST_IF_CONSTEXPR((std::numeric_limits<double>::digits != std::numeric_limits<long double>::digits)
       && (std::numeric_limits<long double>::digits < 90))
    {
       // some errors spill over into type double as well:
@@ -183,6 +220,16 @@ void expected_results()
          ".*Yv.*",              // test data group
          ".*", 80, 70);         // test function
    }
+   else BOOST_IF_CONSTEXPR(std::numeric_limits<long double>::digits >= 90)
+   {
+      add_expected_result(
+         ".*",                          // compiler
+         ".*",                          // stdlib
+         ".*",                          // platform
+         "double",                      // test type(s)
+         ".*Yv.*Mathworld.*",           // test data group
+         ".*", 20, 5);         // test function
+   }
 #endif
    //
    // defaults are based on MSVC-8 on Win32:
@@ -200,7 +247,11 @@ void expected_results()
       ".*",                          // platform
       largest_type,                  // test type(s)
       ".*(Y[nv]|y).*Random.*",           // test data group
+      #ifdef SYCL_LANGUAGE_VERSION
+      ".*", 2000, 1000);
+      #else
       ".*", 1500, 1000);               // test function
+      #endif
    //
    // Fallback for sun has to go after the general cases above:
    //

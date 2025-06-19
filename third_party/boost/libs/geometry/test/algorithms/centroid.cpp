@@ -5,9 +5,8 @@
 // Copyright (c) 2008-2015 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2015 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2014, 2015.
-// Modifications copyright (c) 2014-2015 Oracle and/or its affiliates.
-
+// This file was modified by Oracle on 2014-2021.
+// Modifications copyright (c) 2014-2021 Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
@@ -91,7 +90,7 @@ void test_2d()
         coord_type m = (std::numeric_limits<coord_type>::max)();
         bg::append(ls, P(coord_type(m), coord_type(-m)));
         bg::append(ls, P(coord_type(0.0001), coord_type(0.000)));
-        if (BOOST_GEOMETRY_CONDITION((boost::is_same<typename bg::coordinate_type<P>::type, double>::value)))
+        if (BOOST_GEOMETRY_CONDITION((std::is_same<typename bg::coordinate_type<P>::type, double>::value)))
         {
             // for doubles the INF is detected and the calculation stopped
             // currently for Geometries for which the centroid can't be calculated
@@ -218,8 +217,6 @@ void test_large_integers()
     BOOST_CHECK_EQUAL(bg::get<1>(int_centroid), bg::get<1>(double_centroid_as_int));
 }
 
-//#include <to_svg.hpp>
-
 void test_large_doubles()
 {
     typedef bg::model::point<double, 2, bg::cs::cartesian> point;
@@ -240,9 +237,6 @@ void test_large_doubles()
     bg::set<0>(pt_near_moved, bg::get<0>(pt_near) + 1074000.0);
     bg::set<1>(pt_near_moved, bg::get<1>(pt_near) + 703000.0);
 
-    //geom_to_svg(poly_far, pt_far, "far.svg");
-    //geom_to_svg(poly_near, pt_near, "near.svg");
-
     double d = bg::distance(pt_far, pt_near_moved);
     BOOST_CHECK(d < 0.1);
 }
@@ -256,11 +250,6 @@ int test_main(int, char* [])
     test_3d<boost::tuple<double, double, double> >();
 
     test_5d<boost::tuple<double, double, double, double, double> >();
-
-#if defined(HAVE_TTMATH)
-    test_2d<bg::model::d2::point_xy<ttmath_big> >();
-    test_3d<boost::tuple<ttmath_big, ttmath_big, ttmath_big> >();
-#endif
 
 #ifndef NDEBUG
     // The test currently fails in release mode. TODO: fix this

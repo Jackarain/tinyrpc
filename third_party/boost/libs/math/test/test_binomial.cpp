@@ -27,7 +27,6 @@
 // Enable C++ Exceptions Yes With SEH Exceptions (/EHa) prevents warning 4535.
 #endif
 
-#include <boost/math/tools/test.hpp>
 #include <boost/math/concepts/real_concept.hpp> // for real_concept
 using ::boost::math::concepts::real_concept;
 
@@ -36,7 +35,7 @@ using boost::math::binomial_distribution;
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp> // for test_main
-#include <boost/test/floating_point_comparison.hpp> // for BOOST_CHECK_CLOSE
+#include <boost/test/tools/floating_point_comparison.hpp> // for BOOST_CHECK_CLOSE
 #include "table_type.hpp"
 
 #include "test_out_of_range.hpp"
@@ -100,7 +99,7 @@ void test_spot(
       if(k > 0)
       {
          // estimate success ratio:
-         // Note lower bound uses a different formual internally
+         // Note lower bound uses a different formula internally
          // from upper bound, have to adjust things to prevent
          // fencepost errors:
          BOOST_CHECK_CLOSE(
@@ -220,15 +219,15 @@ template <class RealType> // Any floating-point type RealType.
 void test_spots(RealType T)
 {
   // Basic sanity checks, test data is to double precision only
-  // so set tolerance to 100eps expressed as a persent, or
-  // 100eps of type double expressed as a persent, whichever
+  // so set tolerance to 100eps expressed as a percent, or
+  // 100eps of type double expressed as a percent, whichever
   // is the larger.
 
   RealType tolerance = (std::max)
       (boost::math::tools::epsilon<RealType>(),
       static_cast<RealType>(std::numeric_limits<double>::epsilon()));
   tolerance *= 100 * 1000;
-  RealType tol2 = boost::math::tools::epsilon<RealType>() * 5 * 100;  // 5 eps as a persent
+  RealType tol2 = boost::math::tools::epsilon<RealType>() * 5 * 100;  // 5 eps as a percent
 
   cout << "Tolerance for type " << typeid(T).name()  << " is " << tolerance << " %" << endl;
 
@@ -522,57 +521,57 @@ void test_spots(RealType T)
           binomial_distribution<RealType>(static_cast<RealType>(0), static_cast<RealType>(0.25)),
           static_cast<RealType>(0)), static_cast<RealType>(1)
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        pdf(
           binomial_distribution<RealType>(static_cast<RealType>(-1), static_cast<RealType>(0.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        pdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(-0.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        pdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(1.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        pdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(0.25)),
           static_cast<RealType>(-1)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        pdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(0.25)),
           static_cast<RealType>(9)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        cdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(0.25)),
           static_cast<RealType>(-1)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        cdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(0.25)),
           static_cast<RealType>(9)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        cdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(-0.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        cdf(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(1.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        quantile(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(-0.25)),
           static_cast<RealType>(0)), std::domain_error
        );
-    BOOST_MATH_CHECK_THROW(
+    BOOST_CHECK_THROW(
        quantile(
           binomial_distribution<RealType>(static_cast<RealType>(8), static_cast<RealType>(1.25)),
           static_cast<RealType>(0)), std::domain_error
@@ -716,7 +715,21 @@ void test_spots(RealType T)
 
    check_out_of_range<boost::math::binomial_distribution<RealType> >(1, 1); // (All) valid constructor parameter values.
 
-
+#if !(defined(__clang__) && defined( __APPLE__))
+   // See bug reported here: https://github.com/boostorg/math/pull/1007
+   //
+   // This test case is so extreme that the incomplete beta basically gets
+   // no digits in the result correct, as a result expect some failures on
+   // some platforms.
+   {
+      using namespace boost::math::policies;
+      typedef policy<discrete_quantile<integer_round_outwards> > Policy;
+      binomial_distribution<RealType, Policy> dist(9079765771874083840, 0.561815);
+      // Accuracy is not too important here; the main purpose is to
+      // make sure it is not stuck.
+      BOOST_CHECK_CLOSE(quantile(dist, 0.0365346), 5101148604445670400, 1e12);
+   }
+#endif
 } // template <class RealType>void test_spots(RealType)
 
 BOOST_AUTO_TEST_CASE( test_main )

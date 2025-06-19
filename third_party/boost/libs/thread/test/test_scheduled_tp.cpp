@@ -13,7 +13,7 @@
 #define BOOST_THREAD_VERSION 4
 #define BOOST_THREAD_PROVIDES_EXECUTORS
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/chrono.hpp>
 #include <boost/chrono/chrono_io.hpp>
 #include <boost/function.hpp>
@@ -79,7 +79,7 @@ void test_deque_multi(const int n)
         tg.create_thread(boost::bind(func2, &se, d));
     }
     tg.join_all();
-    //dtor is called here so execution will block untill all the closures
+    //dtor is called here so execution will block until all the closures
     //have been completed.
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,26 +10,35 @@
 // Test that header file is self-contained.
 #include <boost/beast/core/flat_buffer.hpp>
 
-#include "buffer_test.hpp"
+#include "test_buffer.hpp"
 
 #include <boost/beast/core/ostream.hpp>
 #include <boost/beast/core/read_size.hpp>
 #include <boost/beast/core/string.hpp>
 #include <boost/beast/test/test_allocator.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <algorithm>
+#include <cctype>
 
 namespace boost {
 namespace beast {
 
-BOOST_STATIC_ASSERT(
-    boost::asio::is_dynamic_buffer<flat_buffer>::value);
-
 class flat_buffer_test : public beast::unit_test::suite
 {
 public:
+    BOOST_STATIC_ASSERT(
+        is_mutable_dynamic_buffer<flat_buffer>::value);
+
     void
-    testBuffer()
+    testDynamicBuffer()
+    {
+        flat_buffer b(30);
+        BEAST_EXPECT(b.max_size() == 30);
+        test_dynamic_buffer(b);
+    }
+
+    void
+    testSpecialMembers()
     {
         using namespace test;
 
@@ -94,8 +103,8 @@ public:
                 ostream(b1) << "Hello";
                 a_neq_t a;
                 basic_flat_buffer<a_neq_t> b2{std::move(b1), a};
-                BEAST_EXPECT(b1.size() == 0);
-                BEAST_EXPECT(b1.capacity() == 0);
+                BEAST_EXPECT(b1.size() != 0);
+                BEAST_EXPECT(b1.capacity() != 0);
                 BEAST_EXPECT(buffers_to_string(b2.data()) == "Hello");
                 BEAST_EXPECT(b1.max_size() == b2.max_size());
             }
@@ -135,6 +144,16 @@ public:
             BEAST_EXPECT(buffers_to_string(b1.data()) == "Hello");
             BEAST_EXPECT(buffers_to_string(b2.data()) == "Hello");
         }
+        {
+            flat_buffer b1;
+            ostream(b1) << "Hello";
+            basic_flat_buffer<a_t> b2;
+            b2.reserve(1);
+            BEAST_EXPECT(b2.capacity() == 1);
+            b2 = b1;
+            BEAST_EXPECT(buffers_to_string(b2.data()) == "Hello");
+            BEAST_EXPECT(b2.capacity() == b2.size());
+        }
 
         // move assignment
         {
@@ -167,8 +186,8 @@ public:
                 basic_flat_buffer<na_t> b2;
                 b2 = std::move(b1);
                 BEAST_EXPECT(b1.get_allocator() != b2.get_allocator());
-                BEAST_EXPECT(b1.size() == 0);
-                BEAST_EXPECT(b1.capacity() == 0);
+                BEAST_EXPECT(b1.size() != 0);
+                BEAST_EXPECT(b1.capacity() != 0);
                 BEAST_EXPECT(buffers_to_string(b2.data()) == "Hello");
             }
             {
@@ -246,8 +265,10 @@ public:
                 BEAST_EXPECT(buffers_to_string(b2.data()) == s.substr(7));
             }
             {
-                flat_buffer b2{64};
+                flat_buffer b2{32};
+                BEAST_EXPECT(b2.max_size() == 32);
                 b2 = b1;
+                BEAST_EXPECT(b2.max_size() == b1.max_size());
                 BEAST_EXPECT(buffers_to_string(b2.data()) == s);
                 b2.consume(7);
                 BEAST_EXPECT(buffers_to_string(b2.data()) == s.substr(7));
@@ -261,6 +282,32 @@ public:
             b.consume(3);
             ostream(b) << "67890123";
             BEAST_EXPECT(buffers_to_string(b.data()) == "4567890123");
+        }
+
+        // max_size
+        {
+            flat_buffer b{10};
+            BEAST_EXPECT(b.max_size() == 10);
+            b.max_size(32);
+            BEAST_EXPECT(b.max_size() == 32);
+        }
+
+        // allocator max_size
+        {
+            basic_flat_buffer<a_t> b;
+            auto a = b.get_allocator();
+            BOOST_STATIC_ASSERT(
+                ! std::is_const<decltype(a)>::value);
+            a->max_size = 30;
+            try
+            {
+                b.prepare(1000);
+                fail("", __FILE__, __LINE__);
+            }
+            catch(std::length_error const&)
+            {
+                pass();
+            }
         }
 
         // read_size
@@ -326,6 +373,23 @@ public:
             }
         }
 
+        // reserve
+        {
+            flat_buffer b;
+            BEAST_EXPECT(b.capacity() == 0);
+            b.reserve(50);
+            BEAST_EXPECT(b.capacity() == 50);
+            b.prepare(20);
+            b.commit(20);
+            b.reserve(50);
+            BEAST_EXPECT(b.capacity() == 50);
+
+            b.max_size(b.capacity());
+            b.reserve(b.max_size() + 20);
+            BEAST_EXPECT(b.capacity() == 70);
+            BEAST_EXPECT(b.max_size() == 70);
+        }
+
         // shrink to fit
         {
             flat_buffer b;
@@ -338,14 +402,33 @@ public:
             BEAST_EXPECT(b.capacity() >= 125);
             b.shrink_to_fit();
             BEAST_EXPECT(b.capacity() == b.size());
-            
+            b.shrink_to_fit();
+            BEAST_EXPECT(b.capacity() == b.size());
+            b.consume(b.size());
+            BEAST_EXPECT(b.size() == 0);
+            b.shrink_to_fit();
+            BEAST_EXPECT(b.capacity() == 0);
+        }
+
+        // clear
+        {
+            flat_buffer b;
+            BEAST_EXPECT(b.capacity() == 0);
+            b.prepare(50);
+            b.commit(50);
+            BEAST_EXPECT(b.size() == 50);
+            BEAST_EXPECT(b.capacity() == 50);
+            b.clear();
+            BEAST_EXPECT(b.size() == 0);
+            BEAST_EXPECT(b.capacity() == 50);
         }
     }
 
     void
     run() override
     {
-        testBuffer();
+        testDynamicBuffer();
+        testSpecialMembers();
     }
 };
 

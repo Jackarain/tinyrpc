@@ -8,25 +8,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/interprocess/detail/config_begin.hpp>
-#include <boost/interprocess/containers/string.hpp>
-#include <boost/interprocess/containers/vector.hpp>
+#include <boost/container/string.hpp>
+#include <boost/container/vector.hpp>
 #include <boost/interprocess/streams/vectorstream.hpp>
 #include <boost/interprocess/streams/bufferstream.hpp>
 #include <sstream>
 #include <cstring>
 #include <vector>
 #include <iostream>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <stdio.h>
 
 namespace boost {
 namespace interprocess {
 
 //Force instantiations to catch compile-time errors
-typedef basic_string<char> my_string;
+typedef boost::container::basic_string<char> my_string;
 typedef basic_vectorstream<my_string > my_stringstream_t;
-typedef vector<char> my_vector;
+typedef boost::container::vector<char> my_vector;
 typedef basic_vectorstream<my_vector>  my_vectorstream_t;
 template class basic_vectorstream<my_string>;
 template class basic_vectorstream<std::vector<char> >;
@@ -104,11 +102,13 @@ static int vectorstream_test()
          std_stringstream << "testline: " << i << std::endl;
       }
       //Add final null to form a c string
+      my_vectorstream.swap_vector(myvector);
       myvector.push_back(0);
-      if(std::strcmp(&(my_vectorstream.vector()[0]), std_stringstream.str().c_str()) != 0){
+      if(std::strcmp(&(myvector[0]), std_stringstream.str().c_str()) != 0){
          return 1;
       }
       myvector.pop_back();
+      my_vectorstream.swap_vector(myvector);
       for(int i = 0; i < 100; ++i){
          my_vectorstream  >> str1 >> number1;
          std_stringstream >> str2 >> number2;
@@ -153,7 +153,7 @@ static int vectorstream_test()
       my_stringstream << "ABCDEFGHIJKLM";
       my_stringstream.seekp(0);
       my_stringstream << "PQRST";
-      string s("PQRSTFGHIJKLM");
+      boost::container::string s("PQRSTFGHIJKLM");
       if(s != my_stringstream.vector()){
          return 1;
       }
@@ -181,5 +181,3 @@ int main ()
    }
    return 0;
 }
-
-#include <boost/interprocess/detail/config_end.hpp>

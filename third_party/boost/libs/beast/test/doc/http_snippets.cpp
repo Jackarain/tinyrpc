@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -26,20 +26,23 @@ namespace doc_http_snippets {
 
 //[http_snippet_17
 // This function returns the buffer containing the next chunk body
-boost::asio::const_buffer get_next_chunk_body();
+net::const_buffer get_next_chunk_body();
 //]
 
-boost::asio::const_buffer get_next_chunk_body()
+net::const_buffer get_next_chunk_body()
 {
     return {nullptr, 0};
 }
 
 void fxx() {
 
-    boost::asio::io_context ioc;
-    auto work = boost::asio::make_work_guard(ioc);
+    net::io_context ioc;
+    net::any_io_executor work =
+        net::require(
+            ioc.get_executor(),
+            net::execution::outstanding_work.tracked);
     std::thread t{[&](){ ioc.run(); }};
-    boost::asio::ip::tcp::socket sock{ioc};
+    net::ip::tcp::socket sock{ioc};
 
 {
 //[http_snippet_2
@@ -102,7 +105,7 @@ void fxx() {
     error_code ec;
     request<string_body> req;
     read(sock, buffer, req, ec);
-    if(ec == error::buffer_overflow)
+    if(ec == http::error::buffer_overflow)
         std::cerr << "Buffer limit exceeded!" << std::endl;
 
 //]
@@ -160,12 +163,12 @@ void fxx() {
     write_header(sock, sr);
 
     // Now manually emit three chunks:
-    boost::asio::write(sock, make_chunk(get_next_chunk_body()));
-    boost::asio::write(sock, make_chunk(get_next_chunk_body()));
-    boost::asio::write(sock, make_chunk(get_next_chunk_body()));
+    net::write(sock, make_chunk(get_next_chunk_body()));
+    net::write(sock, make_chunk(get_next_chunk_body()));
+    net::write(sock, make_chunk(get_next_chunk_body()));
 
     // We are responsible for sending the last chunk:
-    boost::asio::write(sock, make_chunk_last());
+    net::write(sock, make_chunk_last());
 //]
 }
 
@@ -180,18 +183,18 @@ void fxx() {
     // Write the next chunk with the chunk extensions
     // The implementation will make a copy of the extensions object,
     // so the caller does not need to manage lifetime issues.
-    boost::asio::write(sock, make_chunk(get_next_chunk_body(), ext));
+    net::write(sock, make_chunk(get_next_chunk_body(), ext));
 
     // Write the next chunk with the chunk extensions
     // The implementation will make a copy of the extensions object, storing the copy
     // using the custom allocator, so the caller does not need to manage lifetime issues.
-    boost::asio::write(sock, make_chunk(get_next_chunk_body(), ext, std::allocator<char>{}));
+    net::write(sock, make_chunk(get_next_chunk_body(), ext, std::allocator<char>{}));
 
     // Write the next chunk with the chunk extensions
     // The implementation allocates memory using the default allocator and takes ownership
     // of the extensions object, so the caller does not need to manage lifetime issues.
     // Note: ext is moved
-    boost::asio::write(sock, make_chunk(get_next_chunk_body(), std::move(ext)));
+    net::write(sock, make_chunk(get_next_chunk_body(), std::move(ext)));
 //]
 }
 
@@ -199,7 +202,7 @@ void fxx() {
 //[http_snippet_20
     // Manually specify the chunk extensions.
     // Some of the strings contain spaces and a period and must be quoted
-    boost::asio::write(sock, make_chunk(get_next_chunk_body(),
+    net::write(sock, make_chunk(get_next_chunk_body(),
         ";mp3"
         ";title=\"Danny Boy\""
         ";artist=\"Fred E. Weatherly\""
@@ -221,8 +224,8 @@ void fxx() {
     // Serialize the header and two chunks
     response_serializer<empty_body> sr{res};
     write_header(sock, sr);
-    boost::asio::write(sock, make_chunk(get_next_chunk_body()));
-    boost::asio::write(sock, make_chunk(get_next_chunk_body()));
+    net::write(sock, make_chunk(get_next_chunk_body()));
+    net::write(sock, make_chunk(get_next_chunk_body()));
 
     // Prepare the trailer
     fields trailer;
@@ -232,7 +235,7 @@ void fxx() {
     // Emit the trailer in the last chunk.
     // The implementation will use the default allocator to create the storage for holding
     // the serialized fields.
-    boost::asio::write(sock, make_chunk_last(trailer));
+    net::write(sock, make_chunk_last(trailer));
 //]
 }
 
@@ -241,7 +244,7 @@ void fxx() {
     // Use a custom allocator for serializing the last chunk
     fields trailer;
     trailer.set(field::approved, "yes");
-    boost::asio::write(sock, make_chunk_last(trailer, std::allocator<char>{}));
+    net::write(sock, make_chunk_last(trailer, std::allocator<char>{}));
 //]
 }
 
@@ -253,7 +256,7 @@ void fxx() {
         "Content-MD5: f4a5c16584f03d90\r\n"
         "Expires: never\r\n"
         "\r\n";
-    boost::asio::write(sock, make_chunk_last(boost::asio::const_buffer{ext.data(), ext.size()}));
+    net::write(sock, make_chunk_last(net::const_buffer{ext.data(), ext.size()}));
 //]
 }
 
@@ -272,18 +275,18 @@ void fxx() {
     auto const cb3 = get_next_chunk_body();
 
     // Manually emit a chunk by first writing the chunk-size header with the correct size
-    boost::asio::write(sock, chunk_header{
-        boost::asio::buffer_size(cb1) +
-        boost::asio::buffer_size(cb2) +
-        boost::asio::buffer_size(cb3)});
+    net::write(sock, chunk_header{
+        buffer_bytes(cb1) +
+        buffer_bytes(cb2) +
+        buffer_bytes(cb3)});
 
     // And then output the chunk body in three pieces ("chunk the chunk")
-    boost::asio::write(sock, cb1);
-    boost::asio::write(sock, cb2);
-    boost::asio::write(sock, cb3);
+    net::write(sock, cb1);
+    net::write(sock, cb2);
+    net::write(sock, cb3);
 
     // When we go this deep, we are also responsible for the terminating CRLF
-    boost::asio::write(sock, chunk_crlf{});
+    net::write(sock, chunk_crlf{});
 //]
 }
 
@@ -296,10 +299,10 @@ void fxx() {
 /** Send a message to a stream synchronously.
 
     @param stream The stream to write to. This type must support
-    the @b SyncWriteStream concept.
+    the <em>SyncWriteStream</em> concept.
 
     @param m The message to send. The Body type must support
-    the @b BodyWriter concept.
+    the <em>BodyWriter</em> concept.
 */
 template<
     class SyncWriteStream,
@@ -311,9 +314,9 @@ send(
 {
     // Check the template types
     static_assert(is_sync_write_stream<SyncWriteStream>::value,
-        "SyncWriteStream requirements not met");
+        "SyncWriteStream type requirements not met");
     static_assert(is_body_writer<Body>::value,
-        "BodyWriter requirements not met");
+        "BodyWriter type requirements not met");
 
     // Create the instance of serializer for the message
     serializer<isRequest, Body, Fields> sr{m};
@@ -337,7 +340,7 @@ void
 print_response(SyncReadStream& stream)
 {
     static_assert(is_sync_read_stream<SyncReadStream>::value,
-        "SyncReadStream requirements not met");
+        "SyncReadStream type requirements not met");
 
     // Declare a parser for an HTTP response
     response_parser<string_body> parser;
@@ -365,9 +368,9 @@ print_cxx14(message<isRequest, Body, Fields> const& m)
         sr.next(ec,
             [&sr](error_code& ec, auto const& buffer)
             {
-                ec.assign(0, ec.category());
-                std::cout << buffers(buffer);
-                sr.consume(boost::asio::buffer_size(buffer));
+                ec = {};
+                std::cout << make_printable(buffer);
+                sr.consume(buffer_bytes(buffer));
             });
     }
     while(! ec && ! sr.is_done());
@@ -392,9 +395,9 @@ struct lambda
     template<class ConstBufferSequence>
     void operator()(error_code& ec, ConstBufferSequence const& buffer) const
     {
-        ec.assign(0, ec.category());
-        std::cout << buffers(buffer);
-        sr.consume(boost::asio::buffer_size(buffer));
+        ec = {};
+        std::cout << make_printable(buffer);
+        sr.consume(buffer_bytes(buffer));
     }
 };
 
@@ -417,7 +420,7 @@ print(message<isRequest, Body, Fields> const& m)
 
 //]
 
-#if BOOST_MSVC
+#ifdef BOOST_MSVC
 //[http_snippet_16
 
 template<bool isRequest, class Body, class Fields>
@@ -433,9 +436,9 @@ split_print_cxx14(message<isRequest, Body, Fields> const& m)
         sr.next(ec,
             [&sr](error_code& ec, auto const& buffer)
             {
-                ec.assign(0, ec.category());
-                std::cout << buffers(buffer);
-                sr.consume(boost::asio::buffer_size(buffer));
+                ec = {};
+                std::cout << make_printable(buffer);
+                sr.consume(buffer_bytes(buffer));
             });
     }
     while(! sr.is_header_done());
@@ -447,9 +450,9 @@ split_print_cxx14(message<isRequest, Body, Fields> const& m)
             sr.next(ec,
                 [&sr](error_code& ec, auto const& buffer)
                 {
-                    ec.assign(0, ec.category());
-                    std::cout << buffers(buffer);
-                    sr.consume(boost::asio::buffer_size(buffer));
+                    ec = {};
+                    std::cout << make_printable(buffer);
+                    sr.consume(buffer_bytes(buffer));
                 });
         }
         while(! ec && ! sr.is_done());
@@ -461,6 +464,6 @@ split_print_cxx14(message<isRequest, Body, Fields> const& m)
 //]
 #endif
 
-// Highest snippet: 
+// Highest snippet:
 
 } // doc_http_snippets

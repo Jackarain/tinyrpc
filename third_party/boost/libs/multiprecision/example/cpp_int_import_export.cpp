@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 //  Copyright 2015 John Maddock. Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_
+//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <iostream>
@@ -12,7 +12,7 @@
 //[IE1
 
 /*`
-In this simple example, we'll import/export the bits of a cpp_int 
+In this simple example, we'll import/export the bits of a cpp_int
 to a vector of 8-bit unsigned values:
 */
 /*=
@@ -37,7 +37,7 @@ int main()
    // import back again, and check for equality:
    cpp_int j;
    import_bits(j, v.begin(), v.end());
-   assert(i == j);
+   BOOST_MP_ASSERT(i == j);
 }
 
 //]

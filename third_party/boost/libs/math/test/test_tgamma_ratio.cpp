@@ -86,6 +86,16 @@ void expected_results()
       "[^|]*",               // test data group
       "tgamma_ratio[^|]*", 300, 100);                 // test function
    //
+   // Cygwin
+   //
+   add_expected_result(
+      "GNU.*",                          // compiler
+      "[^|]*",                          // stdlib
+      "Cygwin*",                        // platform
+      largest_type,                     // test type(s)
+      "[^|]*",                          // test data group
+      "tgamma_ratio[^|]*", 300, 100);   // test function
+   //
    // Solaris:
    //
    add_expected_result(
@@ -118,7 +128,7 @@ void expected_results()
       "[^|]*",                          // platform
       "real_concept",                   // test type(s)
       "[^|]*",                          // test data group
-      "tgamma_delta_ratio[^|]*", 40, 15);                 // test function
+      "tgamma_delta_ratio[^|]*", 50, 20); // test function
    add_expected_result(
       "[^|]*",                          // compiler
       "[^|]*",                          // stdlib
@@ -147,7 +157,7 @@ BOOST_AUTO_TEST_CASE( test_main )
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_tgamma_ratio(0.1L, "long double");
 #ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
    test_tgamma_ratio(boost::math::concepts::real_concept(0.1), "real_concept");
 #endif
 #endif
@@ -165,7 +175,7 @@ BOOST_AUTO_TEST_CASE( test_main )
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
    test_spots(0.1L, "long double");
 #ifndef BOOST_MATH_NO_REAL_CONCEPT_TESTS
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582))
    test_spots(boost::math::concepts::real_concept(0.1), "real_concept");
 #endif
 #endif

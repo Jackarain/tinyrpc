@@ -1,4 +1,4 @@
-// Copyright Louis Dionne 2013-2017
+// Copyright Louis Dionne 2013-2022
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 
@@ -63,10 +63,6 @@ void test_b12(Functor&& f) {
     );
     static_assert(std::is_same<DeducedReturnType, Expect>::value, "");
 
-    // Check that result_of_t matches Expect.
-    using ResultOfReturnType = typename std::result_of<ClassFunc&&(Functor&&, NonCopyable&&)>::type;
-    static_assert(std::is_same<ResultOfReturnType, Expect>::value, "");
-
     // Run invoke and check the return value.
     DeducedReturnType ret = hana::apply(func_ptr, std::forward<Functor>(f), std::move(arg));
     BOOST_HANA_RUNTIME_CHECK(ret == 42);
@@ -84,10 +80,6 @@ void test_b34(Functor&& f) {
     );
     static_assert(std::is_same<DeducedReturnType, Expect>::value, "");
 
-    // Check that result_of_t matches Expect.
-    using ResultOfReturnType = typename std::result_of<ClassFunc&&(Functor&&)>::type;
-    static_assert(std::is_same<ResultOfReturnType, Expect>::value, "");
-
     // Run invoke and check the return value.
     DeducedReturnType ret = hana::apply(func_ptr, std::forward<Functor>(f));
     BOOST_HANA_RUNTIME_CHECK(ret == 42);
@@ -102,10 +94,6 @@ void test_b5(Functor&& f) {
         hana::apply(std::forward<Functor>(f), std::move(arg))
     );
     static_assert(std::is_same<DeducedReturnType, Expect>::value, "");
-
-    // Check that result_of_t matches Expect.
-    using ResultOfReturnType = typename std::result_of<Functor&&(NonCopyable&&)>::type;
-    static_assert(std::is_same<ResultOfReturnType, Expect>::value, "");
 
     // Run invoke and check the return value.
     DeducedReturnType ret = hana::apply(std::forward<Functor>(f), std::move(arg));

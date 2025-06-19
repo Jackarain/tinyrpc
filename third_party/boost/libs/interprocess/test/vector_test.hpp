@@ -46,14 +46,14 @@ bool copyable_only(V1 *shmvector, V2 *stdvector, boost::interprocess::ipcdetail:
 {
    typedef typename V1::value_type IntType;
    std::size_t size = shmvector->size();
-   stdvector->insert(stdvector->end(), 50, 1);
-   shmvector->insert(shmvector->end(), 50, IntType(1));
+   stdvector->insert(stdvector->end(), 50u, 1);
+   shmvector->insert(shmvector->end(), 50u, IntType(1));
    if(!test::CheckEqualContainers(shmvector, stdvector)) return false;
 
    {
       IntType move_me(1);
-      stdvector->insert(stdvector->begin()+size/2, 50, 1);
-      shmvector->insert(shmvector->begin()+size/2, 50, boost::move(move_me));
+      stdvector->insert(stdvector->begin()+std::ptrdiff_t(size/2u), 50u, 1);
+      shmvector->insert(shmvector->begin()+std::ptrdiff_t(size/2u), 50u, boost::move(move_me));
       if(!test::CheckEqualContainers(shmvector, stdvector)) return false;
    }
    {
@@ -81,7 +81,7 @@ int vector_test()
    std::string process_name;
    test::get_process_id_name(process_name);
 
-   const int Memsize = 65536;
+   const int Memsize = 128u*1024u;
    const char *const shMemName = process_name.c_str();
    const int max = 100;
 
@@ -89,10 +89,10 @@ int vector_test()
       //Compare several shared memory vector operations with std::vector
       //Create shared memory
       shared_memory_object::remove(shMemName);
-      try{
+      BOOST_INTERPROCESS_TRY{
          ManagedSharedMemory segment(create_only, shMemName, Memsize);
 
-         segment.reserve_named_objects(100);
+         segment.reserve_named_objects(10);
 
          //Shared memory allocator must be always be initialized
          //since it has no default constructor
@@ -138,7 +138,6 @@ int vector_test()
             IntType aux_vect[50];
             for(int i = 0; i < 50; ++i){
                IntType new_int(-1);
-               //BOOST_STATIC_ASSERT((::boost::move_ipcdetail::is_copy_constructible<boost::interprocess::test::movable_int>::value == false));
                aux_vect[i] = boost::move(new_int);
             }
             int aux_vect2[50];
@@ -234,11 +233,11 @@ int vector_test()
          if(!segment.all_memory_deallocated())
             return 1;
       }
-      catch(std::exception &ex){
+      BOOST_INTERPROCESS_CATCH(std::exception &ex){
          shared_memory_object::remove(shMemName);
          std::cout << ex.what() << std::endl;
          return 1;
-      }
+      } BOOST_INTERPROCESS_CATCH_END
    }
    shared_memory_object::remove(shMemName);
    std::cout << std::endl << "Test OK!" << std::endl;

@@ -1,5 +1,5 @@
 [/
-    Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+    Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -73,16 +73,15 @@ something that is not a container for body octets, such as a
 [@boost:/libs/filesystem/doc/reference.html#class-path `boost::filesystem::path`].
 Or, a more structured container may be chosen. This declares a body's
 value type as a JSON tree structure produced from a
-[@boost:/doc/html/property_tree/parsers.html#property_tree.parsers.json_parser `boost::property_tree::json_parser`]:
+[@boost:/doc/html/json/input_output.html#json.input_output.parsing.streaming_parser `boost::json::stream_parser`]:
 ```
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/json/stream_parser.hpp>
 
 struct Body
 {
-    using value_type = boost::property_tree::ptree;
+    using value_type = boost::json::value;
 
-    class reader
+    class reader;
     class writer;
 };
 ```
@@ -93,7 +92,7 @@ those bodies may be parsed or serialized.
 
 
 
-[section File Body]
+[section:file_body File Body __example__]
 
 Use of the flexible __Body__ concept customization point enables authors to
 preserve the self-contained nature of the __message__ object while allowing

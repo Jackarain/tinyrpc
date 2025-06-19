@@ -9,12 +9,11 @@
 // See http://www.boost.org/libs/move for documentation.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include <boost/move/detail/config_begin.hpp>
+
 #include <boost/move/utility.hpp>
 #include <boost/core/lightweight_test.hpp>
 #include "../example/movable.hpp"
 #include "../example/copymovable.hpp"
-#include <boost/static_assert.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 //A copy_movable_noexcept class
@@ -226,5 +225,3 @@ int main()
 
    return boost::report_errors();
 }
-
-#include <boost/move/detail/config_end.hpp>

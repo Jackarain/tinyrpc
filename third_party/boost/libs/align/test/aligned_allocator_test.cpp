@@ -42,18 +42,44 @@ void test_construct()
 template<std::size_t Alignment>
 void test_constructor()
 {
-    boost::alignment::aligned_allocator<char, Alignment> a1;
-    boost::alignment::aligned_allocator<int, Alignment> a2(a1);
-    BOOST_TEST(a2 == a1);
+    {
+        boost::alignment::aligned_allocator<char, Alignment> a1;
+        boost::alignment::aligned_allocator<int, Alignment> a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
+    {
+        boost::alignment::aligned_allocator<char, Alignment> a1;
+        boost::alignment::aligned_allocator<void, Alignment> a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
+    {
+        boost::alignment::aligned_allocator<void, Alignment> a1;
+        boost::alignment::aligned_allocator<char, Alignment> a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
 }
 
 template<std::size_t Alignment>
 void test_rebind()
 {
-    boost::alignment::aligned_allocator<char, Alignment> a1;
-    typename boost::alignment::aligned_allocator<char,
-        Alignment>::template rebind<int>::other a2(a1);
-    BOOST_TEST(a2 == a1);
+    {
+        boost::alignment::aligned_allocator<char, Alignment> a1;
+        typename boost::alignment::aligned_allocator<char,
+            Alignment>::template rebind<int>::other a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
+    {
+        boost::alignment::aligned_allocator<char, Alignment> a1;
+        typename boost::alignment::aligned_allocator<char,
+            Alignment>::template rebind<void>::other a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
+    {
+        boost::alignment::aligned_allocator<void, Alignment> a1;
+        typename boost::alignment::aligned_allocator<void,
+            Alignment>::template rebind<char>::other a2(a1);
+        BOOST_TEST(a2 == a1);
+    }
 }
 
 template<std::size_t Alignment>

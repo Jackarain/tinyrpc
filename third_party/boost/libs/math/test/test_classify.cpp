@@ -11,10 +11,13 @@
 #include <boost/limits.hpp>
 #include <boost/math/concepts/real_concept.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/math/special_functions/next.hpp>  // for has_denorm_now
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <iomanip>
+
+#include "test_autodiff.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4127 4146) //  conditional expression is constant
@@ -103,7 +106,7 @@ void test_classify(T t, const char* type)
          }
       }
    }
-   if(std::numeric_limits<T>::has_denorm)
+   if(boost::math::detail::has_denorm_now<T>())
    {
       t = (std::numeric_limits<T>::min)();
       t /= 2;
@@ -177,7 +180,7 @@ void test_classify(T t, const char* type)
       BOOST_CHECK_EQUAL((::boost::math::isnan)(-t), false);
       BOOST_CHECK_EQUAL((::boost::math::isnormal)(t), false);
       BOOST_CHECK_EQUAL((::boost::math::isnormal)(-t), false);
-#if !defined(__BORLANDC__) && !(defined(__DECCXX) && !defined(_IEEE_FP))
+#if !defined(BOOST_BORLANDC) && !(defined(__DECCXX) && !defined(_IEEE_FP))
       // divide by zero on Borland triggers a C++ exception :-(
       // divide by zero on Compaq CXX triggers a C style signal :-(
       t = 2;
@@ -213,7 +216,7 @@ void test_classify(T t, const char* type)
    {
       std::cout << "Infinity not tested" << std::endl;
    }
-#ifndef __BORLANDC__
+#ifndef BOOST_BORLANDC
    // NaN's:
    // Note that Borland throws an exception if we even try to obtain a Nan
    // by calling std::numeric_limits<T>::quiet_NaN() !!!!!!!
@@ -256,6 +259,9 @@ void test_classify(T t, const char* type)
 #endif
 }
 
+
+BOOST_AUTO_TEST_SUITE(test_fpclassify)
+
 BOOST_AUTO_TEST_CASE( test_main )
 {
    BOOST_MATH_CONTROL_FP;
@@ -287,6 +293,16 @@ BOOST_AUTO_TEST_CASE( test_main )
    test_classify(int(0), "int");
    test_classify(unsigned(0), "unsigned");
 }
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(fpclassify_autodiff, T, all_float_types) {
+   test_classify(boost::math::differentiation::make_fvar<T, 1>(0), "autodiff float");
+   test_classify(boost::math::differentiation::make_fvar<T, 2>(0), "autodiff float");
+   test_classify(boost::math::differentiation::make_fvar<T, 3>(0), "autodiff float");
+   test_classify(boost::math::differentiation::make_fvar<T, 7>(0), "autodiff float");
+   test_classify(boost::math::differentiation::make_fvar<T, 12>(0), "autodiff float");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 /*
 Autorun "i:\Boost-sandbox\math_toolkit\libs\math\test\MSVC80\debug\test_classify.exe"

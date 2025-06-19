@@ -3,8 +3,8 @@
 
 // Copyright (c) 2010-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2014.
-// Modifications copyright (c) 2014 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2014-2020.
+// Modifications copyright (c) 2014-2020 Oracle and/or its affiliates.
 
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
@@ -21,6 +21,8 @@
 #include <boost/geometry/algorithms/covered_by.hpp>
 #include <boost/geometry/algorithms/within.hpp>
 
+#include <boost/geometry/strategy/cartesian/side_robust.hpp>
+
 #include <boost/geometry/strategies/cartesian/point_in_poly_franklin.hpp>
 #include <boost/geometry/strategies/cartesian/point_in_poly_crossings_multiply.hpp>
 #include <boost/geometry/strategies/agnostic/point_in_poly_winding.hpp>
@@ -28,9 +30,12 @@
 #include <boost/geometry/strategies/cartesian/box_in_box.hpp>
 #include <boost/geometry/strategies/agnostic/point_in_box_by_side.hpp>
 
-#include <boost/geometry/strategies/cartesian/side_by_triangle.hpp>
 #include <boost/geometry/strategies/spherical/ssf.hpp>
 
+// TEMP
+#include <boost/geometry/strategies/relate/cartesian.hpp>
+#include <boost/geometry/strategies/relate/geographic.hpp>
+#include <boost/geometry/strategies/relate/spherical.hpp>
 
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
@@ -72,7 +77,7 @@ void test_point_in_polygon(std::string const& case_id,
                            bool expected,
                            bool use_within = true)
 {
-    BOOST_CONCEPT_ASSERT( (bg::concepts::WithinStrategyPolygonal<Strategy>) );
+    BOOST_CONCEPT_ASSERT( (bg::concepts::WithinStrategyPolygonal<Point, Polygon, Strategy>) );
     bool detected = use_within ?
                     bg::within(point, polygon, strategy) :
                     bg::covered_by(point, polygon, strategy);

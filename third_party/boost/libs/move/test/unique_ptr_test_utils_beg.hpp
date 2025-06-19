@@ -14,7 +14,7 @@
 #define BOOST_MOVE_UNIQUE_PTR_TEST_UTILS_BEG_HPP
 #include <boost/move/core.hpp>
 #include <boost/move/detail/unique_ptr_meta_utils.hpp>
-#include <boost/static_assert.hpp>
+#include <cstddef>
 
 //////////////////////////////////////////////
 //
@@ -182,13 +182,13 @@ int B::count = 0;
 
 void reset_counters();
 
-BOOST_STATIC_ASSERT((::boost::move_upmu::is_convertible<B, A>::value));
+BOOST_MOVE_STATIC_ASSERT((::boost::move_upmu::is_convertible<B, A>::value));
 
 //Incomplete Type function declarations
 struct I;
 void check(int i);
 I* get();
-I* get_array(int i);
+I* get_array(std::size_t i);
 
 #include <boost/move/unique_ptr.hpp>
 

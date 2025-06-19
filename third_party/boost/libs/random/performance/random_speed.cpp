@@ -8,6 +8,7 @@
  * $Id$
  */
 
+#define BOOST_TIMER_ENABLE_DEPRECATED
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -352,6 +353,8 @@ int main(int argc, char*argv[])
 #if !defined(BOOST_NO_INT64_T)
   run(iter, "mt19937_64", boost::mt19937_64());
 #endif
+  
+    run(iter, "mixmax", boost::random::mixmax());
 
   run(iter, "lagged_fibonacci607", boost::lagged_fibonacci607());
   run(iter, "lagged_fibonacci1279", boost::lagged_fibonacci1279());
@@ -378,6 +381,17 @@ int main(int argc, char*argv[])
 
   run(iter, "counting", counting());
 
+  run(iter, "splitmix64", boost::random::splitmix64());
+  run(iter, "xoshiro256pp", boost::random::xoshiro256pp());
+  run(iter, "xoshiro256d", boost::random::xoshiro256d());
+  run(iter, "xoshiro256mm", boost::random::xoshiro256mm());
+  run(iter, "xoshiro512pp", boost::random::xoshiro512pp());
+  run(iter, "xoshiro512d", boost::random::xoshiro512d());
+  run(iter, "xoshiro512mm", boost::random::xoshiro512mm());
+  run(iter, "xoshiro128pp", boost::random::xoshiro128pp());
+  run(iter, "xoshiro128f", boost::random::xoshiro128f());
+  run(iter, "xoshiro128mm", boost::random::xoshiro128mm());
+
 #ifdef HAVE_MT19937INT_C
   // requires the original mt19937int.c
   run<float>(iter, "mt19937 original");   // coded for sgenrand()/genrand()
@@ -394,6 +408,8 @@ int main(int argc, char*argv[])
   distrib(iter, "kreutzer1986", boost::kreutzer1986());
 
   distrib(iter, "mt19937", boost::mt19937());
+  
+  distrib(iter, "mixmax", boost::random::mixmax());
   
   distrib(iter, "lagged_fibonacci607", boost::lagged_fibonacci607());
 }

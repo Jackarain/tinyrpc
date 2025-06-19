@@ -6,11 +6,7 @@
 
 # include "node.hpp"
 # include <boost/iterator/iterator_adaptor.hpp>
-
-# ifndef BOOST_NO_SFINAE
-#  include <boost/type_traits/is_convertible.hpp>
-#  include <boost/utility/enable_if.hpp>
-# endif
+# include <type_traits>
 
 template <class Value>
 class node_iter
@@ -27,7 +23,7 @@ class node_iter
     typedef boost::iterator_adaptor<
         node_iter<Value>, Value*, boost::use_default, boost::forward_traversal_tag
     > super_t;
-    
+
  public:
     node_iter()
       : super_t(0) {}
@@ -38,19 +34,17 @@ class node_iter
     template <class OtherValue>
     node_iter(
         node_iter<OtherValue> const& other
-# ifndef BOOST_NO_SFINAE
-      , typename boost::enable_if<
-            boost::is_convertible<OtherValue*,Value*>
+      , typename std::enable_if<
+            std::is_convertible<OtherValue*,Value*>::value
           , enabler
         >::type = enabler()
-# endif 
     )
       : super_t(other.base()) {}
 
 # if !BOOST_WORKAROUND(__GNUC__, == 2)
- private: // GCC2 can't grant friendship to template member functions    
+ private: // GCC2 can't grant friendship to template member functions
     friend class boost::iterator_core_access;
-# endif     
+# endif
     void increment() { this->base_reference() = this->base()->next(); }
 };
 

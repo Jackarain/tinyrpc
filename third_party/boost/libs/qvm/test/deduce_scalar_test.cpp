@@ -1,9 +1,12 @@
-//Copyright (c) 2008-2016 Emil Dotchevski and Reverge Studios, Inc.
+// Copyright 2008-2024 Emil Dotchevski and Reverge Studios, Inc.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-//Distributed under the Boost Software License, Version 1.0. (See accompanying
-//file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-#include <boost/qvm/deduce_scalar.hpp>
+#ifdef BOOST_QVM_TEST_SINGLE_HEADER
+#   include BOOST_QVM_TEST_SINGLE_HEADER
+#else
+#   include <boost/qvm/deduce_scalar.hpp>
+#endif
 
 template <class T,class U>
 struct same_type;
@@ -18,8 +21,14 @@ template <class A,class B,class R>
 struct
 check
     {
-    same_type<typename boost::qvm::deduce_scalar<A,B>::type,R> a;
-    same_type<typename boost::qvm::deduce_scalar<B,A>::type,R> b;
+    same_type<typename boost::qvm::deduce_scalar<A,B>::type,R> a1;
+    same_type<typename boost::qvm::deduce_scalar<A const,B>::type,R> a2;
+    same_type<typename boost::qvm::deduce_scalar<A,B const>::type,R> a3;
+    same_type<typename boost::qvm::deduce_scalar<A const,B const>::type,R> a4;
+    same_type<typename boost::qvm::deduce_scalar<B,A>::type,R> b1;
+    same_type<typename boost::qvm::deduce_scalar<B const,A>::type,R> b2;
+    same_type<typename boost::qvm::deduce_scalar<B,A const>::type,R> b3;
+    same_type<typename boost::qvm::deduce_scalar<B const,A const>::type,R> b4;
     };
 
 int

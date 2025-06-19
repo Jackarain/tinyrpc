@@ -132,7 +132,7 @@ date d(from_string(ds));</screen></entry>
 
         <row>
 	  <entry valign="top" morerows="1"><screen>date from_undelimited_string(std::string)</screen></entry>
-	  <entry>From iso type date string where with order year-month-day eg: 20020125</entry>
+	  <entry>From ISO 8601 type date string where with order year-month-day eg: 20020125</entry>
 	</row>
 	<row>
 	  <entry><screen>std::string ds("20020125");
@@ -500,7 +500,7 @@ tm d_tm = to_tm(d);
    tm_hour => 0
    tm_min  => 0
    tm_sec  => 0
-   tm_isddst => -1 */</screen>
+   tm_isdst => -1 */</screen>
 	  </entry>
         </row>
 

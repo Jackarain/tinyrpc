@@ -11,12 +11,13 @@
 #include <boost/math/concepts/real_concept.hpp>
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
 #include <boost/math/special_functions/legendre.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/array.hpp>
+#include <boost/type_index.hpp>
 #include "functor.hpp"
 
 #include "handle_test_result.hpp"
@@ -182,6 +183,22 @@ void test_spots(T, const char* t)
    BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_q(4, static_cast<T>(0.5L)), static_cast<T>(0.4401745259867706044988642951843745400835L), tolerance);
    BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_q(7, static_cast<T>(0.5L)), static_cast<T>(-0.3439152932669753451878700644212067616780L), tolerance);
    BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_q(40, static_cast<T>(0.5L)), static_cast<T>(0.1493671665503550095010454949479907886011L), tolerance);
+   //
+   // m = l-1, see https://github.com/boostorg/math/issues/453:
+   //
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(0, -1, static_cast<T>(0.5)), static_cast<T>(0.5773502691896257645091487805019574556476017512701268760186023264L), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(0, -1, static_cast<T>(1)), static_cast<T>(0), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(0, -1, static_cast<T>(0)), static_cast<T>(1), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(1, 0, static_cast<T>(0.5)), static_cast<T>(0.5), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(1, 0, static_cast<T>(1)), static_cast<T>(1), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(1, 0, static_cast<T>(0)), static_cast<T>(0), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, 1, static_cast<T>(0.5)), static_cast<T>(-1.2990381056766579701455847561294042752071039403577854710418552L), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, 1, static_cast<T>(1)), static_cast<T>(0), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, 1, static_cast<T>(0)), static_cast<T>(0), tolerance);
+
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, -2, static_cast<T>(0.5)), static_cast<T>(0.09375L), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, -2, static_cast<T>(1)), static_cast<T>(0), tolerance);
+   BOOST_CHECK_CLOSE_FRACTION(::boost::math::legendre_p(2, -2, static_cast<T>(0)), static_cast<T>(0.125), tolerance);
 }
 
 template <class T>
@@ -273,26 +290,26 @@ void test_legendre_p_zeros()
 
     // Check the trivial cases:
     std::vector<Real> zeros = legendre_p_zeros<Real>(1);
-    BOOST_ASSERT(zeros.size() == 1);
+    BOOST_MATH_ASSERT(zeros.size() == 1);
     BOOST_CHECK_SMALL(zeros[0], tol);
 
     zeros = legendre_p_zeros<Real>(2);
-    BOOST_ASSERT(zeros.size() == 1);
+    BOOST_MATH_ASSERT(zeros.size() == 1);
     BOOST_CHECK_CLOSE_FRACTION(zeros[0], (Real) 1/ sqrt(static_cast<Real>(3)), tol);
 
     zeros = legendre_p_zeros<Real>(3);
-    BOOST_ASSERT(zeros.size() == 2);
+    BOOST_MATH_ASSERT(zeros.size() == 2);
     BOOST_CHECK_SMALL(zeros[0], tol);
     BOOST_CHECK_CLOSE_FRACTION(zeros[1], sqrt(static_cast<Real>(3)/static_cast<Real>(5)), tol);
 
     zeros = legendre_p_zeros<Real>(4);
-    BOOST_ASSERT(zeros.size() == 2);
+    BOOST_MATH_ASSERT(zeros.size() == 2);
     BOOST_CHECK_CLOSE_FRACTION(zeros[0], sqrt( (15-2*sqrt(static_cast<Real>(30)))/static_cast<Real>(35) ), tol);
     BOOST_CHECK_CLOSE_FRACTION(zeros[1], sqrt( (15+2*sqrt(static_cast<Real>(30)))/static_cast<Real>(35) ), tol);
 
 
     zeros = legendre_p_zeros<Real>(5);
-    BOOST_ASSERT(zeros.size() == 3);
+    BOOST_MATH_ASSERT(zeros.size() == 3);
     BOOST_CHECK_SMALL(zeros[0], tol);
     BOOST_CHECK_CLOSE_FRACTION(zeros[1], third<Real>()*sqrt( (35 - 2*sqrt(static_cast<Real>(70)))/static_cast<Real>(7) ), 2*tol);
     BOOST_CHECK_CLOSE_FRACTION(zeros[2], third<Real>()*sqrt( (35 + 2*sqrt(static_cast<Real>(70)))/static_cast<Real>(7) ), 2*tol);
@@ -320,7 +337,7 @@ void test_legendre_p_zeros()
             Real next_zero = zeros[k];
             BOOST_CHECK(next_zero > previous_zero);
 
-            std::string err = "Tolerance failed for (n, k) = (" + boost::lexical_cast<std::string>(n) + "," + boost::lexical_cast<std::string>(k) + ")\n";
+            std::string err = "Tolerance failed for (n, k) = (" + std::to_string(n) + "," + std::to_string(k) + ")\n";
             if (n < 40)
             {
                 BOOST_CHECK_MESSAGE( abs(legendre_p(n, next_zero)) < 100*tol,
@@ -352,7 +369,7 @@ int test_legendre_p_zeros_double_ulp(int min_x, int max_n)
     {
         std::vector<double> double_zeros = legendre_p_zeros<double>(n);
         std::vector<cpp_bin_float_quad> quad_zeros   = legendre_p_zeros<cpp_bin_float_quad>(n);
-        BOOST_ASSERT(quad_zeros.size() == double_zeros.size());
+        BOOST_MATH_ASSERT(quad_zeros.size() == double_zeros.size());
         for (int k = 0; k < (int)double_zeros.size(); ++k)
         {
             double d = abs(float_distance(double_zeros[k], quad_zeros[k].convert_to<double>()));

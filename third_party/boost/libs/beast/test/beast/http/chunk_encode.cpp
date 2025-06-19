@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,7 +16,7 @@
 #include <boost/beast/core/static_string.hpp>
 #include <boost/beast/http/fields.hpp>
 #include <boost/beast/test/fuzz.hpp>
-#include <boost/beast/unit_test/suite.hpp>
+#include <boost/beast/_experimental/unit_test/suite.hpp>
 #include <boost/optional.hpp>
 #include <random>
 
@@ -60,7 +60,7 @@ public:
         BEAST_EXPECT(buffers_to_string(t3) == match);
     }
 
-    using cb_t = boost::asio::const_buffer;
+    using cb_t = net::const_buffer;
 
     static
     cb_t
@@ -195,11 +195,11 @@ public:
                 std::string s;
                 for(auto const& v : ce)
                 {
-                    s.append(v.first.to_string());
+                    s.append(std::string(v.first));
                     s.push_back(',');
                     if(! v.second.empty())
                     {
-                        s.append(v.second.to_string());
+                        s.append(std::string(v.second));
                         s.push_back(',');
                     }
                 }
@@ -230,7 +230,7 @@ public:
         [&](string_view s)
         {
             error_code ec;
-            static_string<200> ss{s};
+            static_string<200> ss(s.data(), s.size());
             test::fuzz_rand r;
             for(auto i = 3; i--;)
             {

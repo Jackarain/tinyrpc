@@ -8,6 +8,7 @@
     "category": [
         "String"
     ],
+    "cxxstd": "11",
     "maintainers": [
         "Hartmut Kaiser <hartmut.kaiser -at- gmail.com>"
     ]

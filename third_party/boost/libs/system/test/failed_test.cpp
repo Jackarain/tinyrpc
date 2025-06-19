@@ -2,11 +2,9 @@
 // Copyright 2018 Peter Dimov.
 // Distributed under the Boost Software License, Version 1.0.
 
-// Avoid spurious VC++ warnings
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <boost/system/error_code.hpp>
 #include <boost/core/lightweight_test.hpp>
+#include <boost/core/snprintf.hpp>
 #include <cstdio>
 
 using namespace boost::system;
@@ -15,11 +13,11 @@ struct http_category_impl: public error_category
 {
     // clang++ 3.8 and below: initialization of const object
     // requires a user-provided default constructor
-    BOOST_SYSTEM_CONSTEXPR http_category_impl() BOOST_NOEXCEPT
+    BOOST_SYSTEM_CONSTEXPR http_category_impl() noexcept
     {
     }
 
-    char const * name() const BOOST_NOEXCEPT
+    char const * name() const noexcept
     {
         return "http";
     }
@@ -28,11 +26,11 @@ struct http_category_impl: public error_category
     {
         char buffer[ 32 ];
 
-        std::sprintf( buffer, "HTTP/1.0 %d", ev );
+        boost::core::snprintf( buffer, sizeof( buffer ), "HTTP/1.0 %d", ev );
         return buffer;
     }
 
-    bool failed( int ev ) const BOOST_NOEXCEPT
+    bool failed( int ev ) const noexcept
     {
         return !( ev >= 200 && ev < 300 );
     }

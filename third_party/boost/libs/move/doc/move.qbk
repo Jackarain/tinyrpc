@@ -5,9 +5,9 @@
  / file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  /]
 [library Boost.Move
-    [quickbook 1.5]
+    [quickbook 1.7]
     [authors [Gaztanaga, Ion]]
-    [copyright 2008-2014 Ion Gaztanaga]
+    [copyright 2008-2024 Ion Gaztanaga]
     [id move]
     [dirname move]
     [purpose Move semantics]
@@ -463,7 +463,7 @@ provided with this library. With regular iterator classes,
 
    while (first != last) *result++ = *first++;
 
-causes a range [first,last) to be copied into a range starting with result. The same code with
+causes a range `[first,last)` to be copied into a range starting with result. The same code with
 result being a move insert iterator will move insert corresponding elements into the container.
 This device allows all of the copying algorithms in the library to work in the move insert mode
 instead of the regular overwrite mode. This library offers 3 move insert iterators and their
@@ -801,6 +801,99 @@ Special thanks to:
 [endsect]
 
 [section:release_notes Release Notes]
+
+[section:release_notes_boost_1_88 Boost 1.88 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/pull/58   Git Pull #58: ['"Avoid -Wdeprecated-variadic-comma-omission with GCC 15 trunk -std=c++26"]].
+
+[endsect]
+
+[section:release_notes_boost_1_87 Boost 1.87 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/56 Git Issue #56: ['"Forward declarations of std types cause compilation errors on some platforms"]].
+   *  [@https://github.com/boostorg/move/issues/57 Git Issue #57: ['"<boost/move/adl_move_swap.hpp> fails to compile under libc++-19"]].
+
+[endsect]
+
+Forward declarations of std types cause compilation errors on some platforms #292
+
+[section:release_notes_boost_1_85 Boost 1.85 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/51 Git Issue #51: ['"Compiler deprecation warnings with VS2019 Version 16.10 and boost/move headers"]].
+
+[endsect]
+
+[section:release_notes_boost_1_81 Boost 1.81 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/49 Git Issue #49: ['"clang-15 warnings about deprecated type traits intrinsics"]].
+
+[endsect]
+
+[section:release_notes_boost_1_79 Boost 1.79 Release]
+
+*  The library now compiles without warnings with GCC's -Wcast-align=strict
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/pull/46   Git Issue #46: ['"Include <algorithm> when BOOST_MOVE_USE_STANDARD_LIBRARY_MOVE is defined"]].
+   *  [@https://github.com/boostorg/move/issues/47 Git Issue #47: ['"MSVC C5243: 'member_function_ptr': using incomplete class can cause potential ODR violation ..."]].
+   *  [@https://github.com/boostorg/move/issues/48 Git Issue #48: ['"MSVC warning C4643: Forward declaring 'nothrow_t' in namespace std is not permitted by the C++ Standard"]].
+
+[endsect]
+
+[section:release_notes_boost_1_78 Boost 1.78 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/45 Git Issue #45: ['"Sort/merge bugs that affect boost::container::flat_map"]].
+
+[endsect]
+
+[section:release_notes_boost_1_77 Boost 1.77 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/40 Git Issue #40: ['"Warning 4675 is not defined in MSVC"]].
+   *  [@https://github.com/boostorg/move/issues/42 Git Issue #42: ['"<boost/move/unique_ptr.hpp> fails when BOOST_MOVE_USE_STANDARD_LIBRARY_MOVE is set"]].
+
+[endsect]
+
+[section:release_notes_boost_1_76 Boost 1.76 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/35 Git Issue #35: ['"New nothrow move traits are incomplete"]].
+
+[endsect]
+
+[section:release_notes_boost_1_75 Boost 1.75 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/30 Git Issue #30: ['"(void) C-cast is a non-portable way of suppressing compiler warnings"]].
+
+[endsect]
+
+[section:release_notes_boost_1_73 Boost 1.73 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/28 Git Issue #28: ['"Warning C4624 on MSVC 2019"]].
+
+[endsect]
+
+[section:release_notes_boost_1_71 Boost 1.71 Release]
+
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/issues/26 Git Issue #26: ['"Invalid iterator increment/decrement in the last iteration of adaptive_sort_combine_blocks"]].
+
+[endsect]
+
+[section:release_notes_boost_1_70 Boost 1.70 Release]
+
+*  Removed support for deprecated GCC compilers.
+*  Fixed bugs:
+   *  [@https://github.com/boostorg/move/pull/23 Git Pull #23: ['"Add minimal cmake file"]].
+   *  [@https://github.com/boostorg/move/issues/25 Git Issue #25: ['"adaptive_merge is broken for iterator_traits<RandIt>::size_type != std::size_t"]].
+
+[endsect]
 
 [section:release_notes_boost_1_69 Boost 1.69 Release]
 

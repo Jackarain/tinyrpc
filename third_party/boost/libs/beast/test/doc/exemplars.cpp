@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
+// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -7,6 +7,7 @@
 // Official repository: https://github.com/boostorg/beast
 //
 
+#include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/core/file_base.hpp>
 #include <boost/beast/http/message.hpp>
@@ -53,7 +54,7 @@ struct BodyWriter
 {
 public:
     /// The type of buffer returned by `get`.
-    using const_buffers_type = boost::asio::const_buffer;
+    using const_buffers_type = net::const_buffer;
 
     /** Construct the writer.
 
@@ -76,7 +77,7 @@ public:
     init(error_code& ec)
     {
         // The specification requires this to indicate "no error"
-        ec.assign(0, ec.category());
+        ec = {};
     }
 
     /** Returns the next buffer in the body.
@@ -86,7 +87,7 @@ public:
             body, no more buffers are present.
 
         @li If the optional contains a value, the first element of the
-            pair represents a @b ConstBufferSequence containing one or
+            pair represents a <em>ConstBufferSequence</em> containing one or
             more octets of the body data. The second element indicates
             whether or not there are additional octets of body data.
             A value of `true` means there is more data, and that the
@@ -101,7 +102,7 @@ public:
     get(error_code& ec)
     {
         // The specification requires this to indicate "no error"
-        ec.assign(0, ec.category());
+        ec = {};
 
         return boost::none; // for exposition only
     }
@@ -144,7 +145,7 @@ struct BodyReader
         boost::ignore_unused(content_length);
 
         // The specification requires this to indicate "no error"
-        ec.assign(0, ec.category());
+        ec = {};
     }
 
     /** Store buffers.
@@ -164,7 +165,7 @@ struct BodyReader
         // The specification requires this to indicate "no error"
         ec = {};
 
-        return boost::asio::buffer_size(buffers);
+        return buffer_bytes(buffers);
     }
 
     /** Called when the body is complete.
@@ -268,7 +269,7 @@ protected:
 };
 
 static_assert(is_fields<Fields>::value,
-    "Fields requirements not met");
+    "Fields type requirements not met");
 
 //]
 

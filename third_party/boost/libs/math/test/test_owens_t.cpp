@@ -35,12 +35,13 @@ using boost::math::owens_t;
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <boost/array.hpp>
 
-#include "libs/math/test/handle_test_result.hpp"
-#include "libs/math/test/table_type.hpp"
-#include "libs/math/test/functor.hpp"
+#include "handle_test_result.hpp"
+#include "table_type.hpp"
+#include "functor.hpp"
+#include "boost/math/tools/test_value.hpp"
 #include "test_owens_t.hpp"
 
 //
@@ -52,19 +53,8 @@ using boost::math::owens_t;
 #ifdef TEST_CPP_DEC_FLOAT
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
-template <class R>
-inline R convert_to(const char* s)
-{
-   try{
-      return boost::lexical_cast<R>(s);
-   }
-   catch(const boost::bad_lexical_cast&)
-   {
-      return 0;
-   }
-}
-
-#define SC_(x) convert_to<T>(BOOST_STRINGIZE(x))
+#undef SC_
+#define SC_(x) BOOST_MATH_TEST_VALUE(x)
 #endif
 
 #include "owens_t_T7.hpp"
@@ -98,7 +88,21 @@ void expected_results()
    //
    // Catch all cases come last:
    //
-   if(std::numeric_limits<long double>::digits > 60)
+   if(std::numeric_limits<long double>::digits > 100)
+   {
+      //
+      // Arbitrary precision versions run out steam (and series iterations)
+      // if we push them to too many digits:
+      //
+      add_expected_result(
+         ".*",                            // compiler
+         ".*",                            // stdlib
+         ".*",                            // platform
+         largest_type,                    // test type(s)
+         ".*",      // test data group
+         "owens_t", 10000000, 1000000);  // test function
+   }
+   else if(std::numeric_limits<long double>::digits > 60)
    {
       add_expected_result(
          ".*",                            // compiler
@@ -139,7 +143,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_spots(0.0); // Test double.
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_spots(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_spots(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #endif
@@ -148,7 +152,7 @@ BOOST_AUTO_TEST_CASE( test_main )
   check_against_T7(0.0); // Test double.
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   check_against_T7(0.0L); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   check_against_T7(boost::math::concepts::real_concept(0.)); // Test real concept.
 #endif
 #endif
@@ -157,12 +161,12 @@ BOOST_AUTO_TEST_CASE( test_main )
   test_owens_t(0.0, "double"); // Test double.
 #ifndef BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
   test_owens_t(0.0L, "long double"); // Test long double.
-#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x582)) && !defined(BOOST_MATH_NO_REAL_CONCEPT_TESTS)
   test_owens_t(boost::math::concepts::real_concept(0.), "real_concept"); // Test real concept.
 #endif
 #endif
-#ifdef TEST_CPP_DEC_FLOAT
-  typedef boost::multiprecision::mp_number<boost::multiprecision::cpp_dec_float<35> > cpp_dec_float_35;
+#if defined(TEST_CPP_DEC_FLOAT) && !defined(BOOST_MATH_STANDALONE)
+  typedef boost::multiprecision::number<boost::multiprecision::cpp_dec_float<35> > cpp_dec_float_35;
   test_owens_t(cpp_dec_float_35(0), "cpp_dec_float_35"); // Test real concept.
   test_owens_t(boost::multiprecision::cpp_dec_float_50(0), "cpp_dec_float_50"); // Test real concept.
   test_owens_t(boost::multiprecision::cpp_dec_float_100(0), "cpp_dec_float_100"); // Test real concept.

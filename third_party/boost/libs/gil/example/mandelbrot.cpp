@@ -5,11 +5,16 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
+
 #include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/gil/extension/io/jpeg_io.hpp>
+#include <boost/gil/extension/io/jpeg.hpp>
 
-// Example for convolve_rows() and convolve_cols() in the numeric extension
+// Creates a synthetic image defining the Mandelbrot set.
+// The example relies on a virtual_2d_locator to iterate over the pixels in the destination view.
+// The pixels (of type rgb8_pixel_t) are generated programmatically, and the code shows how to access
+// the colour channels and set them to arbitrary values.
+
 
 using namespace boost::gil;
 
@@ -18,13 +23,13 @@ template <typename P>   // Models PixelValueConcept
 struct mandelbrot_fn
 {
     using point_t = boost::gil::point_t;
-    typedef mandelbrot_fn        const_t;
-    typedef P                    value_type;
-    typedef value_type           reference;
-    typedef value_type           const_reference;
-    typedef point_t              argument_type;
-    typedef reference            result_type;
-    BOOST_STATIC_CONSTANT(bool, is_mutable=false);
+    using const_t = mandelbrot_fn;
+    using value_type = P;
+    using reference = value_type;
+    using const_reference = value_type;
+    using argument_type = point_t;
+    using result_type = reference;
+    static constexpr bool is_mutable =false;
 
     value_type                    _in_color,_out_color;
     point_t                       _img_size;
@@ -40,7 +45,7 @@ struct mandelbrot_fn
         t=pow(t,0.2);
 
         value_type ret;
-        for (int k=0; k<num_channels<P>::value; ++k)
+        for (std::size_t k=0; k<num_channels<P>::value; ++k)
             ret[k]=(typename channel_type<P>::type)(_in_color[k]*t + _out_color[k]*(1-t));
         return ret;
     }
@@ -57,18 +62,19 @@ private:
     }
 };
 
-int main() {
-    typedef mandelbrot_fn<rgb8_pixel_t> deref_t;
-    typedef deref_t::point_t            point_t;
-    typedef virtual_2d_locator<deref_t,false> locator_t;
-    typedef image_view<locator_t> my_virt_view_t;
+int main()
+{
+    using deref_t = mandelbrot_fn<rgb8_pixel_t>;
+    using point_t = deref_t::point_t;
+    using locator_t = virtual_2d_locator<deref_t,false>;
+    using my_virt_view_t = image_view<locator_t>;
 
-    boost::function_requires<PixelLocatorConcept<locator_t> >();
-    gil_function_requires<StepIteratorConcept<locator_t::x_iterator> >();
+    boost::function_requires<PixelLocatorConcept<locator_t>>();
+    gil_function_requires<StepIteratorConcept<locator_t::x_iterator>>();
 
     point_t dims(200,200);
     my_virt_view_t mandel(dims, locator_t(point_t(0,0), point_t(1,1), deref_t(dims, rgb8_pixel_t(255,0,255), rgb8_pixel_t(0,255,0))));
-    jpeg_write_view("out-mandelbrot.jpg",mandel);
+    write_view("out-mandelbrot.jpg",mandel, jpeg_tag{});
 
     return 0;
 }

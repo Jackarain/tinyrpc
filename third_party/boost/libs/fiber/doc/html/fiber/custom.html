@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <title>Customization</title>
 <link rel="stylesheet" href="../../../../../doc/src/boostbook.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 <link rel="home" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="up" href="../index.html" title="Chapter&#160;1.&#160;Fiber">
 <link rel="prev" href="tuning.html" title="Tuning">
@@ -28,7 +28,7 @@
 </h2></div></div></div>
 <h4>
 <a name="fiber.custom.h0"></a>
-      <span class="phrase"><a name="fiber.custom.overview"></a></span><a class="link" href="custom.html#fiber.custom.overview">Overview</a>
+      <span><a name="fiber.custom.overview"></a></span><a class="link" href="custom.html#fiber.custom.overview">Overview</a>
     </h4>
 <p>
       As noted in the <a class="link" href="scheduling.html#scheduling">Scheduling</a> section, by default
@@ -56,12 +56,12 @@
     </p>
 <h4>
 <a name="fiber.custom.h1"></a>
-      <span class="phrase"><a name="fiber.custom.custom_property_class"></a></span><a class="link" href="custom.html#fiber.custom.custom_property_class">Custom
+      <span><a name="fiber.custom.custom_property_class"></a></span><a class="link" href="custom.html#fiber.custom.custom_property_class">Custom
       Property Class</a>
     </h4>
 <p>
       The first essential point is that we must associate an integer priority with
-      each fiber.<a href="#ftn.fiber.custom.f0" class="footnote" name="fiber.custom.f0"><sup class="footnote">[11]</sup></a>
+      each fiber.<sup>[<a name="fiber.custom.f0" href="#ftn.fiber.custom.f0" class="footnote">11</a>]</sup>
     </p>
 <p>
       One might suggest deriving a custom <a class="link" href="fiber_mgmt/fiber.html#class_fiber"><code class="computeroutput">fiber</code></a> subclass to store such
@@ -166,7 +166,7 @@
 </table></div>
 <h4>
 <a name="fiber.custom.h2"></a>
-      <span class="phrase"><a name="fiber.custom.custom_scheduler_class"></a></span><a class="link" href="custom.html#fiber.custom.custom_scheduler_class">Custom
+      <span><a name="fiber.custom.custom_scheduler_class"></a></span><a class="link" href="custom.html#fiber.custom.custom_scheduler_class">Custom
       Scheduler Class</a>
     </h4>
 <p>
@@ -334,7 +334,7 @@
     </p>
 <h4>
 <a name="fiber.custom.h3"></a>
-      <span class="phrase"><a name="fiber.custom.replace_default_scheduler"></a></span><a class="link" href="custom.html#fiber.custom.replace_default_scheduler">Replace
+      <span><a name="fiber.custom.replace_default_scheduler"></a></span><a class="link" href="custom.html#fiber.custom.replace_default_scheduler">Replace
       Default Scheduler</a>
     </h4>
 <p>
@@ -356,7 +356,7 @@
     </p>
 <h4>
 <a name="fiber.custom.h4"></a>
-      <span class="phrase"><a name="fiber.custom.use_properties"></a></span><a class="link" href="custom.html#fiber.custom.use_properties">Use
+      <span><a name="fiber.custom.use_properties"></a></span><a class="link" href="custom.html#fiber.custom.use_properties">Use
       Properties</a>
     </h4>
 <p>
@@ -400,8 +400,8 @@
       then make use of this information next time the fiber manager calls <a class="link" href="scheduling.html#algorithm_with_properties_pick_next"><code class="computeroutput">algorithm_with_properties::pick_next()</code></a>.
     </p>
 <div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.fiber.custom.f0" class="footnote"><p><a href="#fiber.custom.f0" class="para"><sup class="para">[11] </sup></a>
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.fiber.custom.f0" href="#fiber.custom.f0" class="para">11</a>] </sup>
         A previous version of the Fiber library implicitly tracked an int priority
         for each fiber, even though the default scheduler ignored it. This has been
         dropped, since the library now supports arbitrary scheduler-specific fiber

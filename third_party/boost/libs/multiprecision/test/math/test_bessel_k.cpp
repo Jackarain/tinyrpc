@@ -2,7 +2,7 @@
 //  Copyright Christopher Kormanyos 2002 - 2011.
 //  Copyright 2011 John Maddock. Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_
+//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 //
 // This work is based on an earlier work:
 // "Algorithm 910: A Portable C++ Multiple-Precision System for Special-Function Calculations",
@@ -12,6 +12,7 @@
 #include "table_type.hpp"
 
 #include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/bessel.hpp>
 #include "libs/math/test/test_bessel_k.hpp"
 
 void expected_results()
@@ -21,62 +22,62 @@ void expected_results()
    // various compilers and platforms.
    //
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*gmp.*",                     // test type(s)
-      ".*",                          // test data group
-      ".*", 2000, 1500);                // test function
+       ".*",              // compiler
+       ".*",              // stdlib
+       ".*",              // platform
+       ".*gmp.*",         // test type(s)
+       ".*",              // test data group
+       ".*", 2000, 1500); // test function
 #ifdef BOOST_INTEL
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*float128.*",                     // test type(s)
-      ".*",                          // test data group
-      ".*", 300, 100);                // test function
+       ".*",            // compiler
+       ".*",            // stdlib
+       ".*",            // platform
+       ".*float128.*",  // test type(s)
+       ".*",            // test data group
+       ".*", 300, 100); // test function
 #endif
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*mpfr_float_backend<18>.*",  // test type(s)
-      ".*",                          // test data group
-      ".*", 3000, 1000);             // test function
+       ".*",                         // compiler
+       ".*",                         // stdlib
+       ".*",                         // platform
+       ".*mpfr_float_backend<18>.*", // test type(s)
+       ".*",                         // test data group
+       ".*", 3000, 1000);            // test function
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*mpfr_float_backend<0>.*",  // test type(s)
-      ".*",                          // test data group
-      ".*", 300, 150);             // test function
+       ".*",                        // compiler
+       ".*",                        // stdlib
+       ".*",                        // platform
+       ".*mpfr_float_backend<0>.*", // test type(s)
+       ".*",                        // test data group
+       ".*", 300, 150);             // test function
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*",                          // test type(s)
-      ".*large.*",                   // test data group
-      ".*", 80, 50);                 // test function
+       ".*",          // compiler
+       ".*",          // stdlib
+       ".*",          // platform
+       ".*",          // test type(s)
+       ".*large.*",   // test data group
+       ".*", 80, 50); // test function
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*cpp_bin_float.*",           // test type(s)
-      ".*",                          // test data group
-      ".*", 300, 150);               // test function
+       ".*",                // compiler
+       ".*",                // stdlib
+       ".*",                // platform
+       ".*cpp_bin_float.*", // test type(s)
+       ".*",                // test data group
+       ".*", 300, 150);     // test function
    add_expected_result(
-      ".*",                          // compiler
-      ".*",                          // stdlib
-      ".*",                          // platform
-      ".*",                          // test type(s)
-      ".*",                          // test data group
-      ".*", 50, 15);                 // test function
+       ".*",          // compiler
+       ".*",          // stdlib
+       ".*",          // platform
+       ".*",          // test type(s)
+       ".*",          // test data group
+       ".*", 50, 15); // test function
    //
    // Finish off by printing out the compiler/stdlib/platform names,
    // we do this to make it easier to mark up expected error rates.
    //
    std::cout << "Tests run with " << BOOST_COMPILER << ", "
-      << BOOST_STDLIB << ", " << BOOST_PLATFORM << std::endl;
+             << BOOST_STDLIB << ", " << BOOST_PLATFORM << std::endl;
 }
 
 template <class T>
@@ -85,7 +86,7 @@ void test(T t, const char* p)
    test_bessel(t, p);
 }
 
-BOOST_AUTO_TEST_CASE( test_main )
+BOOST_AUTO_TEST_CASE(test_main)
 {
    using namespace boost::multiprecision;
    expected_results();
@@ -97,6 +98,3 @@ BOOST_AUTO_TEST_CASE( test_main )
    //
    ALL_TESTS
 }
-
-
-

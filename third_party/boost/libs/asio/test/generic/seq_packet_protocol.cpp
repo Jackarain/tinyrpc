@@ -2,7 +2,7 @@
 // generic/seq_packet_protocol.cpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2025 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,6 +19,7 @@
 #include <cstring>
 #include <boost/asio/io_context.hpp>
 #include "../unit_test.hpp"
+#include "../archetypes/async_result.hpp"
 
 #if defined(__cplusplus_cli) || defined(__cplusplus_winrt)
 # define generic cpp_generic
@@ -64,6 +65,7 @@ void test()
     socket_base::message_flags out_flags = 0;
     socket_base::send_buffer_size socket_option;
     socket_base::bytes_readable io_control_command;
+    archetypes::immediate_handler immediate;
     boost::system::error_code ec;
 
     // basic_seq_packet_socket constructors.
@@ -77,29 +79,17 @@ void test()
     spp::socket socket4(ioc, spp(af_inet, 0), native_socket1);
 #endif // !defined(BOOST_ASIO_WINDOWS_RUNTIME)
 
-#if defined(BOOST_ASIO_HAS_MOVE)
     spp::socket socket5(std::move(socket4));
-#endif // defined(BOOST_ASIO_HAS_MOVE)
 
     // basic_seq_packet_socket operators.
 
-#if defined(BOOST_ASIO_HAS_MOVE)
     socket1 = spp::socket(ioc);
     socket1 = std::move(socket2);
-#endif // defined(BOOST_ASIO_HAS_MOVE)
 
-    // basic_io_object functions.
+    // I/O object functions.
 
     spp::socket::executor_type ex = socket1.get_executor();
     (void)ex;
-
-#if !defined(BOOST_ASIO_NO_DEPRECATED)
-    io_context& ioc_ref = socket1.get_io_context();
-    (void)ioc_ref;
-
-    io_context& ioc_ref2 = socket1.get_io_service();
-    (void)ioc_ref2;
-#endif // !defined(BOOST_ASIO_NO_DEPRECATED)
 
     // basic_socket functions.
 
@@ -147,6 +137,7 @@ void test()
     socket1.connect(spp::endpoint(), ec);
 
     socket1.async_connect(spp::endpoint(), connect_handler);
+    socket1.async_connect(spp::endpoint(), immediate);
 
     socket1.set_option(socket_option);
     socket1.set_option(socket_option, ec);
@@ -158,10 +149,14 @@ void test()
     socket1.io_control(io_control_command, ec);
 
     spp::endpoint endpoint1 = socket1.local_endpoint();
+    (void)endpoint1;
     spp::endpoint endpoint2 = socket1.local_endpoint(ec);
+    (void)endpoint2;
 
     spp::endpoint endpoint3 = socket1.remote_endpoint();
+    (void)endpoint3;
     spp::endpoint endpoint4 = socket1.remote_endpoint(ec);
+    (void)endpoint4;
 
     socket1.shutdown(socket_base::shutdown_both);
     socket1.shutdown(socket_base::shutdown_both, ec);
@@ -178,6 +173,9 @@ void test()
     socket1.async_send(buffer(mutable_char_buffer), in_flags, send_handler);
     socket1.async_send(buffer(const_char_buffer), in_flags, send_handler);
     socket1.async_send(null_buffers(), in_flags, send_handler);
+    socket1.async_send(buffer(mutable_char_buffer), in_flags, immediate);
+    socket1.async_send(buffer(const_char_buffer), in_flags, immediate);
+    socket1.async_send(null_buffers(), in_flags, immediate);
 
     socket1.receive(buffer(mutable_char_buffer), out_flags);
     socket1.receive(null_buffers(), out_flags);
@@ -192,6 +190,11 @@ void test()
     socket1.async_receive(buffer(mutable_char_buffer), in_flags,
         out_flags, receive_handler);
     socket1.async_receive(null_buffers(), in_flags, out_flags, receive_handler);
+    socket1.async_receive(buffer(mutable_char_buffer), out_flags, immediate);
+    socket1.async_receive(null_buffers(), out_flags, immediate);
+    socket1.async_receive(buffer(mutable_char_buffer), in_flags,
+        out_flags, immediate);
+    socket1.async_receive(null_buffers(), in_flags, out_flags, immediate);
   }
   catch (std::exception&)
   {
@@ -205,5 +208,5 @@ void test()
 BOOST_ASIO_TEST_SUITE
 (
   "generic/seq_packet_protocol",
-  BOOST_ASIO_TEST_CASE(generic_seq_packet_protocol_socket_compile::test)
+  BOOST_ASIO_COMPILE_TEST_CASE(generic_seq_packet_protocol_socket_compile::test)
 )

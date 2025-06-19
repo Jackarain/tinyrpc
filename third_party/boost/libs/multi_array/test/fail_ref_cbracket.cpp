@@ -15,14 +15,14 @@
 //   checking constness of  const operator[].
 //
 
-#include "boost/multi_array.hpp"
+#include <boost/multi_array.hpp>
 
-#include "boost/test/minimal.hpp"
+#include <boost/core/lightweight_test.hpp>
 
-#include "boost/array.hpp"
+#include <boost/array.hpp>
 
 int
-test_main(int,char*[])
+main()
 {
   const int ndims=3;
   typedef boost::multi_array_ref<int,ndims> array_ref;
@@ -40,5 +40,5 @@ test_main(int,char*[])
   // FAIL! can't assign to const multi_array_ref.
   csma[0][0][0] = 5;
 
-  return boost::exit_success;
+  return boost::report_errors();
 }
