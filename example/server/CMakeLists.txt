@@ -17,6 +17,7 @@ target_link_libraries(server
 	Boost::asio
 	Boost::beast
 	Boost::system
+	Boost::scope
 )
 
 set_property(TARGET server PROPERTY FOLDER "example/server")

@@ -39,15 +39,19 @@
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 
+#include <boost/scope/scope_exit.hpp>
+
 namespace jsonrpc
 {
+  // 命名空间别名，方便使用
   namespace beast = boost::beast;
   namespace net = boost::asio;
   namespace json = boost::json;
+  using namespace boost::scope;
 
   namespace detail
   {
-    // 这里可以放一些私有的辅助函数或类型定义
+    // RPC 操作的抽象基类
     class rpc_operation
     {
     public:
@@ -56,6 +60,7 @@ namespace jsonrpc
       virtual json::object &result() = 0;
     };
 
+    // 模板类，用于处理异步 RPC 调用操作
     template <class Handler, class ExecutorType>
     class rpc_call_op : public rpc_operation
     {
@@ -92,6 +97,7 @@ namespace jsonrpc
           });
       }
 
+      // 返回存储操作结果的 JSON 对象
       json::object &result() override
       {
         return data_;
@@ -103,9 +109,11 @@ namespace jsonrpc
       json::object data_;
     };
 
+    // RPC 操作的智能指针类型
     using call_op_ptr = std::unique_ptr<rpc_operation>;
 
 
+    // 从 JSON-RPC 对象中提取 'id' 字段并转换为字符串
     std::string jsonrpc_id(const json::object &obj)
     {
       if (obj.if_contains("id"))
@@ -118,9 +126,31 @@ namespace jsonrpc
       }
       return {};
     }
+
+    // 用于管理共享运行状态标志的工具类
+    struct running_flag : public std::shared_ptr<bool>
+    {
+      running_flag()
+        : std::shared_ptr<bool>(std::make_shared<bool>(false))
+      {
+      }
+
+      bool operator=(bool value)
+      {
+        *(this->get()) = value;
+        return value;
+      }
+
+      explicit operator bool() const
+      {
+        return *(this->get());
+      }
+    };
   }
 
   using detail::jsonrpc_id;
+  using detail::running_flag;
+
 
   template <class StreamType>
   class jsonrpc_session
@@ -128,6 +158,7 @@ namespace jsonrpc
     // c++11 noncopyable.
     jsonrpc_session(const jsonrpc_session &) = delete;
     jsonrpc_session &operator=(const jsonrpc_session &) = delete;
+    jsonrpc_session &operator=(jsonrpc_session&& rhs) noexcept = delete;
 
   public:
     using stream_type = StreamType;
@@ -143,12 +174,13 @@ namespace jsonrpc
 
     //////////////////////////////////////////////////////////////////////////
 
-    // 构造函数, 接受一个 WebSocket 对象.
+    // 构造函数, 可以接受一个 WebSocket 对象(ws/wss都可以).
     jsonrpc_session(stream_type ws)
       : stream_(std::move(ws))
     {
     }
 
+    // 移动构造函数，用于转移所有权
     jsonrpc_session(jsonrpc_session &&rhs) noexcept
       : stream_(std::move(rhs.stream_))
       , call_ops_(std::move(rhs.call_ops_))
@@ -167,8 +199,7 @@ namespace jsonrpc
       rhs.running_ = false;
     }
 
-    jsonrpc_session& operator=(jsonrpc_session&& rhs) noexcept = delete;
-
+    // 析构函数，确保会话停止
     ~jsonrpc_session() noexcept
     {
       // 确保在析构时停止服务.
@@ -193,10 +224,10 @@ namespace jsonrpc
 
       running_ = true;
 
-      net::co_spawn(stream_.get_executor(), [this]() mutable -> net::awaitable<void>
+      net::co_spawn(stream_.get_executor(), [this, running = running_]() mutable -> net::awaitable<void>
       {
         co_await run();
-        running_ = false;
+        running = false;
         co_return;
       }, net::detached);
     }
@@ -213,6 +244,8 @@ namespace jsonrpc
         return;
       }
 
+    running_ = false;
+
       boost::system::error_code ec;
       if (stream_.is_open())
         stream_.close(beast::websocket::close_code::normal, ec);
@@ -224,11 +257,8 @@ namespace jsonrpc
     // 将该消息传递给会话进行处理.
     void dispatch(json::object obj)
     {
-      if (running_)
-      {
-        BOOST_ASSERT(false && "session is running");
-        return;
-      }
+      running_ = true;
+
       if (!obj.if_contains("jsonrpc"))
       {
         BOOST_ASSERT(false && "jsonrpc field not found");
@@ -236,23 +266,21 @@ namespace jsonrpc
       }
 
       net::co_spawn(stream_.get_executor(),
-        [this, obj = std::move(obj)]() mutable -> net::awaitable<void>
+        [this, running = running_, obj = std::move(obj)]() mutable -> net::awaitable<void>
         {
-          running_ = true;
           co_await dispath(std::move(obj));
-          running_ = false;
           co_return;
         }, net::detached);
     }
 
-    // 获取 stream 流对象, 该对象可以用于直接进行 stream 操作.
+    // 获取底层的 stream 流对象, 该对象可以用于直接进行 stream 操作.
     StreamType& stream() noexcept
     {
       return stream_;
     }
 
     //////////////////////////////////////////////////////////////////////////
-
+    // 辅助类，用于发起异步 JSON-RPC 调用
     class initiate_async_call
     {
     public:
@@ -285,19 +313,22 @@ namespace jsonrpc
         data["method"] = method;
         data["params"] = params;
 
-        if (self_->id_recycle_.empty())
         {
-          auto session_id = static_cast<int>(self_->call_ops_.size());
-          data["id"] = session_id;
-          self_->call_ops_.emplace_back(std::move(op));
-        }
-        else
-        {
-          auto session_id = self_->id_recycle_.back();
-          self_->id_recycle_.pop_back();
+          std::lock_guard<std::mutex> lock(self_->call_op_mutex_);
+          if (self_->id_recycle_.empty())
+          {
+            auto session_id = static_cast<int>(self_->call_ops_.size());
+            data["id"] = session_id;
+            self_->call_ops_.emplace_back(std::move(op));
+          }
+          else
+          {
+            auto session_id = self_->id_recycle_.back();
+            self_->id_recycle_.pop_back();
 
-          data["id"] = session_id;
-          self_->call_ops_[session_id] = std::move(op);
+            data["id"] = session_id;
+            self_->call_ops_[session_id] = std::move(op);
+          }
         }
 
         // 发送 JSON 请求数据
@@ -308,6 +339,7 @@ namespace jsonrpc
     private:
       jsonrpc_session* self_;
     };
+    //////////////////////////////////////////////////////////////////////////
 
     // 异步发送 JSONRPC 请求, 返回一个 JSON 对象作为响应.
     // 参数 params 代表要发送的请求数据的 JSONRPC 的 params 字段,
@@ -424,8 +456,9 @@ namespace jsonrpc
         boost::system::error_code ec;
         beast::flat_buffer buf;
         auto executor = co_await net::this_coro::executor;
+        auto running = running_;
 
-        while (running_)
+        while (running)
         {
           auto bytes = co_await stream_.async_read(buf, net::use_awaitable);
 
@@ -472,6 +505,9 @@ namespace jsonrpc
             continue;
           }
 
+          if (!running)
+            co_return; // 如果服务已经停止, 则退出协程
+
           net::co_spawn(executor, [this, obj = std::move(obj)]() mutable -> net::awaitable<void>
           {
             co_await dispath(std::move(obj));
@@ -479,9 +515,8 @@ namespace jsonrpc
           }, net::detached);
         }
       }
-      catch (const std::exception &e)
+      catch (const std::exception&)
       {
-        std::string error_msg = e.what();
         // 捕获异常并调用错误回调函数
         if (error_cb_)
           error_cb_("exception occurred while running jsonrpc session");
@@ -576,24 +611,28 @@ namespace jsonrpc
     net::awaitable<void> handle_call(json::object obj, int session_id)
     {
       // 查找是否有对应的调用操作
-      std::lock_guard<std::mutex> lock(call_op_mutex_);
-      if (session_id < 0 || session_id >= static_cast<int>(call_ops_.size()))
+      call_op_ptr handler;
+
       {
-        // id 不在有效范围内，忽略该消息
-        if (error_cb_)
-          error_cb_("invalid session id");
-        else
-          BOOST_ASSERT(false && "invalid session id");
-        co_return;
+        std::lock_guard<std::mutex> lock(call_op_mutex_);
+        if (session_id < 0 || session_id >= static_cast<int>(call_ops_.size()))
+        {
+          // id 不在有效范围内，忽略该消息
+          if (error_cb_)
+            error_cb_("invalid session id");
+          else
+            BOOST_ASSERT(false && "invalid session id");
+          co_return;
+        }
+        // 获取对应的调用操作
+        handler = std::move(call_ops_[session_id]);
+
+        // 回收 RPC 调用操作的 id
+        id_recycle_.push_back(session_id);
+
+        BOOST_ASSERT(handler && "call op is nullptr!"); // for debug, call_ops_[session_id].reset(); // 清除对应的调用操作
       }
 
-      // 获取对应的调用操作
-      call_op_ptr handler = std::move(call_ops_[session_id]);
-
-      // 回收 RPC 调用操作的 id
-      id_recycle_.push_back(session_id);
-
-      BOOST_ASSERT(handler && "call op is nullptr!"); // for debug, call_ops_[session_id].reset(); // 清除对应的调用操作
       if (handler)
       {
         // 调用操作存在，执行它
@@ -668,40 +707,50 @@ namespace jsonrpc
     // 处理 WebSocket 写入消息的协程
     net::awaitable<void> write_messages()
     {
+      auto running = running_;
       try
       {
-        while (!write_msgs_.empty())
+        while (running && !write_msgs_.empty())
         {
-          auto msg = std::move(write_msgs_.front());
-          write_msgs_.pop_front();
-
           // 发送消息
+          auto msg = std::move(write_msgs_.front());
           co_await stream_.async_write(net::buffer(*msg), net::use_awaitable);
+          write_msgs_.pop_front();
         }
       }
       catch(const std::exception& e)
       {
-        error_cb_(std::string_view(e.what()));
+          if (running)
+              error_cb_(std::string_view(e.what()));
       }
     }
 
   private:
     // Stream 对象, 用于与远程服务进行通信.
     stream_type stream_;
-    std::atomic<bool> running_{false};
 
-    // 回调函数, 用于处理请求、通知消息和错误消息
+    // 会话运行状态标志.
+    running_flag running_;
+
+    // 回调函数, 用于处理请求、通知消息和错误消息.
     std::function<void(json::object)> method_cb_;
+
+    // 处理通知消息的回调.
     std::function<void(json::object)> notify_cb_;
+
+    // 处理错误相关的回调.
     std::function<void(std::string_view)> error_cb_;
 
+    // 注册的 RPC 调用方法.
     std::unordered_map<std::string,
       std::function<void(json::object)>> remote_methods_;
 
+    // 保护调用操作的互斥锁.
     std::mutex call_op_mutex_;
     std::vector<int> id_recycle_;
     std::vector<call_op_ptr> call_ops_;
 
+    // 消息发送队列.
     write_message_queue write_msgs_;
   };
 
