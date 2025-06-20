@@ -17,6 +17,7 @@ target_link_libraries(client
 	Boost::asio
 	Boost::beast
 	Boost::system
+	Boost::scope
 )
 
 set_property(TARGET client PROPERTY FOLDER "example/client")
