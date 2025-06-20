@@ -346,17 +346,17 @@ namespace jsonrpc
     // 该参数可以是一个 JSON 对象或数组, 须满足 JSONRPC 规范的要求.
     // method 参数代表要调用的远程方法名.
     template<BOOST_ASIO_COMPLETION_TOKEN_FOR(
-      void(boost::system::error_code, json::value))
+      void(boost::system::error_code, json::object))
         CallToken = net::default_completion_token_t<executor_type>>
     auto async_call(const std::string& method, const json::value& params,
       CallToken&& token = net::default_completion_token_t<executor_type>()) ->
       decltype(
         net::async_initiate<CallToken,
-        void(boost::system::error_code, json::value)>(
+        void(boost::system::error_code, json::object)>(
           std::declval<initiate_async_call>(), token, method, params))
     {
       return net::async_initiate<CallToken,
-        void(boost::system::error_code, json::value)>(
+        void(boost::system::error_code, json::object)>(
           initiate_async_call(this), token, method, params);
     }
 

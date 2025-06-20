@@ -57,7 +57,7 @@ net::awaitable<void> client_session(std::string host, std::string port)
 
     // subtract RPC 调用, 通过异步回调的方式
     session.async_call("subtract", subtract_req,
-        [&](boost::system::error_code ec, json::value result) {
+        [&](boost::system::error_code ec, json::object result) {
             if (!ec)
                 std::cout << "[subtract] result: " << json::serialize(result) << std::endl;
             else
