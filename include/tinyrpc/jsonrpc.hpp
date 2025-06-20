@@ -212,8 +212,8 @@ namespace jsonrpc
     // 启动服务, 开始接收 WebSocket 消息, 如果服务已经在运行, 则什么都不做.
     // 注意: 调用此函数相当于从 stream 中接收 JSON 数据并调用 dispatch()
     // 函数来派发 JSONRPC 协议消息.
-    // 亦可手工调用 dispatch() 来处理 JSONRPC 消息, 但请注意这种情况下，我
-    // 们不可以调用 start() 来驱动服务, 否则会导致逻辑错误.
+    // 亦可手工调用 dispatch() 来处理 JSONRPC 消息, 但请注意这种情况下，我们
+    // 不可以调用 start() 来驱动服务, 否则会导致逻辑错误.
     void start()
     {
       if (running_)
@@ -224,7 +224,8 @@ namespace jsonrpc
 
       running_ = true;
 
-      net::co_spawn(stream_.get_executor(), [this, running = running_]() mutable -> net::awaitable<void>
+      net::co_spawn(stream_.get_executor(),
+      [this, running = running_]() mutable -> net::awaitable<void>
       {
         co_await run();
         running = false;
@@ -630,7 +631,7 @@ namespace jsonrpc
         // 回收 RPC 调用操作的 id
         id_recycle_.push_back(session_id);
 
-        BOOST_ASSERT(handler && "call op is nullptr!"); // for debug, call_ops_[session_id].reset(); // 清除对应的调用操作
+        BOOST_ASSERT(handler && "call op is nullptr!");
       }
 
       if (handler)
