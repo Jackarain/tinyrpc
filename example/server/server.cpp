@@ -87,13 +87,13 @@ net::awaitable<void> do_jsonrpc(session_type session)
             // 模拟一些异步操作, 例如等待 3 秒钟
             co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
 
-			auto params = obj["params"].as_object();
-			auto a = params["a"].as_int64();
-			auto b = params["b"].as_int64();
+            auto params = obj["params"].as_object();
+            auto a = params["a"].as_int64();
+            auto b = params["b"].as_int64();
 
-			json::object response = {
-				{"val", a + b},
-			};
+            json::object response = {
+                {"val", a + b},
+            };
 
             // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
             session.reply(response, jsonrpc::jsonrpc_id(obj));

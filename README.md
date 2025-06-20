@@ -46,3 +46,67 @@ async_call 可以是回调，也可以是 asio 协程，如：
     auto result = co_await session.async_call("add", add_req, net::use_awaitable);
     std::cout << "[add] result: " << json::serialize(result) << std::endl;
 ```
+
+处理 RPC 请求示例：
+
+``` c++
+    // 绑定 subtract 方法
+    session.bind_method("subtract", [&session](json::object obj) {
+        std::cout << "[subtract] method called with obj: " << json::serialize(obj) << "\n";
+
+        // 回复请求, 回复的内容是一个 JSON 对象, 作为 JSONRPC 协议的 result 部分
+        // 我们不需要关心 JSONRPC 协议的其它字段
+
+        auto params = obj["params"].as_object();
+        auto a = params["a"].as_int64();
+        auto b = params["b"].as_int64();
+
+        json::object response = {
+            {"val", a + b},
+        };
+
+        // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+        session.reply(response, jsonrpc::jsonrpc_id(obj));
+    });
+```
+
+如果是一些很费时的操作，可以为了避免阻塞 bind_method，可以在 bind_method 之外的地方调用 reply 来回复客户端，在这里必须要说明的是，以往形式是
+
+``` c++
+void (request, reply) {
+    // 对 reply 复制，待函数据返回，自动将 reply 内赋值的信息发送给对方，这种形
+    // 式有一个麻烦，它必须限制在 method 响应函数中必须修改 reply 以回应远程调用
+    // 通常我们并不能在这个 method 响应作长时间停留，因为这样会导致整个消息处理循
+    // 环阻塞在这里
+}
+```
+
+所以，当前的设计是取消了 reply 参数机制，而是使用 jsonrpc_session 的成员函数 reply 来回应客户端的 RPC请求，这样就不会导致限制在 method 响应回调函数中了，如：
+
+``` c++
+    // 绑定 add 方法
+    session.bind_method("add", [&session, executor](json::object obj) {
+        std::cout << "[add] method called with obj: " << json::serialize(obj) << "\n";
+
+        // 我们不必限定在 bind_method 这个回调函数中回应对方，我们亦可以
+        // 通过异步处理 add 方法, 这里发起一个 asio 协程模拟一些异步操作
+        net::co_spawn(executor, [&session, executor, obj = std::move(obj)]() mutable -> net::awaitable<void>
+        {
+            // 模拟一些异步操作, 例如等待 3 秒钟
+            co_await net::steady_timer(executor, std::chrono::seconds(3)).async_wait(net::use_awaitable);
+
+            auto params = obj["params"].as_object();
+            auto a = params["a"].as_int64();
+            auto b = params["b"].as_int64();
+
+            json::object response = {
+                {"val", a + b},
+            };
+
+            // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            session.reply(response, jsonrpc::jsonrpc_id(obj));
+
+            co_return;
+        }, net::detached);
+    });
+```
