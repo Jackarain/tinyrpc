@@ -66,7 +66,7 @@ net::awaitable<void> client_session(std::string host, std::string port)
     );
 
     json::object add_req{
-        {"a", 10}, {"b", 9}
+        {"a", 10}, {"b", 3}
     };
     // add RPC 调用, 通过C++20协程的方式
     auto result = co_await session.async_call("add", add_req, net::use_awaitable);

@@ -55,12 +55,17 @@ net::awaitable<void> do_jsonrpc(session_type session)
     // 绑定 subtract 方法
     session.bind_method("subtract", [&session](json::object obj) {
         // 处理 subtract 方法调用, 这里只是作为示例打印输出请求 JSON 对象
-        std::cout << "subtract method called with obj: " << json::serialize(obj) << "\n";
+        std::cout << "[subtract] method called with obj: " << json::serialize(obj) << "\n";
 
         // 回复请求, 回复的内容是一个 JSON 对象, 作为 JSONRPC 协议的 result 部分
         // 我们不需要关心 JSONRPC 协议的其它字段
+
+        auto params = obj["params"].as_object();
+        auto a = params["a"].as_int64();
+        auto b = params["b"].as_int64();
+
         json::object response = {
-            {"val", "47"},
+            {"val", a + b},
         };
 
         // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
@@ -73,20 +78,22 @@ net::awaitable<void> do_jsonrpc(session_type session)
     // 绑定 add 方法
     session.bind_method("add", [&session, executor](json::object obj) {
         // 处理 add 方法调用, 这里只是作为示例打印输出请求 JSON 对象
-        std::cout << "add method called with obj: " << json::serialize(obj) << "\n";
+        std::cout << "[add] method called with obj: " << json::serialize(obj) << "\n";
 
         // 我们不必限定在 bind_method 这个回调函数中回应对方，我们亦可以
         // 通过异步处理 add 方法, 这里发起一个 asio 协程模拟一些异步操作
-        net::co_spawn(executor, [&session, obj = std::move(obj)]() -> net::awaitable<void>
+        net::co_spawn(executor, [&session, obj = std::move(obj)]() mutable -> net::awaitable<void>
         {
             // 模拟一些异步操作, 例如等待 3 秒钟
             co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
 
-            // 回复请求, 回复的内容是一个 JSON 对象, 作为 JSONRPC 协议的 result 部分
-            // 我们不需要关心 JSONRPC 协议的其它字段
-            json::object response = {
-                {"val", "19"},
-            };
+			auto params = obj["params"].as_object();
+			auto a = params["a"].as_int64();
+			auto b = params["b"].as_int64();
+
+			json::object response = {
+				{"val", a + b},
+			};
 
             // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
             session.reply(response, jsonrpc::jsonrpc_id(obj));
