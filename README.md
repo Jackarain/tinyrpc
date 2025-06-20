@@ -1,21 +1,21 @@
 
-# c++ tinyrpc 基于 boost.asio 的 jsonrpc 的实现
+# C++ tinyrpc 基于 boost.asio 的 JSONRPC-2.0 标准的实现
 
 ## 介绍
 
-使用 boost.asio 底层实现, 实现异步（支持 asio 回调、协程等支持的方式）的 jsonrpc 2.0 调用。
+使用 `boost.asio` 底层实现, 实现异步（支持 `asio` 回调、协程等支持的方式）的标准 `JSONRPC-2.0` 调用。
 
 ## 使用
 
-这个库本身实现只有一个 .hpp 头文件实现，在能使用 boost 的项目中，将 jsonrpc.hpp 复制到项目即可使用。
+这个库本身实现只有一个 .hpp 头文件实现，在能使用 boost 的项目中，将 `jsonrpc.hpp` 复制到项目即可使用。
 
 ## 快速上手
 
-用法参考 example，你可以编译运行并调试它们，以了解它的实现原理。
+用法参考 `example`，你可以编译运行并调试它们，以了解它的实现原理。
 
-在 jsonrpc.hpp 中，它并不严格区分 server 或 client，也就是说，双方都可以使用 jsonrpc_session 的 async_call 来发起向对方的 RPC 调用，只要对方使用 bind_method 绑定了对应的 method 回调
+在 `jsonrpc.hpp` 中，它并不严格区分 `server` 或 `client`，也就是说，双方都可以使用 `jsonrpc_session` 的 `async_call` 来发起向对方的 `RPC` 调用，只要对方使用 `bind_method` 绑定了对应的 `method` 回调
 
-async_call 可以是回调，也可以是 asio 协程，如：
+`async_call` 可以是回调，也可以是 `asio` 协程，如：
 
 ``` c++
     json::object subtract_req{
@@ -35,7 +35,7 @@ async_call 可以是回调，也可以是 asio 协程，如：
     );
 ```
 
-再如通过 asio 协程来调用：
+再如通过 `asio` 协程来调用：
 
 ``` c++
     json::object add_req{
@@ -47,7 +47,7 @@ async_call 可以是回调，也可以是 asio 协程，如：
     std::cout << "[add] result: " << json::serialize(result) << std::endl;
 ```
 
-处理 RPC 请求示例：
+处理 `RPC` 请求示例：
 
 ``` c++
     // 绑定 subtract 方法
@@ -70,7 +70,7 @@ async_call 可以是回调，也可以是 asio 协程，如：
     });
 ```
 
-如果是一些很费时的操作，可以为了避免阻塞 bind_method，可以在 bind_method 之外的地方调用 reply 来回复客户端，在这里必须要说明的是，以往形式是
+如果是一些很费时的操作，可以为了避免阻塞 `bind_method`，可以在 `bind_method` 之外的地方调用 `reply` 来回复客户端，在这里必须要说明的是，以往形式是
 
 ``` c++
 void (request, reply) {
@@ -81,7 +81,7 @@ void (request, reply) {
 }
 ```
 
-所以，当前的设计是取消了 reply 参数机制，而是使用 jsonrpc_session 的成员函数 reply 来回应客户端的 RPC请求，这样就不会导致限制在 method 响应回调函数中了，如：
+所以，当前的设计是取消了 `reply` 参数机制，而是使用 `jsonrpc_session` 的成员函数 `reply` 来回应客户端的 `RPC` 请求，这样就不会导致限制在 `method` 响应回调函数中了，如：
 
 ``` c++
     // 绑定 add 方法
