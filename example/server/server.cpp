@@ -208,9 +208,9 @@ int main(int argc, char *argv[])
     if (argc != 3)
     {
         std::cerr <<
-            "Usage: websocket-server <address> <port>\n" <<
+            "Usage: server <address> <port>\n" <<
             "Example:\n" <<
-            "    websocket-server 0.0.0.0 8000\n";
+            "    server 0.0.0.0 8000\n";
         return EXIT_FAILURE;
     }
 

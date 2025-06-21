@@ -75,7 +75,7 @@ net::awaitable<void> client_session(std::string host, std::string port)
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: websocket-client <host> <port>\n";
+        std::cerr << "Usage: client <host> <port>\n";
         return 1;
     }
     std::string host = argv[1], port = argv[2];
