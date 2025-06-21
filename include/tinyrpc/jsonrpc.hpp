@@ -439,6 +439,17 @@ namespace jsonrpc
       error_cb_ = {};
     }
 
+    // 设置数据回调函数
+    void data_callback(std::function<std::string(std::string_view)> cb)
+    {
+      data_cb_ = cb;
+    }
+
+    void data_callback()
+    {
+      data_cb_ = {};
+    }
+
     // 获取当前 jsonrpc_session 的执行器, 该执行器可以用于在协程中调度任务.
     net::any_io_executor get_executor() noexcept
     {
@@ -464,7 +475,17 @@ namespace jsonrpc
           auto bytes = co_await stream_.async_read(buf, net::use_awaitable);
 
           auto bufdata = buf.data();
-          std::string_view sv((const char*)bufdata.data(), bufdata.size());
+          std::string_view sv;
+          std::string data;
+
+          if (data_cb_)
+          {
+            data = data_cb_(std::string_view((const char*)bufdata.data(), bufdata.size()));
+            sv = data;
+          }
+          else {
+            sv = std::string_view((const char*)bufdata.data(), bufdata.size());
+          }
 
           json::value jv = json::parse(
             sv,
@@ -557,24 +578,19 @@ namespace jsonrpc
           co_return;
         }
 
-        int session_id = -1;
-
-        if (id.is_string())
+        int64_t session_id = -1;
+        try
         {
-          // 尝试将字符串 id 转换为数字
-          try
-          {
-            session_id = std::stoi(std::string(id.as_string()));
-          }
-          catch (const std::exception &)
-          {
-            // 转换失败，忽略该消息
-            if (error_cb_)
-              error_cb_("invalid id format");
-            else
-              BOOST_ASSERT(false && "invalid id format");
-            co_return;
-          }
+          session_id = (id.is_number() ? id.as_int64() : std::stoi(std::string(id.as_string())));
+        }
+        catch(const std::exception&)
+        {
+          // 转换失败，忽略该消息
+          if (error_cb_)
+            error_cb_("invalid id format");
+          else
+            BOOST_ASSERT(false && "invalid id format");
+          co_return;
         }
 
         co_await handle_call(std::move(obj), session_id);
@@ -609,7 +625,7 @@ namespace jsonrpc
       co_return;
     }
 
-    net::awaitable<void> handle_call(json::object obj, int session_id)
+    net::awaitable<void> handle_call(json::object obj, int64_t session_id)
     {
       // 查找是否有对应的调用操作
       call_op_ptr handler;
@@ -742,13 +758,17 @@ namespace jsonrpc
     // 处理错误相关的回调.
     std::function<void(std::string_view)> error_cb_;
 
+    // 数据处理相关回调, 如果设置了这个函数, 则解析该回调函数
+    // 返回的数据.
+    std::function<std::string(std::string_view)> data_cb_;
+
     // 注册的 RPC 调用方法.
     std::unordered_map<std::string,
       std::function<void(json::object)>> remote_methods_;
 
     // 保护调用操作的互斥锁.
     std::mutex call_op_mutex_;
-    std::vector<int> id_recycle_;
+    std::vector<int64_t> id_recycle_;
     std::vector<call_op_ptr> call_ops_;
 
     // 消息发送队列.
