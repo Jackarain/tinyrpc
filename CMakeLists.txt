@@ -61,6 +61,9 @@ option(ENABLE_JEMALLOC_STATIC		"Build with Jemalloc support" OFF)
 option(ENABLE_MIMALLOC_STATIC		"Build with mimalloc support" OFF)
 option(ENABLE_SNMALLOC_STATIC		"Build with snmalloc support" OFF)
 
+option(ENABLE_SYSTEM_OPENSSL		"Build with system openssl support" OFF)
+option(ENABLE_USE_OPENSSL			"Build with openssl support" ON)
+
 option(ENABLE_LINKE_TO_LIBATOMIC	"Link to libatomic.so - some platform requires it" OFF)
 
 ################################################################################
@@ -241,6 +244,48 @@ endif(NOT MSVC)
 
 set(BUILD_SHARED_LIBS OFF)
 
+
+################################################################################
+# 使用 system openssl
+
+if (ENABLE_USE_OPENSSL)
+	if (ENABLE_SYSTEM_OPENSSL)
+		find_package(OpenSSL)
+		link_libraries(${OPENSSL_LIBRARIES})
+	else()
+		set(OpenSSL_FOUND TRUE)
+		add_subdirectory(third_party/openssl)
+		if (NOT MSVC AND NOT APPLE)
+			if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+				set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--exclude-libs,ALL ${CMAKE_SHARED_LINKER_FLAGS}")
+				set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--exclude-libs,ALL ${CMAKE_MODULE_LINKER_FLAGS}")
+				set(CMAKE_EXE_LINKER_FLAGS "-Wl,--exclude-libs,ALL ${CMAKE_EXE_LINKER_FLAGS}")
+			endif()
+		endif()
+	endif()
+
+	# 包含 openssl 的头文件和库文件.
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	link_libraries(${OPENSSL_LIBRARIES})
+
+	message(STATUS "Using openssl...")
+endif()
+
+################################################################################
+# 使用 zlib
+
+if (WIN32 OR NOT ENABLE_SYSTEM_ZLIB)
+	add_subdirectory(third_party/zlib EXCLUDE_FROM_ALL)
+
+	set(ZLIB_LIBRARIES zlibstatic)
+	set(ZLIB_INCLUDE_DIRS
+		${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib
+		${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib/contrib/minizip
+	)
+else()
+	find_package(ZLIB REQUIRED)
+endif()
+
 ################################################################################
 # 使用 boost asio 和 boost beast
 
@@ -308,7 +353,10 @@ set_property(TARGET boost_optional PROPERTY FOLDER "third_party/boost")
 # 使用 Threads
 
 find_package(Threads)
-link_libraries(${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+link_libraries(
+	${CMAKE_THREAD_LIBS_INIT}
+	${CMAKE_DL_LIBS}
+)
 
 ################################################################################
 # 使用 tcmalloc/jemalloc
@@ -322,6 +370,21 @@ if (ENABLE_JEMALLOC_STATIC)
 	find_package(JeMalloc)
 	link_libraries(${JEMALLOC_LIBRARIES})
 endif()
+
+
+################################################################################
+# 添加 include 目录
+
+include_directories(third_party
+	${ZLIB_INCLUDE_DIRS}
+)
+
+################################################################################
+# 添加 link 项目
+
+link_libraries(
+	${ZLIB_LIBRARIES}
+)
 
 ################################################################################
 # 添加 tinyrpc 包含项目
@@ -381,4 +444,3 @@ endif()
 # 添加 example 项目
 
 add_subdirectory(example)
-
