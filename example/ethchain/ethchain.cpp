@@ -27,8 +27,6 @@
 
 #include "tinyrpc/jsonrpc.hpp"
 
-#include "zlib.h"
-
 using boost::multiprecision::cpp_int;
 using boost::multiprecision::cpp_dec_float_50;
 
