@@ -51,6 +51,23 @@ namespace jsonrpc
 
   namespace detail
   {
+    template <typename T, typename = void>
+    struct has_is_open : std::false_type {};
+
+    template <typename T>
+    struct has_is_open<T, std::void_t<decltype(std::declval<T>().is_open())>>
+        : std::is_same<bool, decltype(std::declval<T>().is_open())>
+    {};
+
+    template <typename T, typename = void>
+    struct has_close : std::false_type {};
+
+    template <typename T>
+    struct has_close<T, std::void_t<decltype(std::declval<T>().close())>>
+        : std::is_same<void, decltype(std::declval<T>().close())>
+    {
+    };
+
     // RPC 操作的抽象基类
     class rpc_operation
     {
@@ -245,11 +262,23 @@ namespace jsonrpc
         return;
       }
 
-    running_ = false;
+      running_ = false;
 
-      boost::system::error_code ec;
-      if (stream_.is_open())
-        stream_.close(beast::websocket::close_code::normal, ec);
+      try
+      {
+        if constexpr (detail::has_is_open<stream_type>::value)
+        {
+          if (stream_.is_open())
+          {
+            if constexpr (detail::has_close<stream_type>::value)
+              stream_.close();
+            else
+              beast::get_lowest_layer(stream_).close();
+          }
+        }
+      }
+      catch (const std::exception&)
+      {}
     }
 
     // 手工调度一个 JSONRPC 协议, 这个函数可以用于在不运行 start 的前提下
