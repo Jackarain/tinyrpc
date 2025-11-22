@@ -129,7 +129,7 @@ namespace jsonrpc
 
 
     // 从 JSON-RPC 对象中提取 'id' 字段并转换为字符串
-    std::string jsonrpc_id(const json::object &obj)
+    inline std::string jsonrpc_id(const json::object &obj)
     {
       if (obj.if_contains("id"))
       {
