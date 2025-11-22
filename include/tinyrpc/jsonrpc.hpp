@@ -39,7 +39,6 @@
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 
-#include <boost/scope/scope_exit.hpp>
 
 namespace jsonrpc
 {
@@ -47,7 +46,6 @@ namespace jsonrpc
   namespace beast = boost::beast;
   namespace net = boost::asio;
   namespace json = boost::json;
-  using namespace boost::scope;
 
   namespace detail
   {
