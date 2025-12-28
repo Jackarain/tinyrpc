@@ -35,7 +35,7 @@ session.async_call("subtract", subtract_req,
 );
 ```
 
-再如通过 `asio` 协程来调用：
+再比如通过 `asio` 协程来调用：
 
 ``` c++
 json::object add_req{
@@ -47,7 +47,7 @@ auto result = co_await session.async_call("add", add_req, net::use_awaitable);
 std::cout << "[add] result: " << json::serialize(result) << std::endl;
 ```
 
-处理 `RPC` 请求示例：
+对端处理上述 `RPC` 请求示例：
 
 ``` c++
 // 绑定 subtract 方法
@@ -69,19 +69,6 @@ session.bind_method("subtract", [&session](json::object obj) {
     session.reply(response, jsonrpc::jsonrpc_id(obj));
 });
 ```
-
-如果是一些很费时的操作，可以为了避免阻塞 `bind_method`，可以在 `bind_method` 之外的地方调用 `reply` 来回复客户端，在这里必须要说明的是，以往形式是
-
-``` c++
-void (request, reply) {
-    // 对 reply 复制，待函数据返回，自动将 reply 内赋值的信息发送给对方，这种形
-    // 式有一个麻烦，它必须限制在 method 响应函数中必须修改 reply 以回应远程调用
-    // 通常我们并不能在这个 method 响应作长时间停留，因为这样会导致整个消息处理循
-    // 环阻塞在这里
-}
-```
-
-所以，当前的设计是取消了 `reply` 参数机制，而是使用 `jsonrpc_session` 的成员函数 `reply` 来回应客户端的 `RPC` 请求，这样就不会导致限制在 `method` 响应回调函数中了，如：
 
 ``` c++
 // 绑定 add 方法
@@ -110,3 +97,35 @@ session.bind_method("add", [&session, executor](json::object obj) {
     }, net::detached);
 });
 ```
+
+上面处理 `RPC` 请求示例中，我们可以在 `bind_method` 中的回调函数中处理 `RPC` 请求，也可以创建一个异步协程来处理 `RPC` 请求，这取决于我们的需求。
+
+## 设计优势
+
+`tinyrpc` 设计的优势在于：
+
+- 协程请求可支持回调、协程等，与 `asio` 相同的 `CompletionToken` 概念的接口，使 `RPC` 调用更加灵活。
+- 处理 `RPC` 请求避免固定返回模式，这样就不会导致限制在 `method` 响应回调函数中，甚至可以创建异步协程，在协程中回应 `RPC` 请求，具体解释如下：
+
+大多数 `RPC` 库都是以下这种方式处理 `RPC` 请求：
+
+``` c++
+void (request, reply) {
+    // 对 reply 复制，待函数据返回，自动将 reply 内赋值的信息发送给对方，这种形
+    // 式有一个麻烦，它必须限制在 method 响应函数中必须修改 reply 以回应远程调用
+    // 通常我们并不能在这个 method 响应作长时间停留，因为这样会导致整个消息处理循
+    // 环阻塞在这里
+}
+```
+
+亦或是这种方式：
+
+``` c++
+auto (request) -> reply {
+    // 对 request 进行处理, 并返回一个 reply 对象
+    // 这种设计的缺点，使我们不能在这个 method 响应作长时间停留，因为这样会导致
+    // 整个消息处理循环阻塞在这里.
+}
+```
+
+以上2种设计都是固定返回模式，所以，当前 `tinyrpc` 的设计是放弃了这种固定返回模式，而是通过 `jsonrpc_session` 的 `reply` 方法来回应客户端的 `RPC` 请求，这样就不会将处理 `RPC` 请求的处理流程限制在 `method` 响应回调函数中了。
