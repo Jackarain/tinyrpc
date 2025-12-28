@@ -6,14 +6,7 @@ add_executable(server
 
 target_link_libraries(server
 	Boost::thread
-	Boost::date_time
-	Boost::program_options
-	Boost::filesystem
-	Boost::signals2
-	Boost::nowide
-	Boost::url
 	Boost::json
-	Boost::uuid
 	Boost::asio
 	Boost::beast
 	Boost::system

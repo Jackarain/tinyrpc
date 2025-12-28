@@ -6,14 +6,7 @@ add_executable(client
 
 target_link_libraries(client
 	Boost::thread
-	Boost::date_time
-	Boost::program_options
-	Boost::filesystem
-	Boost::signals2
-	Boost::nowide
-	Boost::url
 	Boost::json
-	Boost::uuid
 	Boost::asio
 	Boost::beast
 	Boost::system
