@@ -76,7 +76,7 @@ net::awaitable<void> do_jsonrpc(session_type session)
     auto executor = co_await net::this_coro::executor;
 
     session.bind_coroutine("mul",
-        [&session, executor](json::object obj) mutable -> net::awaitable<void> {
+        [&session](json::object obj) mutable -> net::awaitable<void> {
             // 处理 mul 方法调用, 这里只是作为示例打印输出请求 JSON 对象
             std::cout << "[mul] method called with obj: " << json::serialize(obj) << "\n";
 
