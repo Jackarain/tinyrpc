@@ -47,6 +47,8 @@ namespace jsonrpc
   namespace net = boost::asio;
   namespace json = boost::json;
 
+  using coroutine_type = std::function<net::awaitable<void>(json::object)>;
+
   namespace detail
   {
     template <typename T, typename = void>
@@ -204,6 +206,7 @@ namespace jsonrpc
       , error_cb_(std::move(rhs.error_cb_))
       , notify_cb_(std::move(rhs.notify_cb_))
       , remote_methods_(std::move(rhs.remote_methods_))
+      , remote_coroutines_(std::move(rhs.remote_coroutines_))
       , write_msgs_(std::move(rhs.write_msgs_))
     {
       if (rhs.running_)
@@ -421,6 +424,31 @@ namespace jsonrpc
       }
 
       remote_methods_[std::string(method_name)] = std::move(handler);
+    }
+
+    // 绑定一个 JSON-RPC 方法调用的协程函数, 当接收到对应的方法调用时会调用该函数.
+    // 方法名是一个字符串, 代表远程方法的名称, handler 是一个协程函数,
+    // 接受一个 json::object 作为参数, 代表接收到的请求消息.
+    template<typename CoroHandler>
+    void bind_coroutine(
+      std::string_view method_name,
+      CoroHandler&& handler)
+    {
+      if (method_name.empty())
+      {
+        BOOST_ASSERT(false && "method name or coroutine is invalid");
+        return;
+      }
+
+      auto coroutine_handler = [
+        handler = std::forward<CoroHandler>(handler)]
+        (json::object obj) mutable -> net::awaitable<void>
+        {
+            // 执行用户协程
+            co_await handler(std::move(obj));
+        };
+
+      remote_coroutines_[std::string(method_name)] = std::move(handler);
     }
 
     // 设置请求回调函数, 当接收到请求消息时会调用该函数.
@@ -697,22 +725,32 @@ namespace jsonrpc
 
     net::awaitable<void> handle_method(json::object obj, std::string_view method_name)
     {
-      // 检查是否有对应的远程方法
-      auto it = remote_methods_.find(std::string(method_name));
-      if (it != remote_methods_.end())
       {
-        // 找到对应的远程方法，调用它
-        it->second(std::move(obj));
+        // 检查协程中是否存在
+        auto it = remote_coroutines_.find(std::string(method_name));
+        if (it != remote_coroutines_.end())
+        {
+          co_await it->second(std::move(obj));
+        }
       }
-      else if (method_cb_)
       {
-        // 如果没有找到对应的远程方法，调用默认的 method 回调函数
-        method_cb_(std::move(obj));
-      }
-      else
-      {
-        // 没有设置 method 回调函数，忽略该消息
-        BOOST_ASSERT(false && "no method callback set");
+        // 检查是否有对应的远程方法
+        auto it = remote_methods_.find(std::string(method_name));
+        if (it != remote_methods_.end())
+        {
+          // 找到对应的远程方法，调用它
+          it->second(std::move(obj));
+        }
+        else if (method_cb_)
+        {
+          // 如果没有找到对应的远程方法，调用默认的 method 回调函数
+          method_cb_(std::move(obj));
+        }
+        else
+        {
+          // 没有设置 method 回调函数，忽略该消息
+          BOOST_ASSERT(false && "no method callback set");
+        }
       }
 
       co_return;
@@ -792,6 +830,8 @@ namespace jsonrpc
     // 注册的 RPC 调用方法.
     std::unordered_map<std::string,
       std::function<void(json::object)>> remote_methods_;
+    std::unordered_map<std::string,
+      coroutine_type> remote_coroutines_;
 
     // 保护调用操作的互斥锁.
     std::mutex call_op_mutex_;

@@ -75,6 +75,27 @@ net::awaitable<void> do_jsonrpc(session_type session)
 
     auto executor = co_await net::this_coro::executor;
 
+    session.bind_coroutine("mul",
+        [&session, executor](json::object obj) mutable -> net::awaitable<void> {
+            // 处理 mul 方法调用, 这里只是作为示例打印输出请求 JSON 对象
+            std::cout << "[mul] method called with obj: " << json::serialize(obj) << "\n";
+
+            // 模拟一些异步操作, 例如等待 3 秒钟
+            co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
+
+            auto params = obj["params"].as_object();
+            auto a = params["a"].as_int64();
+            auto b = params["b"].as_int64();
+
+            json::object response = {
+                {"val", a * b},
+            };
+
+            // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            session.reply(response, jsonrpc::jsonrpc_id(obj));
+            co_return;
+        });
+
     // 绑定 add 方法
     session.bind_method("add", [&session, executor](json::object obj) {
         // 处理 add 方法调用, 这里只是作为示例打印输出请求 JSON 对象
