@@ -98,7 +98,31 @@ session.bind_method("add", [&session, executor](json::object obj) {
 });
 ```
 
-上面处理 `RPC` 请求示例中，我们可以在 `bind_method` 中的回调函数中处理 `RPC` 请求，也可以创建一个异步协程来处理 `RPC` 请求，这取决于我们的需求。
+上面处理 `RPC` 请求示例中，我们可以在 `bind_method` 中的回调函数中处理 `RPC` 请求，也可以创建一个异步协程来处理 `RPC` 请求，这取决于我们的需求，下面是使用 `bind_coroutine` 异步协程处理 `RPC` 请求的示例：
+
+``` c++
+// 绑定 mul 方法
+session.bind_coroutine("mul",
+    [&session, executor](json::object obj) mutable -> net::awaitable<void> {
+        // 处理 mul 方法调用, 这里只是作为示例打印输出请求 JSON 对象
+        std::cout << "[mul] method called with obj: " << json::serialize(obj) << "\n";
+
+        // 模拟一些异步操作, 例如等待 3 秒钟
+        co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
+
+        auto params = obj["params"].as_object();
+        auto a = params["a"].as_int64();
+        auto b = params["b"].as_int64();
+
+        json::object response = {
+            {"val", a * b},
+        };
+
+        // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+        session.reply(response, jsonrpc::jsonrpc_id(obj));
+        co_return;
+    });
+```
 
 ## 设计优势
 
