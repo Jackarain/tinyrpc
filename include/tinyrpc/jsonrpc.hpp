@@ -11,7 +11,6 @@
 #ifndef INCLUDE__2023_10_18__JSONRPC_HPP
 #define INCLUDE__2023_10_18__JSONRPC_HPP
 
-#include <atomic>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -67,6 +66,107 @@ namespace jsonrpc
         : std::is_same<void, decltype(std::declval<T>().close())>
     {
     };
+
+    // 函数特征模板，用于获取函数的参数类型和返回类型, 支持函数指针、函数对象和 lambda 表达式
+    // 参考来源: boost/leaf/detail/function_traits.hpp
+    template<class... T> struct mp_list
+    {
+    };
+
+    template<class L> struct mp_pop_front_impl
+    {
+      // An error "no type named 'type'" here means that the argument to mp_pop_front
+      // is either not a list, or is an empty list
+    };
+
+    template<template<class...> class L, class T1, class... T> struct mp_pop_front_impl<L<T1, T...>>
+    {
+        using type = L<T...>;
+    };
+
+    template<class L> using mp_pop_front = typename mp_pop_front_impl<L>::type;
+    template<class L> using mp_rest = mp_pop_front<L>;
+
+
+    template <class T> struct remove_noexcept { using type = T; };
+    template <class R, class... A>  struct remove_noexcept<R(*)(A...) noexcept> { using type = R(*)(A...); };
+    template <class C, class R, class... A>  struct remove_noexcept<R(C::*)(A...) noexcept> { using type = R(C::*)(A...); };
+    template <class C, class R, class... A>  struct remove_noexcept<R(C::*)(A...) const noexcept> { using type = R(C::*)(A...) const; };
+
+    template<class...>
+    struct gcc49_workaround //Thanks Glen Fernandes
+    {
+        using type = void;
+    };
+
+    template<class... T>
+    using void_t = typename gcc49_workaround<T...>::type;
+
+    template<class F,class V=void>
+    struct function_traits_impl
+    {
+        constexpr static int arity = -1;
+    };
+
+    template<class F>
+    struct function_traits_impl<F, void_t<decltype(&F::operator())>>
+    {
+    private:
+
+        using tr = function_traits_impl<typename remove_noexcept<decltype(&F::operator())>::type>;
+
+    public:
+
+        using return_type = typename tr::return_type;
+        static constexpr int arity = tr::arity - 1;
+
+        using mp_args = mp_rest<typename tr::mp_args>;
+
+        template <int I>
+        struct arg:
+            tr::template arg<I+1>
+        {
+        };
+    };
+
+    template<class R, class... A>
+    struct function_traits_impl<R(A...)>
+    {
+        using return_type = R;
+        static constexpr int arity = sizeof...(A);
+
+        using mp_args = mp_list<A...>;
+
+        template <int I>
+        struct arg
+        {
+            static_assert(I < arity, "I out of range");
+            using type = typename std::tuple_element<I,std::tuple<A...>>::type;
+        };
+    };
+
+    template<class F> struct function_traits_impl<F&> : function_traits_impl<F> { };
+    template<class F> struct function_traits_impl<F&&> : function_traits_impl<F> { };
+    template<class R, class... A> struct function_traits_impl<R(*)(A...)> : function_traits_impl<R(A...)> { };
+    template<class R, class... A> struct function_traits_impl<R(* &)(A...)> : function_traits_impl<R(A...)> { };
+    template<class R, class... A> struct function_traits_impl<R(* const &)(A...)> : function_traits_impl<R(A...)> { };
+    template<class C, class R, class... A> struct function_traits_impl<R(C::*)(A...)> : function_traits_impl<R(C&,A...)> { };
+    template<class C, class R, class... A> struct function_traits_impl<R(C::*)(A...) const> : function_traits_impl<R(C const &,A...)> { };
+    template<class C, class R> struct function_traits_impl<R(C::*)> : function_traits_impl<R(C&)> { };
+
+    template <class F>
+    struct function_traits: function_traits_impl<typename remove_noexcept<F>::type>
+    {
+    };
+
+    template <class F>
+    using fn_return_type = typename function_traits<F>::return_type;
+
+    template <class F, int I>
+    using fn_arg_type = typename function_traits<F>::template arg<I>::type;
+
+    template <class F>
+    using fn_mp_args = typename function_traits<F>::mp_args;
 
     // RPC 操作的抽象基类
     class rpc_operation
@@ -206,7 +306,6 @@ namespace jsonrpc
       , error_cb_(std::move(rhs.error_cb_))
       , notify_cb_(std::move(rhs.notify_cb_))
       , remote_methods_(std::move(rhs.remote_methods_))
-      , remote_coroutines_(std::move(rhs.remote_coroutines_))
       , write_msgs_(std::move(rhs.write_msgs_))
     {
       if (rhs.running_)
@@ -410,29 +509,11 @@ namespace jsonrpc
       write_message(std::move(context));
     }
 
-    // 当接收到对应的 JSON-RPC 方法调用时会调用该函数, 方法名是一个
-    // 字符串, 代表远程方法的名称, handler 是一个函数对象,
-    // 接受一个 json::object 作为参数, 代表接收到的请求消息.
-    void bind_method(
-      std::string_view method_name,
-      std::function<void(json::object)> handler)
-    {
-      if (method_name.empty() || !handler)
-      {
-        BOOST_ASSERT(false && "method name or handler is invalid");
-        return;
-      }
-
-      remote_methods_[std::string(method_name)] = std::move(handler);
-    }
-
     // 绑定一个 JSON-RPC 方法调用的协程函数, 当接收到对应的方法调用时会调用该函数.
-    // 方法名是一个字符串, 代表远程方法的名称, handler 是一个协程函数,
+    // 方法名是一个字符串, 代表远程方法的名称, handler 是一个协程函数或普通函数,
     // 接受一个 json::object 作为参数, 代表接收到的请求消息.
-    template<typename CoroHandler>
-    void bind_coroutine(
-      std::string_view method_name,
-      CoroHandler&& handler)
+    template<typename Handler>
+    void bind_method(std::string_view method_name, Handler&& handler)
     {
       if (method_name.empty())
       {
@@ -441,14 +522,34 @@ namespace jsonrpc
       }
 
       auto coroutine_handler = [
-        handler = std::forward<CoroHandler>(handler)]
+        this, handler = std::forward<Handler>(handler)]
         (json::object obj) mutable -> net::awaitable<void>
         {
-            // 执行用户协程
+          using ReturnType = detail::fn_return_type<Handler>;
+
+          if constexpr (std::same_as<ReturnType, net::awaitable<void>>)
+          {
             co_await handler(std::move(obj));
+          }
+          else if constexpr (std::is_same_v<ReturnType, net::awaitable<json::object>>)
+          {
+            auto id = jsonrpc::jsonrpc_id(obj);
+            auto response = co_await handler(std::move(obj));
+            reply(response, id);
+          }
+          else if constexpr (std::is_same_v<ReturnType, json::object>)
+          {
+            auto id = jsonrpc::jsonrpc_id(obj);
+            auto response = handler(std::move(obj));
+            reply(response, id);
+          }
+          else if constexpr (std::is_same_v<ReturnType, void>)
+          {
+            handler(std::move(obj));
+          }
         };
 
-      remote_coroutines_[std::string(method_name)] = std::move(handler);
+      remote_methods_[std::string(method_name)] = std::move(coroutine_handler);
     }
 
     // 设置请求回调函数, 当接收到请求消息时会调用该函数.
@@ -725,32 +826,20 @@ namespace jsonrpc
 
     net::awaitable<void> handle_method(json::object obj, std::string_view method_name)
     {
+      // 检查协程中是否存在
+      auto it = remote_methods_.find(std::string(method_name));
+      if (it != remote_methods_.end())
       {
-        // 检查协程中是否存在
-        auto it = remote_coroutines_.find(std::string(method_name));
-        if (it != remote_coroutines_.end())
-        {
-          co_await it->second(std::move(obj));
-        }
+        co_await it->second(std::move(obj));
       }
+      else if (method_cb_)
       {
-        // 检查是否有对应的远程方法
-        auto it = remote_methods_.find(std::string(method_name));
-        if (it != remote_methods_.end())
-        {
-          // 找到对应的远程方法，调用它
-          it->second(std::move(obj));
-        }
-        else if (method_cb_)
-        {
-          // 如果没有找到对应的远程方法，调用默认的 method 回调函数
-          method_cb_(std::move(obj));
-        }
-        else
-        {
-          // 没有设置 method 回调函数，忽略该消息
-          BOOST_ASSERT(false && "no method callback set");
-        }
+        method_cb_(std::move(obj));
+      }
+      else
+      {
+        // 没有设置 method 回调函数，忽略该消息
+        BOOST_ASSERT(false && "no method callback set");
       }
 
       co_return;
@@ -828,10 +917,7 @@ namespace jsonrpc
     std::function<std::string(std::string_view)> data_cb_;
 
     // 注册的 RPC 调用方法.
-    std::unordered_map<std::string,
-      std::function<void(json::object)>> remote_methods_;
-    std::unordered_map<std::string,
-      coroutine_type> remote_coroutines_;
+    std::unordered_map<std::string, coroutine_type> remote_methods_;
 
     // 保护调用操作的互斥锁.
     std::mutex call_op_mutex_;
