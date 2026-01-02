@@ -52,10 +52,10 @@ net::awaitable<void> do_jsonrpc(session_type session)
     });
 
 
-    // 绑定 subtract 方法
-    session.bind_method("subtract", [&session](json::object obj) {
-        // 处理 subtract 方法调用, 这里只是作为示例打印输出请求 JSON 对象
-        std::cout << "[subtract] method called with obj: " << json::serialize(obj) << "\n";
+    // 绑定 sub 方法
+    session.bind_method("sub", [&session](json::object obj) -> json::object {
+        // 处理 sub 方法调用, 这里只是作为示例打印输出请求 JSON 对象
+        std::cout << "[sub] method called with obj: " << json::serialize(obj) << "\n";
 
         // 回复请求, 回复的内容是一个 JSON 对象, 作为 JSONRPC 协议的 result 部分
         // 我们不需要关心 JSONRPC 协议的其它字段
@@ -65,36 +65,14 @@ net::awaitable<void> do_jsonrpc(session_type session)
         auto b = params["b"].as_int64();
 
         json::object response = {
-            {"val", a + b},
+            {"val", a - b},
         };
 
-        // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
-        session.reply(response, jsonrpc::jsonrpc_id(obj));
+        // 通过 return 回复请求.
+        return response;
     });
 
-
     auto executor = co_await net::this_coro::executor;
-
-    session.bind_coroutine("mul",
-        [&session](json::object obj) mutable -> net::awaitable<void> {
-            // 处理 mul 方法调用, 这里只是作为示例打印输出请求 JSON 对象
-            std::cout << "[mul] method called with obj: " << json::serialize(obj) << "\n";
-
-            // 模拟一些异步操作, 例如等待 3 秒钟
-            co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
-
-            auto params = obj["params"].as_object();
-            auto a = params["a"].as_int64();
-            auto b = params["b"].as_int64();
-
-            json::object response = {
-                {"val", a * b},
-            };
-
-            // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
-            session.reply(response, jsonrpc::jsonrpc_id(obj));
-            co_return;
-        });
 
     // 绑定 add 方法
     session.bind_method("add", [&session, executor](json::object obj) {
@@ -116,12 +94,52 @@ net::awaitable<void> do_jsonrpc(session_type session)
                 {"val", a + b},
             };
 
-            // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
             session.reply(response, jsonrpc::jsonrpc_id(obj));
-
             co_return;
         }, net::detached);
     });
+
+    session.bind_method("mul",
+        [&session](json::object obj) mutable -> net::awaitable<void> {
+            // 处理 mul 方法调用, 这里只是作为示例打印输出请求 JSON 对象
+            std::cout << "[mul] method called with obj: " << json::serialize(obj) << "\n";
+
+            // 模拟一些异步操作, 例如等待 3 秒钟
+            co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
+
+            auto params = obj["params"].as_object();
+            auto a = params["a"].as_int64();
+            auto b = params["b"].as_int64();
+
+            json::object response = {
+                {"val", a * b},
+            };
+
+            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            session.reply(response, jsonrpc::jsonrpc_id(obj));
+            co_return;
+        });
+
+    session.bind_method("div",
+        [&session](json::object obj) mutable -> net::awaitable<json::object> {
+            // 处理 div 方法调用, 这里只是作为示例打印输出请求 JSON 对象
+            std::cout << "[div] method called with obj: " << json::serialize(obj) << "\n";
+
+            // 模拟一些异步操作, 例如等待 3 秒钟
+            co_await net::steady_timer(session.get_executor(), std::chrono::seconds(3)).async_wait(net::use_awaitable);
+
+            auto params = obj["params"].as_object();
+            auto a = params["a"].as_int64();
+            auto b = params["b"].as_int64();
+
+            json::object response = {
+                {"val", a / b},
+            };
+
+            // 通过 co_return 回复请求.
+            co_return response;
+        });
 
     //////////////////////////////////////////////////////////////////////////
     // 处理 WebSocket 消息的循环

@@ -55,13 +55,13 @@ net::awaitable<void> client_session(std::string host, std::string port)
         {"a", 42}, {"b", 5}
     };
 
-    // subtract RPC 调用, 通过异步回调的方式
-    session.async_call("subtract", subtract_req,
+    // sub RPC 调用, 通过异步回调的方式
+    session.async_call("sub", subtract_req,
         [&](boost::system::error_code ec, json::object result) {
             if (!ec)
-                std::cout << "[subtract] result: " << json::serialize(result) << std::endl;
+                std::cout << "[sub] result: " << json::serialize(result) << std::endl;
             else
-                std::cerr << "subtract error: " << ec.message() << std::endl;
+                std::cerr << "sub error: " << ec.message() << std::endl;
         }
     );
 
@@ -75,6 +75,10 @@ net::awaitable<void> client_session(std::string host, std::string port)
     // mul RPC 调用, 通过C++20协程的方式
     result = co_await session.async_call("mul", compute_req, net::use_awaitable);
     std::cout << "[mul] result: " << json::serialize(result) << std::endl;
+
+    // div RPC 调用, 通过C++20协程的方式
+    result = co_await session.async_call("div", compute_req, net::use_awaitable);
+    std::cout << "[div] result: " << json::serialize(result) << std::endl;
 }
 
 int main(int argc, char* argv[]) {
