@@ -188,17 +188,12 @@ namespace jsonrpc
       {
       }
 
-      rpc_call_op(const rpc_call_op &other)
-        : handler_(std::forward<Handler>(other.handler_))
-        , executor_(other.executor_)
-        , data_(other.data_)
-      {
-      }
+      rpc_call_op(const rpc_call_op &other) = delete;
 
       rpc_call_op(rpc_call_op &&other) noexcept
         : handler_(std::forward<Handler>(other.handler_))
         , executor_(other.executor_)
-        , data_(other.data_)
+        , data_(std::move(other.data_))
       {
       }
 
@@ -500,9 +495,9 @@ namespace jsonrpc
       data["jsonrpc"] = "2.0";
       data["id"] = id;
       if (error)
-        data["error"] = response;
+        data["error"] = std::move(response);
       else
-        data["result"] = response;
+        data["result"] = std::move(response);
 
       // 将响应数据序列化为 JSON 字符串并发送
       auto context = std::make_unique<std::string>(json::serialize(data));
@@ -891,7 +886,7 @@ namespace jsonrpc
       }
       catch(const std::exception& e)
       {
-          if (running)
+          if (running && error_cb_)
               error_cb_(std::string_view(e.what()));
       }
     }
