@@ -272,21 +272,6 @@ if (ENABLE_USE_OPENSSL)
 endif()
 
 ################################################################################
-# 使用 zlib
-
-if (WIN32 OR NOT ENABLE_SYSTEM_ZLIB)
-	add_subdirectory(third_party/zlib EXCLUDE_FROM_ALL)
-
-	set(ZLIB_LIBRARIES zlibstatic)
-	set(ZLIB_INCLUDE_DIRS
-		${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib
-		${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib/contrib/minizip
-	)
-else()
-	find_package(ZLIB REQUIRED)
-endif()
-
-################################################################################
 # 使用 boost asio 和 boost beast
 
 if (ENABLE_BUILD_TESTS)
@@ -371,20 +356,6 @@ if (ENABLE_JEMALLOC_STATIC)
 	link_libraries(${JEMALLOC_LIBRARIES})
 endif()
 
-
-################################################################################
-# 添加 include 目录
-
-include_directories(third_party
-	${ZLIB_INCLUDE_DIRS}
-)
-
-################################################################################
-# 添加 link 项目
-
-link_libraries(
-	${ZLIB_LIBRARIES}
-)
 
 ################################################################################
 # 添加 tinyrpc 包含项目
