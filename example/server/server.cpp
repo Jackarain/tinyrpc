@@ -223,9 +223,10 @@ net::awaitable<void> do_listen(const net::ip::address &address, unsigned short p
             // 创建 JSON-RPC 会话
             session_type session(std::move(ws_stream));
 
+            auto exec = session.get_executor();
             net::co_spawn(
-                session.get_executor(),
-                [&session]() -> net::awaitable<void>
+                exec,
+                [session = std::move(session)]() mutable -> net::awaitable<void>
                 {
                     // 启动 JSON-RPC 会话
                     co_await do_jsonrpc(std::move(session));
