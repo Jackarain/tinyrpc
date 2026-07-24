@@ -404,6 +404,13 @@ namespace jsonrpc
       return stream_;
     }
 
+    // 释放底层的 stream 流对象到外部, 调用此函数后, 当前会话将不再拥有该 stream
+    // 的所有权. 由调用者负责管理 stream 的生命周期.
+    StreamType release() noexcept
+    {
+      return std::move(stream_);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     // 辅助类，用于发起异步 JSON-RPC 调用
     class initiate_async_call
