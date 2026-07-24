@@ -442,7 +442,7 @@ namespace jsonrpc
           std::lock_guard<std::mutex> lock(self_->call_op_mutex_);
           if (self_->id_recycle_.empty())
           {
-            auto session_id = static_cast<int>(self_->call_ops_.size());
+            auto session_id = static_cast<int64_t>(self_->call_ops_.size());
             data["id"] = session_id;
             self_->call_ops_.emplace_back(std::move(op));
           }
