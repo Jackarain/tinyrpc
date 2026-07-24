@@ -287,7 +287,7 @@ namespace jsonrpc
     //////////////////////////////////////////////////////////////////////////
 
     // 构造函数, 可以接受一个 WebSocket 对象(ws/wss都可以).
-    jsonrpc_session(stream_type ws)
+    explicit jsonrpc_session(stream_type ws)
       : stream_(std::move(ws))
     {
     }
