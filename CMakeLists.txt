@@ -8,6 +8,7 @@ project(tinyrpc LANGUAGES CXX)
 
 include(CheckCXXCompilerFlag)
 include(CheckLibraryExists)
+include(CheckLinkerFlag)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
