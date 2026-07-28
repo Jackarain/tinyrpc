@@ -295,12 +295,12 @@ namespace jsonrpc
     // 移动构造函数，用于转移所有权
     jsonrpc_session(jsonrpc_session &&rhs) noexcept
       : stream_(std::move(rhs.stream_))
-      , call_ops_(std::move(rhs.call_ops_))
-      , id_recycle_(std::move(rhs.id_recycle_))
       , method_cb_(std::move(rhs.method_cb_))
-      , error_cb_(std::move(rhs.error_cb_))
       , notify_cb_(std::move(rhs.notify_cb_))
+      , error_cb_(std::move(rhs.error_cb_))
       , remote_methods_(std::move(rhs.remote_methods_))
+      , id_recycle_(std::move(rhs.id_recycle_))
+      , call_ops_(std::move(rhs.call_ops_))
       , write_msgs_(std::move(rhs.write_msgs_))
     {
       if (rhs.running_)
