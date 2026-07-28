@@ -53,7 +53,7 @@ net::awaitable<void> do_jsonrpc(session_type session)
 
 
     // 绑定 sub 方法
-    session.bind_method("sub", [&session](json::object obj) -> json::object {
+    session.bind_method("sub", [](json::object obj) -> json::object {
         // 处理 sub 方法调用, 这里只是作为示例打印输出请求 JSON 对象
         std::cout << "[sub] method called with obj: " << json::serialize(obj) << "\n";
 
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     try
     {
         net::co_spawn(ioc,
-            [&ioc, address, port]() -> net::awaitable<void>
+            [address, port]() -> net::awaitable<void>
             {
                 co_await do_listen(address, port);
                 co_return;

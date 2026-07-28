@@ -529,6 +529,11 @@ namespace jsonrpc
         {
           using ReturnType = detail::fn_return_type<Handler>;
 
+          // Suppress -Wunused-lambda-capture on Clang when ReturnType
+          // is void or awaitable<void> and this is not used in the
+          // active if constexpr branch.
+          (void)this;
+
           if constexpr (std::same_as<ReturnType, net::awaitable<void>>)
           {
             co_await handler(std::move(obj));
