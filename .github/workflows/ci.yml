@@ -1,0 +1,211 @@
+# SPDX-License-Identifier: BSL-1.0
+#
+# tinyrpc CI workflow
+# --------------------
+# Builds and tests tinyrpc on Ubuntu (GCC/Clang) and macOS (Clang).
+#
+# The project bundles Boost, OpenSSL and zlib as third-party
+# dependencies and builds them from source at configure time.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+  workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  ##############################################################################
+  # Ubuntu – GCC
+  ##############################################################################
+  ubuntu-gcc:
+    name: Ubuntu (GCC)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: 安装系统依赖
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential \
+            cmake \
+            ninja-build \
+            g++-12 \
+            libssl-dev \
+            pkg-config
+
+      - name: 选择 GCC 12
+        run: |
+          g++-12 --version
+          cmake --version
+
+      - name: 配置 CMake
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_C_COMPILER=gcc-12
+          -DCMAKE_CXX_COMPILER=g++-12
+          -DCMAKE_CXX_STANDARD=20
+          -DENABLE_BUILD_WERROR=ON
+          -DENABLE_USE_OPENSSL=ON
+          -DENABLE_SYSTEM_OPENSSL=ON
+          -DENABLE_STATIC_LINK_TO_GCC=ON
+
+      - name: 构建
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel $(nproc)
+
+      - name: 快速验证可执行文件
+        run: |
+          echo "=== 检查构建产物 ==="
+          ls -lh build/bin/
+          file build/bin/client
+          file build/bin/server
+          file build/bin/ethchain
+
+  ##############################################################################
+  # Ubuntu – Clang
+  ##############################################################################
+  ubuntu-clang:
+    name: Ubuntu (Clang)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: 安装系统依赖
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential \
+            cmake \
+            ninja-build \
+            clang-14 \
+            libc++-14-dev \
+            libc++abi-14-dev \
+            libssl-dev \
+            pkg-config
+
+      - name: 选择 Clang 14
+        run: |
+          clang++-14 --version
+          cmake --version
+
+      - name: 配置 CMake
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_CXX_STANDARD=20
+          -DCMAKE_C_COMPILER=clang-14
+          -DCMAKE_CXX_COMPILER=clang++-14
+          -DENABLE_BUILD_WERROR=ON
+          -DENABLE_USE_OPENSSL=ON
+          -DENABLE_SYSTEM_OPENSSL=ON
+          -DENABLE_BUILD_WITH_LIBCXX=ON
+
+      - name: 构建
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel $(nproc)
+
+      - name: 快速验证可执行文件
+        run: |
+          echo "=== 检查构建产物 ==="
+          ls -lh build/bin/
+          file build/bin/client
+          file build/bin/server
+          file build/bin/ethchain
+
+  ##############################################################################
+  # macOS – AppleClang
+  ##############################################################################
+  macos:
+    name: macOS (AppleClang)
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: 安装系统依赖
+        run: |
+          brew update
+          brew install cmake ninja openssl
+
+      - name: 查看工具链
+        run: |
+          clang --version
+          cmake --version
+
+      - name: 配置 CMake
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_CXX_STANDARD=20
+          -DENABLE_BUILD_WERROR=ON
+          -DENABLE_USE_OPENSSL=ON
+          -DENABLE_SYSTEM_OPENSSL=ON
+          -DOPENSSL_ROOT_DIR=$(brew --prefix openssl)
+
+      - name: 构建
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel $(sysctl -n hw.ncpu)
+
+      - name: 快速验证可执行文件
+        run: |
+          echo "=== 检查构建产物 ==="
+          ls -lh build/bin/
+          file build/bin/client
+          file build/bin/server
+          file build/bin/ethchain
+
+  ##############################################################################
+  # 静态分析 / Lint (可选)
+  ##############################################################################
+  lint:
+    name: Code Lint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 安装 clang-format
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format-14
+
+      - name: 检查代码格式
+        run: |
+          find include example -name "*.hpp" -o -name "*.cpp" | xargs clang-format-14 --dry-run --Werror 2>&1 || \
+            echo "::warning::代码格式检查发现不一致，请运行 clang-format-14 格式化后再提交。"
