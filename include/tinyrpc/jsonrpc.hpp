@@ -225,17 +225,11 @@ namespace jsonrpc
     using call_op_ptr = std::unique_ptr<rpc_operation>;
 
 
-    // 从 JSON-RPC 对象中提取 'id' 字段并转换为字符串
-    inline std::string jsonrpc_id(const json::object &obj)
+    // 从 JSON-RPC 对象中提取 'id' 字段, 保持原始 JSON 类型.
+    inline json::value jsonrpc_id(const json::object &obj)
     {
       if (obj.if_contains("id"))
-      {
-        const auto &id = obj.at("id");
-        if (id.is_string())
-          return std::string(id.as_string());
-        else if (id.is_int64())
-          return std::to_string(id.as_int64());
-      }
+        return obj.at("id");
       return {};
     }
 
@@ -383,7 +377,11 @@ namespace jsonrpc
     // 将该消息传递给会话进行处理.
     void dispatch(json::object obj)
     {
-      running_ = true;
+      if (!running_)
+      {
+        BOOST_ASSERT(false && "session is not running");
+        return;
+      }
 
       if (!obj.if_contains("jsonrpc"))
       {
@@ -494,14 +492,14 @@ namespace jsonrpc
     }
 
     // 回复 JSONRPC 请求, 该函数接受一个 JSON 对象作为参数代表响应数据,
-    // 以及一个字符串 id 代表请求的 ID. 如果 error 参数为 true, 则表示
-    // 这是一个错误 error 响应, 否则表示正常 result 响应.
-    void reply(json::object response, const std::string& id, bool error = false)
+    // 以及一个 id 值代表请求的 ID, 该 id 的类型应与原始请求保持一致.
+    // 如果 error 参数为 true, 则表示这是一个错误 error 响应, 否则表示正常 result 响应.
+    void reply(json::object response, json::value id, bool error = false)
     {
       json::object data;
 
       data["jsonrpc"] = "2.0";
-      data["id"] = id;
+      data["id"] = std::move(id);
       if (error)
         data["error"] = std::move(response);
       else
@@ -541,15 +539,15 @@ namespace jsonrpc
           }
           else if constexpr (std::is_same_v<ReturnType, net::awaitable<json::object>>)
           {
-            auto id = jsonrpc::jsonrpc_id(obj);
+            auto id = jsonrpc_id(obj);
             auto response = co_await handler(std::move(obj));
-            reply(response, id);
+            reply(response, std::move(id));
           }
           else if constexpr (std::is_same_v<ReturnType, json::object>)
           {
-            auto id = jsonrpc::jsonrpc_id(obj);
+            auto id = jsonrpc_id(obj);
             auto response = handler(std::move(obj));
-            reply(response, id);
+            reply(response, std::move(id));
           }
           else if constexpr (std::is_same_v<ReturnType, void>)
           {

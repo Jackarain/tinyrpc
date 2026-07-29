@@ -94,7 +94,7 @@ net::awaitable<void> do_jsonrpc(session_type session)
                 {"val", a + b},
             };
 
-            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的原始 id 使客户端能够匹配响应
             session.reply(response, jsonrpc::jsonrpc_id(obj));
             co_return;
         }, net::detached);
@@ -116,7 +116,7 @@ net::awaitable<void> do_jsonrpc(session_type session)
                 {"val", a * b},
             };
 
-            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+            // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的原始 id 使客户端能够匹配响应
             session.reply(response, jsonrpc::jsonrpc_id(obj));
             co_return;
         });
