@@ -391,7 +391,7 @@ namespace jsonrpc
       net::co_spawn(stream_.get_executor(),
         [this, obj = std::move(obj)]() mutable -> net::awaitable<void>
         {
-          co_await dispath(std::move(obj));
+          co_await dispatch_impl(std::move(obj));
           co_return;
         }, net::detached);
     }
@@ -693,7 +693,7 @@ namespace jsonrpc
 
           net::co_spawn(executor, [this, obj = std::move(obj)]() mutable -> net::awaitable<void>
           {
-            co_await dispath(std::move(obj));
+            co_await dispatch_impl(std::move(obj));
             co_return;
           }, net::detached);
         }
@@ -708,7 +708,7 @@ namespace jsonrpc
       }
     }
 
-    net::awaitable<void> dispath(json::object obj)
+    net::awaitable<void> dispatch_impl(json::object obj)
     {
       auto try_id = obj.try_at("id");
       if (!try_id.has_value())
