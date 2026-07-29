@@ -63,7 +63,7 @@ session.bind_method("sub", [&session](json::object obj) {
         {"val", a - b},
     };
 
-    // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+    // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的原始 id 使客户端能够匹配响应
     session.reply(response, jsonrpc::jsonrpc_id(obj));
 });
 ```
@@ -88,7 +88,7 @@ session.bind_method("add", [&session, executor](json::object obj) {
             {"val", a + b},
         };
 
-        // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+        // 手工回复请求, 使用 jsonrpc_id(obj) 获取请求的原始 id 使客户端能够匹配响应
         session.reply(response, jsonrpc::jsonrpc_id(obj));
         co_return;
     }, net::detached);
@@ -115,7 +115,7 @@ session.bind_method("mul",
             {"val", a * b},
         };
 
-        // 回复请求, 使用 jsonrpc_id(obj) 获取请求的 ID 使客户端能够匹配响应
+        // 回复请求, 使用 jsonrpc_id(obj) 获取请求的原始 id 使客户端能够匹配响应
         session.reply(response, jsonrpc::jsonrpc_id(obj));
         co_return;
     });
