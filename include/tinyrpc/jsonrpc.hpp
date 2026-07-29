@@ -298,6 +298,7 @@ namespace jsonrpc
       , method_cb_(std::move(rhs.method_cb_))
       , notify_cb_(std::move(rhs.notify_cb_))
       , error_cb_(std::move(rhs.error_cb_))
+      , data_cb_(std::move(rhs.data_cb_))
       , remote_methods_(std::move(rhs.remote_methods_))
       , id_recycle_(std::move(rhs.id_recycle_))
       , call_ops_(std::move(rhs.call_ops_))
