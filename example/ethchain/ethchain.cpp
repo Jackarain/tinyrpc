@@ -158,12 +158,10 @@ net::awaitable<void> ethchain_session(url_view url)
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2) {
-        std::cerr << "Usage: ethchain <url>\n";
-        return 1;
-    }
+	boost::url_view url = "wss://ethereum-rpc.publicnode.com";
 
-    boost::url_view url(argv[1]);
+	if (argc == 2)
+    	url = boost::url_view(argv[1]);
 
     net::io_context ioc;
       net::co_spawn(ioc, ethchain_session(url), net::detached);
