@@ -334,7 +334,12 @@ namespace jsonrpc
       net::co_spawn(stream_.get_executor(),
       [this, running = running_]() mutable -> net::awaitable<void>
       {
-        co_await run();
+        try
+        {
+          co_await run();
+        }
+        catch (...)
+        {}
         running = false;
         co_return;
       }, net::detached);
@@ -377,12 +382,6 @@ namespace jsonrpc
     // 将该消息传递给会话进行处理.
     void dispatch(json::object obj)
     {
-      if (!running_)
-      {
-        BOOST_ASSERT(false && "session is not running");
-        return;
-      }
-
       if (!obj.if_contains("jsonrpc"))
       {
         BOOST_ASSERT(false && "jsonrpc field not found");
@@ -390,7 +389,7 @@ namespace jsonrpc
       }
 
       net::co_spawn(stream_.get_executor(),
-        [this, running = running_, obj = std::move(obj)]() mutable -> net::awaitable<void>
+        [this, obj = std::move(obj)]() mutable -> net::awaitable<void>
         {
           co_await dispath(std::move(obj));
           co_return;
