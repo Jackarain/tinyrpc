@@ -831,7 +831,7 @@ namespace jsonrpc
 
     net::awaitable<void> handle_method(json::object obj, std::string_view method_name)
     {
-      // 检查协程中是否存在
+      // 检查远程方法是否已注册
       auto it = remote_methods_.find(std::string(method_name));
       if (it != remote_methods_.end())
       {
@@ -843,8 +843,20 @@ namespace jsonrpc
       }
       else
       {
-        // 没有设置 method 回调函数，忽略该消息
-        BOOST_ASSERT(false && "no method callback set");
+        // 方法未找到且没有设置默认回调，返回 JSON-RPC 标准 -32601 错误响应
+        auto id = jsonrpc_id(obj);
+        if (!id.is_null())
+        {
+          json::object error_obj = {
+            {"code", -32601},
+            {"message", "Method not found"}
+          };
+          reply(std::move(error_obj), std::move(id), true);
+        }
+        else
+        {
+          BOOST_ASSERT(false && "no method callback set");
+        }
       }
 
       co_return;
