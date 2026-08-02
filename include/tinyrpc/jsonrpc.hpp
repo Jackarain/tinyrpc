@@ -909,7 +909,10 @@ namespace jsonrpc
       catch(const std::exception& e)
       {
           if (running && error_cb_)
-              error_cb_(std::string_view(e.what()));
+          {
+            write_msgs_.clear();
+            error_cb_(std::string_view(e.what()));
+          }
       }
     }
 
