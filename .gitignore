@@ -244,6 +244,8 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
+.cache/
+
 vs2017/
 build/
 tcmalloc-build/
