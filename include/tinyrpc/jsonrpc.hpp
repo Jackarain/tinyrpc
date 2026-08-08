@@ -312,6 +312,11 @@ namespace jsonrpc
         catch (...)
         {}
         self->running_.store(false);
+
+        // 消息循环已结束, 通知会话已关闭.
+        if (self->closed_cb_)
+          self->closed_cb_();
+
         co_return;
       }, net::detached);
     }
@@ -608,6 +613,19 @@ namespace jsonrpc
     void data_callback()
     {
       data_cb_ = {};
+    }
+
+    // 设置会话关闭回调函数, 当会话消息循环结束时 (连接关闭/停止) 调用.
+    // 如果传入的回调函数为空, 则清除之前设置的回调函数.
+    void closed_callback(std::function<void()> cb)
+    {
+      closed_cb_ = std::move(cb);
+    }
+
+    // 清除会话关闭回调函数.
+    void closed_callback()
+    {
+      closed_cb_ = {};
     }
 
     // 获取当前 jsonrpc_session 的执行器, 该执行器可以用于在协程中调度任务.
@@ -943,6 +961,9 @@ namespace jsonrpc
     // 返回的数据.
     std::function<std::string(std::string_view)> data_cb_;
 
+    // 会话关闭回调, 当消息循环结束时调用.
+    std::function<void()> closed_cb_;
+
     // 注册的 RPC 调用方法.
     std::unordered_map<std::string, coroutine_type> remote_methods_;
 
@@ -1100,6 +1121,17 @@ namespace jsonrpc
     void data_callback()
     {
       impl_->data_callback();
+    }
+
+    // 设置会话关闭回调函数.
+    void closed_callback(std::function<void()> cb)
+    {
+      impl_->closed_callback(std::move(cb));
+    }
+
+    void closed_callback()
+    {
+      impl_->closed_callback();
     }
 
     // 获取当前 jsonrpc_session 的执行器.
