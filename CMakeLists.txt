@@ -65,6 +65,8 @@ option(ENABLE_SNMALLOC_STATIC		"Build with snmalloc support" OFF)
 option(ENABLE_SYSTEM_OPENSSL		"Build with system openssl support" OFF)
 option(ENABLE_USE_OPENSSL			"Build with openssl support" ON)
 
+option(ENABLE_BUILD_TESTS			"Build unit tests" OFF)
+
 option(ENABLE_LINKE_TO_LIBATOMIC	"Link to libatomic.so - some platform requires it" OFF)
 
 ################################################################################
@@ -416,3 +418,11 @@ endif()
 # 添加 example 项目
 
 add_subdirectory(example)
+
+################################################################################
+# 添加单元测试
+
+if (ENABLE_BUILD_TESTS)
+	enable_testing()
+	add_subdirectory(test)
+endif()
