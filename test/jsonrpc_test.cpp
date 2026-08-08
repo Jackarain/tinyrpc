@@ -763,4 +763,47 @@ BOOST_AUTO_TEST_CASE(rpc_manual_reply_json_value)
   });
 }
 
+// closed_callback: 调用 stop() 停止会话后触发
+BOOST_AUTO_TEST_CASE(rpc_closed_callback_on_stop)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool closed = false;
+    client.closed_callback([&]() { closed = true; });
+
+    // 先确认连接正常
+    server.bind_method("ping", [](json::object) -> json::object
+    {
+      return json::object{{"pong", true}};
+    });
+    auto [ec, result] = co_await client.async_call(
+      "ping", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+
+    // 停止 client 会话, 消息循环结束应触发 closed_callback
+    client.stop();
+
+    co_await wait_until(client.get_executor(), [&]() { return closed; });
+    BOOST_TEST(closed);
+    co_return;
+  });
+}
+
+// closed_callback: 对端关闭连接后触发
+BOOST_AUTO_TEST_CASE(rpc_closed_callback_on_peer_close)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool closed = false;
+    client.closed_callback([&]() { closed = true; });
+
+    // 对端 (server) 关闭底层连接, client 的消息循环应检测到并结束
+    beast::get_lowest_layer(server.stream()).close();
+
+    co_await wait_until(client.get_executor(), [&]() { return closed; });
+    BOOST_TEST(closed);
+    co_return;
+  });
+}
+
 BOOST_AUTO_TEST_SUITE_END()
