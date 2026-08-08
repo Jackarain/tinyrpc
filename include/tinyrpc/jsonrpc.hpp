@@ -463,10 +463,10 @@ namespace jsonrpc
           initiate_async_call(this), token, method, params);
     }
 
-    // 回复 JSONRPC 请求, 该函数接受一个 JSON 对象作为参数代表响应数据,
+    // 回复 JSONRPC 请求, 该函数接受一个 JSON value 作为参数代表响应数据,
     // 以及一个 id 值代表请求的 ID, 该 id 的类型应与原始请求保持一致.
     // 如果 error 参数为 true, 则表示这是一个错误 error 响应, 否则表示正常 result 响应.
-    void reply(json::object response, json::value id, bool error = false)
+    void reply(json::value response, json::value id, bool error = false)
     {
       json::object data;
 
@@ -478,6 +478,20 @@ namespace jsonrpc
         data["result"] = std::move(response);
 
       // 将响应数据序列化为 JSON 字符串并发送
+      auto context = std::make_unique<std::string>(json::serialize(data));
+      write_message(std::move(context));
+    }
+
+    // 发送一个无 id 的通知消息.
+    void notify(std::string_view method_name, const json::value& params)
+    {
+      json::object data;
+
+      data["jsonrpc"] = "2.0";
+      data["method"] = std::string(method_name);
+      if (!params.is_null())
+        data["params"] = params;
+
       auto context = std::make_unique<std::string>(json::serialize(data));
       write_message(std::move(context));
     }
@@ -515,11 +529,23 @@ namespace jsonrpc
             auto response = co_await handler(std::move(obj));
             reply(response, std::move(id));
           }
+          else if constexpr (std::is_same_v<ReturnType, net::awaitable<json::value>>)
+          {
+            auto id = jsonrpc_id(obj);
+            auto response = co_await handler(std::move(obj));
+            reply(std::move(response), std::move(id));
+          }
           else if constexpr (std::is_same_v<ReturnType, json::object>)
           {
             auto id = jsonrpc_id(obj);
             auto response = handler(std::move(obj));
             reply(response, std::move(id));
+          }
+          else if constexpr (std::is_same_v<ReturnType, json::value>)
+          {
+            auto id = jsonrpc_id(obj);
+            auto response = handler(std::move(obj));
+            reply(std::move(response), std::move(id));
           }
           else if constexpr (std::is_same_v<ReturnType, void>)
           {
@@ -1014,9 +1040,15 @@ namespace jsonrpc
     }
 
     // 回复 JSONRPC 请求.
-    void reply(json::object response, json::value id, bool error = false)
+    void reply(json::value response, json::value id, bool error = false)
     {
       impl_->reply(std::move(response), std::move(id), error);
+    }
+
+    // 发送一个无 id 的通知消息.
+    void notify(std::string_view method_name, const json::value& params)
+    {
+      impl_->notify(method_name, params);
     }
 
     // 绑定一个 JSON-RPC 方法调用的协程函数.
