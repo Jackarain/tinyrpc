@@ -676,4 +676,91 @@ BOOST_AUTO_TEST_CASE(rpc_large_payload)
   });
 }
 
+// 通过门面 notify() 发送无 id 的通知消息
+BOOST_AUTO_TEST_CASE(rpc_notify_method)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool got = false;
+    json::object got_params;
+    server.notify_callback([&](json::object obj)
+    {
+      got = true;
+      got_params = obj["params"].as_object();
+    });
+
+    // 使用 notify() 发送通知, 无需手工构造消息.
+    client.notify("event", json::object{{"x", 1}});
+
+    co_await wait_until(client.get_executor(), [&]() { return got; });
+
+    BOOST_TEST(got_params["x"].as_int64() == 1);
+    co_return;
+  });
+}
+
+// bind_method 返回 json::value (非 object), 例如数组
+BOOST_AUTO_TEST_CASE(rpc_return_json_value)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("list", [](json::object) -> json::value
+    {
+      return json::array{1, 2, 3};
+    });
+
+    auto [ec, result] = co_await client.async_call(
+      "list", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    auto arr = result["result"].as_array();
+    BOOST_TEST(arr.size() == 3);
+    BOOST_TEST(arr[0].as_int64() == 1);
+    BOOST_TEST(arr[2].as_int64() == 3);
+    co_return;
+  });
+}
+
+// bind_method 协程返回 awaitable<json::value>, 例如字符串
+BOOST_AUTO_TEST_CASE(rpc_return_awaitable_json_value)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("greet", [](json::object obj) -> net::awaitable<json::value>
+    {
+      auto name = obj["params"].as_object()["name"].as_string();
+      co_return json::value("hello " + std::string(name));
+    });
+
+    auto [ec, result] = co_await client.async_call(
+      "greet", json::object{{"name", "world"}}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(result["result"].as_string() == "hello world");
+    co_return;
+  });
+}
+
+// 手工 reply 接受任意 json::value (非 object), 例如数组
+BOOST_AUTO_TEST_CASE(rpc_manual_reply_json_value)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("arr_reply", [&server](json::object obj) -> net::awaitable<void>
+    {
+      auto id = jsonrpc::jsonrpc_id(obj);
+      // 手工回复 json::value 数组.
+      server.reply(json::array{7, 8}, std::move(id));
+      co_return;
+    });
+
+    auto [ec, result] = co_await client.async_call(
+      "arr_reply", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    auto arr = result["result"].as_array();
+    BOOST_TEST(arr.size() == 2);
+    BOOST_TEST(arr[0].as_int64() == 7);
+    BOOST_TEST(arr[1].as_int64() == 8);
+    co_return;
+  });
+}
+
 BOOST_AUTO_TEST_SUITE_END()
