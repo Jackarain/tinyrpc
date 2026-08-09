@@ -49,6 +49,73 @@ namespace json = boost::json;
 using test_ws = beast::websocket::stream<beast::test::stream>;
 using session_type = jsonrpc::jsonrpc_session<test_ws>;
 
+// 用于跟踪底层流析构的流类型.
+// 当 jsonrpc_session_service 析构时, 其底层流成员随之析构,
+// 通过该标志可验证 service 是否被正常析构.
+struct tracking_stream : beast::test::stream
+{
+  std::shared_ptr<bool> destroyed;
+
+  tracking_stream(net::any_io_executor ex, std::shared_ptr<bool> d)
+    : beast::test::stream(std::move(ex))
+    , destroyed(std::move(d))
+  {}
+
+  tracking_stream(net::io_context& ctx, std::shared_ptr<bool> d)
+    : beast::test::stream(ctx)
+    , destroyed(std::move(d))
+  {}
+
+  tracking_stream(tracking_stream&&) noexcept = default;
+  tracking_stream& operator=(tracking_stream&&) noexcept = default;
+
+  ~tracking_stream()
+  {
+    if (destroyed)
+      *destroyed = true;
+  }
+};
+
+using tracking_ws = beast::websocket::stream<tracking_stream>;
+using tracking_session = jsonrpc::jsonrpc_session<tracking_ws>;
+
+// beast 的 teardown/async_teardown 是为 basic_stream 精确类型提供的 friend
+// 函数 (位于 boost::beast::test 命名空间, 通过 ADL 查找). 派生的
+// tracking_stream 需要显式转发到基类实现, 否则 websocket 关闭时会因
+// "Unknown Socket type" 静态断言失败.
+namespace boost {
+namespace beast {
+namespace test {
+
+template<class TeardownHandler>
+void
+async_teardown(
+    role_type role,
+    ::tracking_stream& s,
+    TeardownHandler&& handler)
+{
+    boost::beast::test::async_teardown(
+        role,
+        static_cast<::boost::beast::test::stream&>(s),
+        std::forward<TeardownHandler>(handler));
+}
+
+void
+teardown(
+    role_type role,
+    ::tracking_stream& s,
+    boost::system::error_code& ec)
+{
+    boost::beast::test::teardown(
+        role,
+        static_cast<::boost::beast::test::stream&>(s),
+        ec);
+}
+
+} // namespace test
+} // namespace beast
+} // namespace boost
+
 namespace {
 
 // 运行一个端到端测试场景.
@@ -804,6 +871,114 @@ BOOST_AUTO_TEST_CASE(rpc_closed_callback_on_peer_close)
     BOOST_TEST(closed);
     co_return;
   });
+}
+
+// stop() 后, 处于连接状态的 service 应被正常析构.
+// 验证: 连接建立并 start() 后调用 stop(), 释放门面后底层流析构
+// (即 service 析构), 无协程泄漏导致 service 无法释放.
+BOOST_AUTO_TEST_CASE(stop_destroys_connected_service)
+{
+  net::io_context ioc;
+
+  auto server_destroyed = std::make_shared<bool>(false);
+  auto client_destroyed = std::make_shared<bool>(false);
+
+  tracking_stream ts_server(ioc, server_destroyed);
+  tracking_stream ts_client(ioc, client_destroyed);
+  ts_server.connect(ts_client);
+
+  tracking_ws server_ws(std::move(ts_server));
+  tracking_ws client_ws(std::move(ts_client));
+
+  auto server = std::make_shared<tracking_session>(std::move(server_ws));
+  auto client = std::make_shared<tracking_session>(std::move(client_ws));
+
+  // 静默错误回调, 避免连接关闭触发断言.
+  server->error_callback([](std::string_view) {});
+  client->error_callback([](std::string_view) {});
+
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server 握手 + start
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server->stream().async_accept(net::use_awaitable);
+        server->start();
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // client 握手 + start + stop + 释放门面
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client->stream().async_handshake("test", "/", net::use_awaitable);
+        client->start();
+
+        // 连接已建立
+        BOOST_TEST(server->running());
+        BOOST_TEST(client->running());
+
+        // 在连接状态下调用 stop(), 然后释放 client 门面.
+        client->stop();
+        client.reset();
+
+        // 等待 client 的 service 被析构 (底层流析构即代表 service 析构).
+        co_await wait_until(ioc.get_executor(), [&]() { return *client_destroyed; });
+        BOOST_TEST(*client_destroyed);
+
+        // 清理 server 端: server 可能已因 client 关闭连接而自然停止,
+        // 仅在仍处于运行状态时才需要显式 stop(), 否则会触发 "not running" 断言.
+        if (server->running())
+          server->stop();
+        server.reset();
+
+        co_await wait_until(ioc.get_executor(), [&]() { return *server_destroyed; });
+        BOOST_TEST(*server_destroyed);
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out: service not destroyed");
+  });
+
+  ioc.run();
+
+  BOOST_TEST(*client_destroyed);
+  BOOST_TEST(*server_destroyed);
+}
+
+// 未调用 start() 的空闲 service, 门面析构后应立即析构.
+BOOST_AUTO_TEST_CASE(destroy_idle_service)
+{
+  net::io_context ioc;
+  auto destroyed = std::make_shared<bool>(false);
+
+  tracking_stream ts_a(ioc, destroyed), ts_b(ioc, std::make_shared<bool>(false));
+  ts_a.connect(ts_b);
+
+  {
+    tracking_ws ws(std::move(ts_a));
+    tracking_session session(std::move(ws));
+    BOOST_TEST(!*destroyed);
+  } // 作用域结束, 门面析构
+
+  BOOST_TEST(*destroyed);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
