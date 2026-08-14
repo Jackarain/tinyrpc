@@ -345,10 +345,7 @@ namespace jsonrpc
     void stop()
     {
       if (!running_.load())
-      {
-        BOOST_ASSERT(false && "not running");
         return;
-      }
 
       running_.store(false);
 
@@ -746,17 +743,13 @@ namespace jsonrpc
         // 连接已断开, 完成所有挂起的 RPC 调用.
         fail_pending_calls();
       }
-      catch (const std::exception&)
+      catch (const std::exception& e)
       {
-        // 若服务已被显式停止 (running_ 为 false), 则视为正常关闭,
-        // 不再上报错误, 以便 session 析构时能干净退出.
         if (running_.load())
         {
           // 捕获异常并调用错误回调函数
           if (error_cb_)
-            error_cb_("exception occurred while running jsonrpc session");
-          else
-            BOOST_ASSERT(false && "exception occurred while running jsonrpc session");
+            error_cb_(e.what());
         }
 
         // 连接异常断开, 完成所有挂起的 RPC 调用.
