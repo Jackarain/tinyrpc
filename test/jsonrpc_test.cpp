@@ -873,6 +873,116 @@ BOOST_AUTO_TEST_CASE(rpc_closed_callback_on_peer_close)
   });
 }
 
+// fail_pending_calls: 调用 stop() 时, 挂起的 RPC 调用以 operation_aborted 完成.
+BOOST_AUTO_TEST_CASE(fail_pending_calls_on_stop)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+
+    bool call_done = false;
+    boost::system::error_code call_ec;
+    client.async_call("never_reply", json::object{},
+      [&](boost::system::error_code ec, json::object)
+      {
+        call_done = true;
+        call_ec = ec;
+      });
+
+    // 等待 server 收到请求, 确认调用确实处于挂起状态.
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+    BOOST_TEST(request_received);
+    BOOST_TEST(!call_done);
+
+    // 停止 client 会话, 挂起的调用应以 operation_aborted 完成,
+    // 避免等待响应的协程永久挂起导致 io_context 无法退出.
+    client.stop();
+
+    co_await wait_until(client.get_executor(), [&]() { return call_done; });
+    BOOST_TEST(call_done);
+    BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+    co_return;
+  });
+}
+
+// fail_pending_calls: 对端关闭连接时, 挂起的 RPC 调用以 operation_aborted 完成.
+BOOST_AUTO_TEST_CASE(fail_pending_calls_on_peer_close)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+
+    bool call_done = false;
+    boost::system::error_code call_ec;
+    client.async_call("never_reply", json::object{},
+      [&](boost::system::error_code ec, json::object)
+      {
+        call_done = true;
+        call_ec = ec;
+      });
+
+    // 等待 server 收到请求, 确认调用确实处于挂起状态.
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+    BOOST_TEST(request_received);
+    BOOST_TEST(!call_done);
+
+    // 对端 (server) 直接关闭底层连接, client 的挂起调用应以 operation_aborted 完成.
+    beast::get_lowest_layer(server.stream()).close();
+
+    co_await wait_until(client.get_executor(), [&]() { return call_done; });
+    BOOST_TEST(call_done);
+    BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+    co_return;
+  });
+}
+
+// fail_pending_calls: 多个挂起调用在 stop() 时全部以 operation_aborted 完成.
+BOOST_AUTO_TEST_CASE(fail_all_pending_calls_on_stop)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    constexpr int n = 8;
+    int received = 0;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      ++received;
+    });
+
+    int call_done = 0;
+    int aborted = 0;
+    for (int i = 0; i < n; ++i)
+    {
+      client.async_call("never_reply", json::object{{"n", i}},
+        [&](boost::system::error_code ec, json::object)
+        {
+          ++call_done;
+          if (ec == boost::asio::error::operation_aborted)
+            ++aborted;
+        });
+    }
+
+    // 等待所有请求到达对端, 确认所有调用均处于挂起状态.
+    co_await wait_until(client.get_executor(), [&]() { return received == n; });
+    BOOST_TEST(received == n);
+    BOOST_TEST(call_done == 0);
+
+    client.stop();
+
+    co_await wait_until(client.get_executor(), [&]() { return call_done == n; });
+    BOOST_TEST(call_done == n);
+    BOOST_TEST(aborted == n);
+    co_return;
+  });
+}
+
 // stop() 后, 处于连接状态的 service 应被正常析构.
 // 验证: 连接建立并 start() 后调用 stop(), 释放门面后底层流析构
 // (即 service 析构), 无协程泄漏导致 service 无法释放.
