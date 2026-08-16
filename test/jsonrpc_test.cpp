@@ -12,11 +12,17 @@
 //   - 模式 A (start 驱动) 的 RPC 调用
 //   - 模式 B (手动 dispatch) 的 RPC 调用
 //   - bind_method 的三种返回形式 (json::object / awaitable<json::object> / void+reply)
-//   - 未注册方法的 -32601 错误响应
-//   - 通知 (notification)
+//   - 未注册方法的 -32601 错误响应 (数字/字符串 id)
+//   - 通知 (notification) 与 notify() 门面 (含 null params 省略 params 字段)
 //   - 回调形式的 async_call
 //   - 字符串 id 保留
 //   - 双向 RPC
+//   - default_method_callback / data_callback / closed_callback 回调
+//   - 手工错误响应 reply(..., error=true)
+//   - stop() 后发起调用的立即失败
+//   - 错误回调路径 (非对象 JSON / 无 jsonrpc 字段 / method 非字符串 /
+//     invalid id format / invalid session id)
+//   - release() 与移动语义
 //
 
 #define BOOST_TEST_MODULE jsonrpc_test
@@ -164,6 +170,70 @@ void run_with_pair(Fn&& fn)
       {
         co_await client.stream().async_handshake("test", "/", net::use_awaitable);
         client.start();
+        co_await fn(server, client);
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      beast::get_lowest_layer(client.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
+}
+
+// 运行一个需要手动读写底层数据的端到端测试场景.
+// 与 run_with_pair 的区别: client 不调用 start(), 由测试逻辑通过
+// stream() 手动发送/接收数据帧, 用于验证 server 端的解析与响应.
+template <class Fn>
+void run_manual_pair(Fn&& fn)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client(std::move(client_ws));
+
+  server.error_callback([](std::string_view) {});
+  client.error_callback([](std::string_view) {});
+
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server 端握手 + 启动
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+        server.start();
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // client 端握手后执行测试逻辑 (不调用 start)
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client.stream().async_handshake("test", "/", net::use_awaitable);
         co_await fn(server, client);
       }
       catch (const std::exception&)
@@ -1089,6 +1159,465 @@ BOOST_AUTO_TEST_CASE(destroy_idle_service)
   } // 作用域结束, 门面析构
 
   BOOST_TEST(*destroyed);
+}
+
+// default_method_callback: 方法未注册时由兜底回调处理, 不再回复 -32601.
+BOOST_AUTO_TEST_CASE(rpc_default_method_callback)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool got = false;
+    json::object got_obj;
+    server.default_method_callback([&](json::object obj)
+    {
+      got = true;
+      got_obj = std::move(obj);
+    });
+
+    // client 手动发送一个未注册方法的请求.
+    json::object req{
+      {"jsonrpc", "2.0"},
+      {"method", "unbound"},
+      {"params", json::object{{"x", 5}}},
+      {"id", 1}
+    };
+    co_await client.stream().async_write(net::buffer(json::serialize(req)), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return got; });
+    BOOST_TEST(got_obj["method"].as_string() == "unbound");
+    BOOST_TEST(got_obj["id"].as_int64() == 1);
+    co_return;
+  });
+}
+
+// notify(): params 为 null 时省略 params 字段.
+BOOST_AUTO_TEST_CASE(rpc_notify_null_params)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool got = false;
+    json::object got_obj;
+    server.notify_callback([&](json::object obj)
+    {
+      got = true;
+      got_obj = std::move(obj);
+    });
+
+    // params 传 null, notify() 应省略 params 字段.
+    client.notify("event", json::value());
+
+    co_await wait_until(client.get_executor(), [&]() { return got; });
+    BOOST_TEST(got_obj["method"].as_string() == "event");
+    BOOST_TEST(!got_obj.if_contains("params"));
+    co_return;
+  });
+}
+
+// 手工错误响应: reply(..., error=true) 发送 error 字段而非 result.
+BOOST_AUTO_TEST_CASE(rpc_manual_error_reply)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("fail", [&server](json::object obj) -> void
+    {
+      auto id = jsonrpc::jsonrpc_id(obj);
+      json::object err{{"code", -32000}, {"message", "custom error"}};
+      server.reply(err, std::move(id), true);
+    });
+
+    auto [ec, result] = co_await client.async_call(
+      "fail", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(!result.if_contains("result"));
+    BOOST_TEST(result.if_contains("error"));
+    BOOST_TEST(result["error"].as_object()["code"].as_int64() == -32000);
+    BOOST_TEST(result["error"].as_object()["message"].as_string() == "custom error");
+    co_return;
+  });
+}
+
+// stop() 后发起 async_call, 应立即以 operation_aborted 完成, 不会挂起.
+BOOST_AUTO_TEST_CASE(rpc_async_call_after_stop)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("ping", [](json::object) -> json::object
+    {
+      return json::object{{"pong", true}};
+    });
+
+    // 先确认连接正常.
+    auto [ec0, r0] = co_await client.async_call(
+      "ping", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec0);
+
+    // 停止会话后, 新发起的调用应立即失败.
+    client.stop();
+
+    bool done = false;
+    boost::system::error_code ec;
+    client.async_call("ping", json::object{},
+      [&](boost::system::error_code e, json::object)
+      {
+        done = true;
+        ec = e;
+      });
+
+    co_await wait_until(client.get_executor(), [&]() { return done; });
+    BOOST_TEST(ec == boost::asio::error::operation_aborted);
+    co_return;
+  });
+}
+
+// error_callback: 收到非对象 JSON (数组) 时触发 "parsed json is not an object".
+BOOST_AUTO_TEST_CASE(rpc_error_not_object)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    // 通过 shared_ptr 共享状态: 会话关闭时错误回调仍可能被触发,
+    // 捕获共享状态可避免对已析构局部变量的悬垂引用.
+    auto st = std::make_shared<std::pair<bool, std::string>>(false, std::string());
+    client.error_callback([st](std::string_view m)
+    {
+      st->first = true;
+      st->second = std::string(m);
+    });
+
+    // 注意: 需使用 std::string 作为写入载荷, net::buffer("字面量") 会
+    // 连同结尾的 '\0' 一起发送, 导致对端解析失败.
+    std::string payload = "[1, 2, 3]";
+    co_await server.stream().async_write(net::buffer(payload), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return st->first; });
+    BOOST_TEST(st->second == "parsed json is not an object");
+    co_return;
+  });
+}
+
+// error_callback: 收到无 jsonrpc 字段的对象时触发 "jsonrpc field not found".
+BOOST_AUTO_TEST_CASE(rpc_error_no_jsonrpc)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    auto st = std::make_shared<std::pair<bool, std::string>>(false, std::string());
+    client.error_callback([st](std::string_view m)
+    {
+      st->first = true;
+      st->second = std::string(m);
+    });
+
+    std::string payload = "{\"foo\": 1}";
+    co_await server.stream().async_write(net::buffer(payload), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return st->first; });
+    BOOST_TEST(st->second == "jsonrpc field not found");
+    co_return;
+  });
+}
+
+// error_callback: 请求 method 字段非字符串时触发 "method must be string".
+BOOST_AUTO_TEST_CASE(rpc_error_method_not_string)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    auto st = std::make_shared<std::pair<bool, std::string>>(false, std::string());
+    client.error_callback([st](std::string_view m)
+    {
+      st->first = true;
+      st->second = std::string(m);
+    });
+
+    std::string payload = "{\"jsonrpc\":\"2.0\",\"method\":42,\"id\":1}";
+    co_await server.stream().async_write(net::buffer(payload), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return st->first; });
+    BOOST_TEST(st->second == "method must be string");
+    co_return;
+  });
+}
+
+// error_callback: 响应 id 为非数字字符串时触发 "invalid id format".
+BOOST_AUTO_TEST_CASE(rpc_error_invalid_id_format)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    auto st = std::make_shared<std::pair<bool, std::string>>(false, std::string());
+    client.error_callback([st](std::string_view m)
+    {
+      st->first = true;
+      st->second = std::string(m);
+    });
+
+    // 发起一个挂起调用, 使 call_ops_ 非空.
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+    client.async_call("never_reply", json::object{},
+      [](boost::system::error_code, json::object) {});
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+
+    // 注入 id 为不可转数字字符串的响应.
+    json::object resp{{"jsonrpc", "2.0"}, {"result", json::object{}}, {"id", std::string("abc")}};
+    std::string payload = json::serialize(resp);
+    co_await server.stream().async_write(net::buffer(payload), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return st->first; });
+    BOOST_TEST(st->second == "invalid id format");
+    co_return;
+  });
+}
+
+// error_callback: 响应 id 越界时触发 "invalid session id".
+BOOST_AUTO_TEST_CASE(rpc_error_invalid_session_id)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    auto st = std::make_shared<std::pair<bool, std::string>>(false, std::string());
+    client.error_callback([st](std::string_view m)
+    {
+      st->first = true;
+      st->second = std::string(m);
+    });
+
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+    client.async_call("never_reply", json::object{},
+      [](boost::system::error_code, json::object) {});
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+
+    // 注入 id 越界的响应.
+    json::object resp{{"jsonrpc", "2.0"}, {"result", json::object{}}, {"id", 999}};
+    std::string payload = json::serialize(resp);
+    co_await server.stream().async_write(net::buffer(payload), net::use_awaitable);
+
+    co_await wait_until(client.get_executor(), [&]() { return st->first; });
+    BOOST_TEST(st->second == "invalid session id");
+    co_return;
+  });
+}
+
+// data_callback: 解析前转换原始数据 (去掉前缀), 转换后再按 JSON 解析.
+BOOST_AUTO_TEST_CASE(rpc_data_callback)
+{
+  run_manual_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.data_callback([](std::string_view data) -> std::string
+    {
+      std::string s(data);
+      return (s.rfind("PREFIX", 0) == 0) ? s.substr(6) : s;
+    });
+    server.bind_method("echo", [](json::object obj) -> json::object
+    {
+      return json::object{{"got", obj["params"]}};
+    });
+
+    // client 手动发送带前缀的请求, 由 server 的 data_callback 去前缀后解析.
+    json::object req{
+      {"jsonrpc", "2.0"},
+      {"method", "echo"},
+      {"params", json::object{{"v", 9}}},
+      {"id", 1}
+    };
+    std::string framed = "PREFIX" + json::serialize(req);
+    co_await client.stream().async_write(net::buffer(framed), net::use_awaitable);
+
+    beast::flat_buffer buf;
+    auto n = co_await client.stream().async_read(buf, net::use_awaitable);
+    json::value jv = json::parse(beast::buffers_to_string(buf.data()));
+    buf.consume(n);
+
+    BOOST_TEST(jv.is_object());
+    auto resp = jv.as_object();
+    BOOST_TEST(resp["id"].as_int64() == 1);
+    BOOST_TEST(resp["result"].as_object()["got"].as_object()["v"].as_int64() == 9);
+    co_return;
+  });
+}
+
+// 未注册方法 + 字符串 id: 错误响应中 id 保留为字符串.
+BOOST_AUTO_TEST_CASE(rpc_unregistered_string_id_error)
+{
+  run_manual_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    // server 不绑定任何方法.
+
+    json::object req{
+      {"jsonrpc", "2.0"},
+      {"method", "missing"},
+      {"params", json::object{}},
+      {"id", std::string("abc-id")}
+    };
+    co_await client.stream().async_write(net::buffer(json::serialize(req)), net::use_awaitable);
+
+    beast::flat_buffer buf;
+    auto n = co_await client.stream().async_read(buf, net::use_awaitable);
+    json::value jv = json::parse(beast::buffers_to_string(buf.data()));
+    buf.consume(n);
+
+    BOOST_TEST(jv.is_object());
+    auto resp = jv.as_object();
+    BOOST_TEST(resp["id"].is_string());
+    BOOST_TEST(resp["id"].as_string() == "abc-id");
+    BOOST_TEST(resp["error"].as_object()["code"].as_int64() == -32601);
+    BOOST_TEST(resp["error"].as_object()["message"].as_string() == "Method not found");
+    co_return;
+  });
+}
+
+// release(): 释放底层流后, 会话不再拥有该流, 释放出的流仍可直接使用.
+BOOST_AUTO_TEST_CASE(rpc_release_stream)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client(std::move(client_ws));
+
+  server.error_callback([](std::string_view) {});
+  client.error_callback([](std::string_view) {});
+
+  bool got = false;
+  server.notify_callback([&](json::object) { got = true; });
+
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server 握手 + start
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+        server.start();
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // client 握手后释放底层流, 再用释放出的流发送通知.
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client.stream().async_handshake("test", "/", net::use_awaitable);
+
+        // 释放底层流, 会话不再拥有该流.
+        test_ws released = client.release();
+
+        json::object notif{{"jsonrpc", "2.0"}, {"method", "after_release"}, {"params", json::object{}}};
+        co_await released.async_write(net::buffer(json::serialize(notif)), net::use_awaitable);
+
+        co_await wait_until(ioc.get_executor(), [&]() { return got; });
+        BOOST_TEST(got);
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
+}
+
+// 移动构造与移动赋值: 转移 impl_ 所有权后仍可正常发起 RPC.
+BOOST_AUTO_TEST_CASE(rpc_move_session)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client_src(std::move(client_ws));
+  server.error_callback([](std::string_view) {});
+  client_src.error_callback([](std::string_view) {});
+
+  // 移动构造: 转移 client_src 的会话服务.
+  session_type client(std::move(client_src));
+
+  // 移动赋值: 覆盖一个已存在的空闲会话.
+  beast::test::stream s3(ioc), s4(ioc);
+  s3.connect(s4);
+  session_type client_dst(std::move(test_ws(std::move(s3))));
+  client_dst = std::move(client);
+
+  server.bind_method("add", [](json::object obj) -> json::object
+  {
+    auto p = obj["params"].as_object();
+    return json::object{{"val", p["a"].as_int64() + p["b"].as_int64()}};
+  });
+
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server 握手 + start
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+        server.start();
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // 移动后的会话握手 + start + RPC
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client_dst.stream().async_handshake("test", "/", net::use_awaitable);
+        client_dst.start();
+
+        auto [ec, result] = co_await client_dst.async_call(
+          "add", json::object{{"a", 40}, {"b", 2}}, net::as_tuple(net::use_awaitable));
+        BOOST_TEST(!ec);
+        BOOST_TEST(result["result"].as_object()["val"].as_int64() == 42);
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      beast::get_lowest_layer(client_dst.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
