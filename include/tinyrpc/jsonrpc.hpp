@@ -594,6 +594,7 @@ namespace jsonrpc
           {
             handler(std::move(obj));
           }
+          co_return;
         };
 
       remote_methods_[std::string(method_name)] = std::move(coroutine_handler);
