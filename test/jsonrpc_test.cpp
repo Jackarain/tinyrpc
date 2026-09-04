@@ -19,6 +19,7 @@
 //   - 双向 RPC
 //   - default_method_callback / data_callback / closed_callback 回调
 //   - 手工错误响应 reply(..., error=true)
+//   - 挂起调用取消 (cancellation_slot) 与取消后的迟到响应处理
 //   - stop() 后发起调用的立即失败
 //   - 错误回调路径 (非对象 JSON / 无 jsonrpc 字段 / method 非字符串 /
 //     invalid id format / invalid session id)
@@ -33,6 +34,8 @@
 #include <boost/asio/use_awaitable.hpp>
 #include <boost/asio/detached.hpp>
 #include <boost/asio/as_tuple.hpp>
+#include <boost/asio/cancellation_signal.hpp>
+#include <boost/asio/bind_cancellation_slot.hpp>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
@@ -1618,6 +1621,186 @@ BOOST_AUTO_TEST_CASE(rpc_move_session)
   });
 
   ioc.run();
+}
+
+// 挂起调用取消: 通过 cancellation_slot 触发取消后, 调用以
+// operation_aborted 完成, 且重复取消不会触发第二次回调.
+BOOST_AUTO_TEST_CASE(rpc_cancel_pending_call)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+
+    net::cancellation_signal sig;
+    int callbacks = 0;
+    boost::system::error_code call_ec;
+    client.async_call("never_reply", json::object{},
+      net::bind_cancellation_slot(sig.slot(),
+        [&](boost::system::error_code ec, json::object)
+        {
+          ++callbacks;
+          call_ec = ec;
+        }));
+
+    // 等待请求到达对端, 确认调用处于挂起状态.
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+    BOOST_TEST(callbacks == 0);
+
+    // 触发取消: 挂起调用以 operation_aborted 完成.
+    sig.emit(net::cancellation_type::terminal);
+    co_await wait_until(client.get_executor(), [&]() { return callbacks == 1; });
+    BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+
+    // 再次取消不应触发第二次回调.
+    sig.emit(net::cancellation_type::terminal);
+    co_await wait_until(client.get_executor(), [&]() { return callbacks == 1; });
+    BOOST_TEST(callbacks == 1);
+    co_return;
+  });
+}
+
+// 取消后的迟到响应: 取消时已回调一次, 迟到的响应到达后不应再次回调,
+// 也不应触发错误回调; 会话仍可正常发起新调用.
+BOOST_AUTO_TEST_CASE(rpc_cancel_late_response_dropped)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool request_received = false;
+    server.bind_method("slow_reply", [&server, &request_received](json::object obj) -> net::awaitable<void>
+    {
+      request_received = true;
+      auto id = jsonrpc::jsonrpc_id(obj);
+      co_await net::steady_timer(server.get_executor(), std::chrono::milliseconds(200))
+        .async_wait(net::use_awaitable);
+      server.reply(json::object{{"val", 1}}, std::move(id));
+      co_return;
+    });
+
+    int errors = 0;
+    client.error_callback([&](std::string_view) { ++errors; });
+
+    net::cancellation_signal sig;
+    int callbacks = 0;
+    boost::system::error_code call_ec;
+    client.async_call("slow_reply", json::object{},
+      net::bind_cancellation_slot(sig.slot(),
+        [&](boost::system::error_code ec, json::object)
+        {
+          ++callbacks;
+          call_ec = ec;
+        }));
+
+    // 等待请求到达服务端后取消.
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+    sig.emit(net::cancellation_type::terminal);
+
+    co_await wait_until(client.get_executor(), [&]() { return callbacks == 1; });
+    BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+
+    // 等待服务端的迟到响应到达: 应被丢弃, 不再次回调也不触发错误.
+    co_await net::steady_timer(client.get_executor(), std::chrono::milliseconds(350))
+      .async_wait(net::use_awaitable);
+    BOOST_TEST(callbacks == 1);
+    BOOST_TEST(errors == 0);
+
+    // 会话仍可正常使用.
+    server.bind_method("ping", [](json::object) -> json::object
+    {
+      return json::object{{"pong", true}};
+    });
+    auto [ec, result] = co_await client.async_call(
+      "ping", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(result["result"].as_object()["pong"].as_bool() == true);
+    co_return;
+  });
+}
+
+// 取消与并发调用: 被取消的 id 不会立即复用, 迟到的响应不会串扰到
+// 取消后立即发起的新调用.
+BOOST_AUTO_TEST_CASE(rpc_cancel_no_id_collision)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool slow_received = false;
+    server.bind_method("slow_echo", [&server, &slow_received](json::object obj) -> net::awaitable<void>
+    {
+      slow_received = true;
+      auto id = jsonrpc::jsonrpc_id(obj);
+      auto tag = obj["params"].as_object()["tag"];
+      co_await net::steady_timer(server.get_executor(), std::chrono::milliseconds(200))
+        .async_wait(net::use_awaitable);
+      server.reply(json::object{{"got", tag}}, std::move(id));
+      co_return;
+    });
+    server.bind_method("echo", [](json::object obj) -> json::object
+    {
+      return json::object{{"got", obj["params"].as_object()["tag"]}};
+    });
+
+    int errors = 0;
+    client.error_callback([&](std::string_view) { ++errors; });
+
+    net::cancellation_signal sig;
+    int slow_callbacks = 0;
+    client.async_call("slow_echo", json::object{{"tag", "slow"}},
+      net::bind_cancellation_slot(sig.slot(),
+        [&](boost::system::error_code ec, json::object)
+        {
+          ++slow_callbacks;
+          BOOST_TEST(ec == boost::asio::error::operation_aborted);
+        }));
+
+    co_await wait_until(client.get_executor(), [&]() { return slow_received; });
+    sig.emit(net::cancellation_type::terminal);
+    co_await wait_until(client.get_executor(), [&]() { return slow_callbacks == 1; });
+
+    // 取消后立即发起新调用, 结果必须与新请求匹配, 不受迟到响应干扰.
+    auto [ec, result] = co_await client.async_call(
+      "echo", json::object{{"tag", "fast"}}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(result["result"].as_object()["got"].as_string() == "fast");
+
+    // 等待被取消调用的迟到响应到达并被丢弃.
+    co_await net::steady_timer(client.get_executor(), std::chrono::milliseconds(350))
+      .async_wait(net::use_awaitable);
+    BOOST_TEST(slow_callbacks == 1);
+    BOOST_TEST(errors == 0);
+    co_return;
+  });
+}
+
+// 协程形式取消: 挂起中的 co_await async_call 被取消后以
+// operation_aborted 返回 (模拟超时等场景).
+BOOST_AUTO_TEST_CASE(rpc_cancel_awaitable_call)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    bool request_received = false;
+    server.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+
+    net::cancellation_signal sig;
+    net::co_spawn(client.get_executor(),
+      [&]() -> net::awaitable<void>
+      {
+        co_await wait_until(client.get_executor(), [&]() { return request_received; });
+        sig.emit(net::cancellation_type::terminal);
+        co_return;
+      }, net::detached);
+
+    auto [ec, result] = co_await client.async_call("never_reply", json::object{},
+      net::bind_cancellation_slot(sig.slot(), net::as_tuple(net::use_awaitable)));
+    BOOST_TEST(ec == boost::asio::error::operation_aborted);
+    (void)result;
+    co_return;
+  });
 }
 
 BOOST_AUTO_TEST_SUITE_END()
