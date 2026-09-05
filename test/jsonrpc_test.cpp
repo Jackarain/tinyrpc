@@ -455,6 +455,273 @@ BOOST_AUTO_TEST_CASE(rpc_mode_b_manual_dispatch)
   ioc.run();
 }
 
+// 模式 B 双向: 双方均使用手工读循环 + dispatch (不调用 start()),
+// 验证手工 dispatch 会话同样能发起 async_call (两种模式可互换),
+// 且同时能应答对方的调用.
+BOOST_AUTO_TEST_CASE(rpc_mode_b_bidirectional_call)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client(std::move(client_ws));
+
+  server.error_callback([](std::string_view) {});
+  client.error_callback([](std::string_view) {});
+
+  server.bind_method("add", [](json::object obj) -> json::object
+  {
+    auto p = obj["params"].as_object();
+    return json::object{{"val", p["a"].as_int64() + p["b"].as_int64()}};
+  });
+  client.bind_method("ping", [](json::object) -> json::object
+  {
+    return json::object{{"pong", true}};
+  });
+
+  bool server_call_ok = false;
+  bool client_call_ok = false;
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server: 手工读循环 + dispatch (模式 B), 并主动调用 client 绑定的方法.
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+
+        net::co_spawn(server.get_executor(),
+          [&]() -> net::awaitable<void>
+          {
+            try
+            {
+              beast::flat_buffer buf;
+              while (true)
+              {
+                auto bytes = co_await server.stream().async_read(buf, net::use_awaitable);
+                json::value jv = json::parse(beast::buffers_to_string(buf.data()),
+                  boost::system::error_code{}, json::storage_ptr{},
+                  {64, json::number_precision::imprecise, true, true, true});
+                buf.consume(bytes);
+
+                if (!jv.is_object() || !jv.as_object().if_contains("jsonrpc"))
+                  break;
+
+                server.dispatch(jv.as_object());
+              }
+            }
+            catch (const std::exception&)
+            {}
+            co_return;
+          }, net::detached);
+
+        // server (模式 B) 发起调用.
+        auto [ec, result] = co_await server.async_call(
+          "ping", json::object{}, net::as_tuple(net::use_awaitable));
+        server_call_ok = !ec &&
+          result["result"].as_object()["pong"].as_bool() == true;
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // client: 手工读循环 + dispatch (模式 B), 并主动调用 server 绑定的方法.
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client.stream().async_handshake("test", "/", net::use_awaitable);
+
+        net::co_spawn(client.get_executor(),
+          [&]() -> net::awaitable<void>
+          {
+            try
+            {
+              beast::flat_buffer buf;
+              while (true)
+              {
+                auto bytes = co_await client.stream().async_read(buf, net::use_awaitable);
+                json::value jv = json::parse(beast::buffers_to_string(buf.data()),
+                  boost::system::error_code{}, json::storage_ptr{},
+                  {64, json::number_precision::imprecise, true, true, true});
+                buf.consume(bytes);
+
+                if (!jv.is_object() || !jv.as_object().if_contains("jsonrpc"))
+                  break;
+
+                client.dispatch(jv.as_object());
+              }
+            }
+            catch (const std::exception&)
+            {}
+            co_return;
+          }, net::detached);
+
+        // client (模式 B) 发起调用.
+        auto [ec, result] = co_await client.async_call(
+          "add", json::object{{"a", 20}, {"b", 22}}, net::as_tuple(net::use_awaitable));
+        client_call_ok = !ec && result["result"].as_object()["val"].as_int64() == 42;
+
+        // 等待另一侧调用完成后再收尾.
+        co_await wait_until(client.get_executor(),
+          [&]() { return server_call_ok; });
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      beast::get_lowest_layer(client.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
+
+  BOOST_TEST(client_call_ok);
+  BOOST_TEST(server_call_ok);
+}
+
+// 模式 B + stop(): 未调用 start() 的会话 (手工 dispatch) 发起挂起调用后,
+// 调用 stop() 可立即以 operation_aborted 完成挂起调用, 不会永久挂起.
+BOOST_AUTO_TEST_CASE(rpc_mode_b_stop_aborts_pending_call)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client(std::move(client_ws));
+
+  server.error_callback([](std::string_view) {});
+  client.error_callback([](std::string_view) {});
+
+  bool request_received = false;
+  server.bind_method("never_reply", [&](json::object) -> void
+  {
+    request_received = true;
+  });
+
+  bool call_done = false;
+  boost::system::error_code call_ec;
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server: 握手 + start (模式 A)
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+        server.start();
+      }
+      catch (const std::exception&)
+      {}
+      co_return;
+    }, net::detached);
+
+  // client: 手工读循环 + dispatch (模式 B), 发起挂起调用后调用 stop().
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client.stream().async_handshake("test", "/", net::use_awaitable);
+
+        net::co_spawn(client.get_executor(),
+          [&]() -> net::awaitable<void>
+          {
+            try
+            {
+              beast::flat_buffer buf;
+              while (true)
+              {
+                auto bytes = co_await client.stream().async_read(buf, net::use_awaitable);
+                json::value jv = json::parse(beast::buffers_to_string(buf.data()),
+                  boost::system::error_code{}, json::storage_ptr{},
+                  {64, json::number_precision::imprecise, true, true, true});
+                buf.consume(bytes);
+
+                if (!jv.is_object() || !jv.as_object().if_contains("jsonrpc"))
+                  break;
+
+                client.dispatch(jv.as_object());
+              }
+            }
+            catch (const std::exception&)
+            {}
+            co_return;
+          }, net::detached);
+
+        // 发起调用, server 端永不回复, 调用保持挂起.
+        client.async_call("never_reply", json::object{},
+          [&](boost::system::error_code ec, json::object)
+          {
+            call_done = true;
+            call_ec = ec;
+          });
+
+        co_await wait_until(client.get_executor(),
+          [&]() { return request_received; });
+        BOOST_TEST(!call_done);
+
+        // 停止模式 B 会话: 挂起调用应立即以 operation_aborted 完成.
+        client.stop();
+        co_await wait_until(client.get_executor(),
+          [&]() { return call_done; });
+        BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+
+        // 停止后再发起调用应立即使调用失败, 不会写出请求.
+        bool call2_done = false;
+        boost::system::error_code call2_ec;
+        client.async_call("never_reply", json::object{},
+          [&](boost::system::error_code ec, json::object)
+          {
+            call2_done = true;
+            call2_ec = ec;
+          });
+        co_await wait_until(client.get_executor(),
+          [&]() { return call2_done; });
+        BOOST_TEST(call2_ec == boost::asio::error::operation_aborted);
+      }
+      catch (const std::exception&)
+      {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      beast::get_lowest_layer(client.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
+}
+
+
 // 未注册方法返回 -32601 错误
 BOOST_AUTO_TEST_CASE(rpc_unregistered_method)
 {
@@ -1799,6 +2066,174 @@ BOOST_AUTO_TEST_CASE(rpc_cancel_awaitable_call)
       net::bind_cancellation_slot(sig.slot(), net::as_tuple(net::use_awaitable)));
     BOOST_TEST(ec == boost::asio::error::operation_aborted);
     (void)result;
+    co_return;
+  });
+}
+
+// 用户绑定回调抛出异常: 回复 JSON-RPC -32603 错误响应, 调用方不会
+// 永久挂起, 同时通知服务端 error_callback. 覆盖同步/协程方法回调与
+// 默认方法回调三种形式.
+BOOST_AUTO_TEST_CASE(rpc_method_handler_throw_returns_internal_error)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    int errors = 0;
+    server.error_callback([&](std::string_view) { ++errors; });
+
+    // 同步返回类型的回调抛异常.
+    server.bind_method("boom_sync", [](json::object) -> json::object
+    {
+      throw std::runtime_error("sync handler boom");
+    });
+
+    // 协程返回类型的回调抛异常 (异常发生在 co_await 之后).
+    server.bind_method("boom_await",
+      [&server](json::object) -> net::awaitable<json::object>
+      {
+        co_await net::steady_timer(server.get_executor(), std::chrono::milliseconds(10))
+          .async_wait(net::use_awaitable);
+        throw std::runtime_error("await handler boom");
+        co_return json::object{};
+      });
+
+    // 默认方法回调抛异常.
+    server.default_method_callback([](json::object)
+    {
+      throw std::runtime_error("default handler boom");
+    });
+
+    auto check_internal_error = [](json::object const& result)
+    {
+      BOOST_TEST(!result.if_contains("result"));
+      BOOST_TEST(result.if_contains("error"));
+      auto const& error = result.at("error").as_object();
+      BOOST_TEST(error.at("code").as_int64() == -32603);
+      BOOST_TEST(error.at("message").as_string() == "Internal error");
+      BOOST_TEST(error.if_contains("data"));
+    };
+
+    auto [ec1, r1] = co_await client.async_call(
+      "boom_sync", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec1);
+    check_internal_error(r1);
+
+    auto [ec2, r2] = co_await client.async_call(
+      "boom_await", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec2);
+    check_internal_error(r2);
+
+    auto [ec3, r3] = co_await client.async_call(
+      "not_bound_boom", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec3);
+    check_internal_error(r3);
+
+    // 服务端 error_callback 应被调用 3 次 (通过会话执行器调度).
+    co_await wait_until(client.get_executor(), [&]() { return errors >= 3; });
+    BOOST_TEST(errors == 3);
+
+    // 会话仍可正常使用.
+    server.bind_method("ping", [](json::object) -> json::object
+    {
+      return json::object{{"pong", true}};
+    });
+    auto [ec4, r4] = co_await client.async_call(
+      "ping", json::object{}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec4);
+    BOOST_TEST(r4["result"].as_object()["pong"].as_bool() == true);
+    co_return;
+  });
+}
+
+// 用户 completion handler 抛异常: 不应破坏 asio 执行上下文 (进程终止),
+// 异常转交 error_callback 通知, 会话仍可继续正常使用.
+BOOST_AUTO_TEST_CASE(rpc_completion_handler_throw_reports_error)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    server.bind_method("echo", [](json::object obj) -> json::object
+    {
+      return json::object{{"got", obj["params"]}};
+    });
+
+    int errors = 0;
+    client.error_callback([&](std::string_view) { ++errors; });
+
+    bool invoked = false;
+    client.async_call("echo", json::object{{"v", 1}},
+      [&](boost::system::error_code ec, json::object)
+      {
+        invoked = true;
+        BOOST_TEST(!ec);
+        throw std::runtime_error("completion handler boom");
+      });
+
+    co_await wait_until(client.get_executor(), [&]() { return errors >= 1; });
+    BOOST_TEST(invoked);
+    BOOST_TEST(errors == 1);
+
+    // 会话仍可正常发起调用.
+    auto [ec2, r2] = co_await client.async_call(
+      "echo", json::object{{"v", 2}}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec2);
+    BOOST_TEST(r2["result"].as_object()["got"].as_object()["v"].as_int64() == 2);
+    co_return;
+  });
+}
+
+// 取消后的 id 生命周期: 被取消且对端不响应的调用占用槽位 (id 不复用,
+// 防迟到响应串扰); 迟到响应到达后槽位回收, 新调用复用该 id.
+BOOST_AUTO_TEST_CASE(rpc_cancel_id_reuse_after_late_response)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    std::vector<json::value> seen_ids;
+    server.bind_method("never_reply", [&](json::object obj) -> void
+    {
+      seen_ids.push_back(jsonrpc::jsonrpc_id(obj));
+    });
+
+    // 发起一次挂起调用并立即取消, 等待对端收到请求后返回其请求 id.
+    auto issue_cancelled_call =
+      [&](std::size_t expected_seen) -> net::awaitable<json::value>
+      {
+        net::cancellation_signal sig;
+        bool call_done = false;
+        client.async_call("never_reply", json::object{},
+          net::bind_cancellation_slot(sig.slot(),
+            [&](boost::system::error_code ec, json::object)
+            {
+              call_done = true;
+              BOOST_TEST(ec == boost::asio::error::operation_aborted);
+            }));
+
+        co_await wait_until(client.get_executor(),
+          [&]() { return seen_ids.size() >= expected_seen; });
+        sig.emit(net::cancellation_type::terminal);
+        co_await wait_until(client.get_executor(), [&]() { return call_done; });
+        co_return seen_ids.back();
+      };
+
+    // 两次取消且对端不响应: 第二次调用不能复用第一次占用的 id.
+    auto id0 = co_await issue_cancelled_call(1);
+    auto id1 = co_await issue_cancelled_call(2);
+    BOOST_TEST(id0.as_int64() != id1.as_int64());
+
+    // 对端补发第一次请求的迟到响应: 槽位回收, 响应被丢弃不串扰.
+    json::value late_id = id0;
+    net::co_spawn(server.get_executor(),
+      [&server, late_id]() mutable -> net::awaitable<void>
+      {
+        server.reply(json::object{{"late", true}}, late_id);
+        co_return;
+      }, net::detached);
+
+    // 等待迟到响应被消费 (占用槽位回收).
+    co_await net::steady_timer(client.get_executor(), std::chrono::milliseconds(300))
+      .async_wait(net::use_awaitable);
+
+    // 新调用复用被回收的 id.
+    auto id2 = co_await issue_cancelled_call(3);
+    BOOST_TEST(id2.as_int64() == id0.as_int64());
     co_return;
   });
 }
