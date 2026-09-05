@@ -197,6 +197,10 @@ auto (request) -> reply {
 `start()`，否则会重复读取底层流）。模式 B 的会话不再接收消息时，调用 `stop()`
 可以立即以 `operation_aborted` 完成所有挂起的调用并关闭连接。
 
+`stop()` 是终态操作：调用后会话不再接受新的 `async_call`，也不能再次调用
+`start()`；此时再手工 `dispatch()` 的消息会被忽略（不会进入方法回调、不会
+向已关闭的连接写响应）。需要重新使用时请创建新的 `jsonrpc_session`。
+
 ## 挂起调用的取消与 id 生命周期
 
 `async_call` 可通过 `CompletionToken` 关联的 `cancellation_slot` 取消挂起的调用
@@ -218,3 +222,11 @@ auto (request) -> reply {
   `error_callback` 会收到异常通知。
 - 用户传入 `async_call` 的完成回调抛出异常时，异常不会逃逸到 asio 执行上下文
   导致进程终止，而是转交 `error_callback` 通知。
+- 通知回调（`notify_callback`）或数据转换回调（`data_callback`）抛出异常时，
+  没有可回复的请求方，异常会转交 `error_callback` 通知；其中 `data_callback`
+  异常只丢弃当前帧，会话继续接收后续消息，不会使消息循环失败关闭。
+- 会话在连接错误等路径调用 `error_callback` 时，回调自身抛出的异常会被忽略，
+  不会阻断挂起调用的清理流程。
+- 注意：若在方法回调中先自行调用 `reply()` 再抛出异常，会话会额外补发一个
+  `-32603 Internal error` 错误响应（先前的响应仍会发送），请在方法回调中避免
+  先 `reply()` 后抛异常的顺序错误。

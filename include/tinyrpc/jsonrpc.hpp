@@ -489,19 +489,25 @@ namespace jsonrpc
     // 区别仅在于接收消息的方式. 调用过 stop() 的会话不能再调用 start().
     void start()
     {
-      if (running_.load())
+      // 状态检查与置位与 stop() 在同一互斥量下完成: running_/stopped_
+      // 若分开置位, stop() 与 start() 交错时理论上可能出现 stop() 之后
+      // start() 仍成功拉起消息循环, 这里消除该窗口.
       {
-        BOOST_ASSERT(false && "already running");
-        return;
-      }
+        std::lock_guard<std::mutex> lock(call_op_mutex_);
+        if (running_.load())
+        {
+          BOOST_ASSERT(false && "already running");
+          return;
+        }
 
-      if (stopped_.load())
-      {
-        BOOST_ASSERT(false && "session already stopped");
-        return;
-      }
+        if (stopped_.load())
+        {
+          BOOST_ASSERT(false && "session already stopped");
+          return;
+        }
 
-      running_.store(true);
+        running_.store(true);
+      }
 
       // 通过 shared_from_this 持有自身, 保证 run() 协程执行期间本服务存活.
       auto self = this->shared_from_this();
@@ -530,10 +536,17 @@ namespace jsonrpc
     // 启动服务, 请创建一个新的 jsonrpc_session 实例并调用 start() 方法.
     void stop()
     {
-      if (stopped_.load())
-        return;
+      {
+        // 与 start() 在同一互斥量下完成 stopped_ 检查与 running_/stopped_
+        // 置位, 消除 start()/stop() 交错时 "stop() 之后 start() 仍拉起
+        // 消息循环" 的理论竞态.
+        std::lock_guard<std::mutex> lock(call_op_mutex_);
+        if (stopped_.load())
+          return;
 
-      running_.store(false);
+        running_.store(false);
+        stopped_.store(true);
+      }
 
       // 完成所有挂起的 RPC 调用（会话已停止, 响应不可能再到达）,
       // 避免等待响应的协程永久挂起导致 io_context 无法退出.
@@ -575,6 +588,12 @@ namespace jsonrpc
         BOOST_ASSERT(false && "jsonrpc field not found");
         return;
       }
+
+      // 会话已停止: 忽略手工派发的消息, 不进入方法回调, 也不向已关闭
+      // 的连接写响应. dispatch_impl 开头还会再检查一次, 覆盖协程晚于
+      // 调用线程执行的交错.
+      if (stopped_.load())
+        return;
 
       // 通过 shared_from_this 持有自身, 保证 dispatch 协程执行期间本服务存活.
       auto self = this->shared_from_this();
@@ -873,9 +892,17 @@ namespace jsonrpc
       }
       catch (const std::exception& e)
       {
-        // 连接异常断开, 上报错误并完成所有挂起的 RPC 调用.
+        // 连接异常断开, 上报错误并完成所有挂起的 RPC 调用. 用户
+        // error_callback 自身抛异常不应阻断挂起调用的清理.
         if (running_.load() && error_cb_)
-          error_cb_(e.what());
+        {
+          try
+          {
+            error_cb_(e.what());
+          }
+          catch (...)
+          {}
+        }
 
         fail_pending_calls();
       }
@@ -891,8 +918,25 @@ namespace jsonrpc
       std::string converted;
       if (data_cb_)
       {
-        converted = data_cb_(sv);
-        sv = converted;
+        try
+        {
+          converted = data_cb_(sv);
+          sv = converted;
+        }
+        catch (const std::exception& e)
+        {
+          // 数据转换回调抛异常属于用户错误: 丢弃该帧并继续接收后续
+          // 消息, 不使整个消息循环因用户回调异常而失败关闭.
+          buf.consume(bytes);
+          report_handler_error(e.what());
+          return;
+        }
+        catch (...)
+        {
+          buf.consume(bytes);
+          report_handler_error("unknown exception in data callback");
+          return;
+        }
       }
 
       boost::system::error_code ec;
@@ -1038,12 +1082,32 @@ namespace jsonrpc
 
     net::awaitable<void> dispatch_impl(json::object obj)
     {
+      // 协程可能晚于调用线程执行: 会话已停止时忽略派发的请求/响应/
+      // 通知, 避免向已关闭的连接写响应或触发 "无挂起调用" 断言.
+      if (stopped_.load())
+        co_return;
+
       auto try_id = obj.try_at("id");
       if (!try_id.has_value())
       {
         // 无 id 字段是通知消息, 交给通知回调处理.
         if (notify_cb_)
-          notify_cb_(std::move(obj));
+        {
+          try
+          {
+            notify_cb_(std::move(obj));
+          }
+          catch (const std::exception& e)
+          {
+            // 通知无 id, 不能回复错误响应; 通知回调异常转交
+            // error_callback 上报, 不使其逃逸 detached 协程.
+            report_handler_error(e.what());
+          }
+          catch (...)
+          {
+            report_handler_error("unknown exception in notify callback");
+          }
+        }
         co_return;
       }
 
@@ -1251,7 +1315,13 @@ namespace jsonrpc
         if (error_cb_)
         {
           write_msgs_.clear();
-          error_cb_(std::string_view(e.what()));
+          // 用户 error_callback 自身抛异常不应再次逃逸写协程.
+          try
+          {
+            error_cb_(std::string_view(e.what()));
+          }
+          catch (...)
+          {}
         }
       }
     }

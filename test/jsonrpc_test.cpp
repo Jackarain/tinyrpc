@@ -2238,4 +2238,212 @@ BOOST_AUTO_TEST_CASE(rpc_cancel_id_reuse_after_late_response)
   });
 }
 
+// 模式 B + stop(): stop() 之后手工 dispatch() 的请求/响应应被忽略,
+// 不进入方法回调、不向已关闭连接写响应, 也不触发 "无挂起调用" 断言.
+BOOST_AUTO_TEST_CASE(rpc_mode_b_dispatch_after_stop_ignored)
+{
+  net::io_context ioc;
+
+  beast::test::stream s1(ioc), s2(ioc);
+  s1.connect(s2);
+
+  test_ws server_ws(std::move(s1));
+  test_ws client_ws(std::move(s2));
+
+  session_type server(std::move(server_ws));
+  session_type client(std::move(client_ws));
+
+  server.error_callback([](std::string_view) {});
+  client.error_callback([](std::string_view) {});
+
+  int errors = 0;
+  client.error_callback([&](std::string_view) { ++errors; });
+
+  bool method_called = false;
+  client.bind_method("nop", [&](json::object) -> json::object
+  {
+    method_called = true;
+    return json::object{{"ok", true}};
+  });
+
+  bool done = false;
+  net::steady_timer watchdog(ioc, std::chrono::seconds(15));
+
+  // server: 握手 + start (模式 A)
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await server.stream().async_accept(net::use_awaitable);
+        server.start();
+      }
+      catch (const std::exception&) {}
+      co_return;
+    }, net::detached);
+
+  // client: 仅握手 (模式 B), 停止会话后再手工派发消息.
+  net::co_spawn(ioc,
+    [&]() -> net::awaitable<void>
+    {
+      try
+      {
+        co_await client.stream().async_handshake("test", "/", net::use_awaitable);
+
+        client.stop();
+
+        // 请求消息: 应被忽略, 方法回调不应执行.
+        client.dispatch(json::object{
+          {"jsonrpc", "2.0"},
+          {"method", "nop"},
+          {"params", json::object{}},
+          {"id", 1}
+        });
+        // 响应消息: 登记表已清空, 应被忽略而不是触发 "无挂起调用" 断言.
+        client.dispatch(json::object{
+          {"jsonrpc", "2.0"},
+          {"result", json::object{{"ok", true}}},
+          {"id", 0}
+        });
+
+        // 等待派发协程有机会执行后再断言.
+        co_await net::steady_timer(client.get_executor(), std::chrono::milliseconds(50))
+          .async_wait(net::use_awaitable);
+
+        BOOST_TEST(!method_called);
+        BOOST_TEST(errors == 0);
+      }
+      catch (const std::exception&) {}
+      done = true;
+      watchdog.cancel();
+      beast::get_lowest_layer(server.stream()).close();
+      beast::get_lowest_layer(client.stream()).close();
+      co_return;
+    }, net::detached);
+
+  watchdog.async_wait([&](boost::system::error_code ec)
+  {
+    if (ec != net::error::operation_aborted && !done)
+      BOOST_ERROR("test timed out");
+  });
+
+  ioc.run();
+}
+
+// 通知回调 (notify_callback) 抛异常: 通知无 id 无法回复错误响应,
+// 异常转交 error_callback 上报, 不逃逸 detached 协程, 会话仍可继续使用.
+BOOST_AUTO_TEST_CASE(rpc_notify_callback_throw_reports_error)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    int errors = 0;
+    server.error_callback([&](std::string_view) { ++errors; });
+
+    server.notify_callback([](json::object)
+    {
+      throw std::runtime_error("notify boom");
+    });
+    server.bind_method("echo", [](json::object obj) -> json::object
+    {
+      return json::object{{"got", obj["params"]}};
+    });
+
+    client.notify("boom", json::object{{"v", 1}});
+
+    // 服务端 error_callback 应收到异常通知.
+    co_await wait_until(client.get_executor(), [&]() { return errors >= 1; });
+    BOOST_TEST(errors == 1);
+
+    // 会话仍可正常使用.
+    auto [ec, result] = co_await client.async_call(
+      "echo", json::object{{"v", 2}}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(result["result"].as_object()["got"].as_object()["v"].as_int64() == 2);
+    co_return;
+  });
+}
+
+// data_callback 抛异常: 丢弃该帧并继续接收, 不使消息循环因用户回调
+// 异常而失败关闭; 异常转交 error_callback 通知.
+BOOST_AUTO_TEST_CASE(rpc_data_callback_throw_keeps_session)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    int calls = 0;
+    server.data_callback([&](std::string_view data) -> std::string
+    {
+      ++calls;
+      if (calls == 1)
+        throw std::runtime_error("data cb boom");
+      return std::string(data);
+    });
+
+    int errors = 0;
+    server.error_callback([&](std::string_view) { ++errors; });
+
+    server.bind_method("echo", [](json::object obj) -> json::object
+    {
+      return json::object{{"got", obj["params"]}};
+    });
+
+    // 从 client 侧发送一帧原始数据, 使 server 的 data_callback 抛异常.
+    co_await client.stream().async_write(net::buffer(std::string("boom frame")),
+      net::use_awaitable);
+
+    // 异常应转交 error_callback, 且会话消息循环不被关闭.
+    co_await wait_until(client.get_executor(), [&]() { return errors >= 1; });
+    BOOST_TEST(errors == 1);
+
+    // 后续正常帧仍能处理 (data_callback 第二次调用不再抛异常).
+    auto [ec, result] = co_await client.async_call(
+      "echo", json::object{{"v", 3}}, net::as_tuple(net::use_awaitable));
+    BOOST_TEST(!ec);
+    BOOST_TEST(result["result"].as_object()["got"].as_object()["v"].as_int64() == 3);
+    BOOST_TEST(calls == 2);
+    co_return;
+  });
+}
+
+// error_callback 自身抛异常 (连接异常路径): 不应阻断挂起调用的清理,
+// 也不应让异常逃逸消息循环协程.
+BOOST_AUTO_TEST_CASE(rpc_error_callback_throw_keeps_cleanup)
+{
+  run_with_pair([](session_type& server, session_type& client) -> net::awaitable<void>
+  {
+    // client 绑定一个永不回复的方法: server 发起的调用保持挂起.
+    bool request_received = false;
+    client.bind_method("never_reply", [&](json::object) -> void
+    {
+      request_received = true;
+    });
+
+    // server 的 error_callback 抛异常: 上报连接错误时不能阻断清理.
+    server.error_callback([](std::string_view)
+    {
+      throw std::runtime_error("error cb boom");
+    });
+
+    bool call_done = false;
+    boost::system::error_code call_ec;
+    server.async_call("never_reply", json::object{},
+      [&](boost::system::error_code ec, json::object)
+      {
+        call_done = true;
+        call_ec = ec;
+      });
+
+    // 等待 client 收到请求, 确认 server 调用处于挂起状态.
+    co_await wait_until(client.get_executor(), [&]() { return request_received; });
+    BOOST_TEST(!call_done);
+
+    // 关闭底层连接: server 消息循环异常退出并触发 error_callback (抛
+    // 异常), 挂起调用仍应被清理并以 operation_aborted 完成.
+    beast::get_lowest_layer(client.stream()).close();
+
+    co_await wait_until(client.get_executor(), [&]() { return call_done; });
+    BOOST_TEST(call_ec == boost::asio::error::operation_aborted);
+    co_return;
+  });
+}
+
 BOOST_AUTO_TEST_SUITE_END()
