@@ -1,7 +1,7 @@
 /*
- * Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2000-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -19,20 +19,20 @@
  * is normally due to an encoding error.
  */
 
-#define BN_SENSITIVE    1
+#define BN_SENSITIVE 1
 
 static int bn_new(ASN1_VALUE **pval, const ASN1_ITEM *it);
 static int bn_secure_new(ASN1_VALUE **pval, const ASN1_ITEM *it);
 static void bn_free(ASN1_VALUE **pval, const ASN1_ITEM *it);
 
-static int bn_i2c(ASN1_VALUE **pval, unsigned char *cont, int *putype,
-                  const ASN1_ITEM *it);
+static int bn_i2c(const ASN1_VALUE **pval, unsigned char *cont, int *putype,
+    const ASN1_ITEM *it);
 static int bn_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
-                  int utype, char *free_cont, const ASN1_ITEM *it);
+    int utype, char *free_cont, const ASN1_ITEM *it);
 static int bn_secure_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
-                         int utype, char *free_cont, const ASN1_ITEM *it);
-static int bn_print(BIO *out, ASN1_VALUE **pval, const ASN1_ITEM *it,
-                    int indent, const ASN1_PCTX *pctx);
+    int utype, char *free_cont, const ASN1_ITEM *it);
+static int bn_print(BIO *out, const ASN1_VALUE **pval, const ASN1_ITEM *it,
+    int indent, const ASN1_PCTX *pctx);
 
 static ASN1_PRIMITIVE_FUNCS bignum_pf = {
     NULL, 0,
@@ -55,14 +55,13 @@ static ASN1_PRIMITIVE_FUNCS cbignum_pf = {
 };
 
 ASN1_ITEM_start(BIGNUM)
-        ASN1_ITYPE_PRIMITIVE, V_ASN1_INTEGER, NULL, 0, &bignum_pf, 0, "BIGNUM"
-ASN1_ITEM_end(BIGNUM)
+    ASN1_ITYPE_PRIMITIVE,
+    V_ASN1_INTEGER, NULL, 0, &bignum_pf, 0, "BIGNUM" ASN1_ITEM_end(BIGNUM)
 
-ASN1_ITEM_start(CBIGNUM)
-        ASN1_ITYPE_PRIMITIVE, V_ASN1_INTEGER, NULL, 0, &cbignum_pf, BN_SENSITIVE, "CBIGNUM"
-ASN1_ITEM_end(CBIGNUM)
+                                                ASN1_ITEM_start(CBIGNUM) ASN1_ITYPE_PRIMITIVE,
+    V_ASN1_INTEGER, NULL, 0, &cbignum_pf, BN_SENSITIVE, "CBIGNUM" ASN1_ITEM_end(CBIGNUM)
 
-static int bn_new(ASN1_VALUE **pval, const ASN1_ITEM *it)
+                                                            static int bn_new(ASN1_VALUE **pval, const ASN1_ITEM *it)
 {
     *pval = (ASN1_VALUE *)BN_new();
     if (*pval != NULL)
@@ -82,7 +81,7 @@ static int bn_secure_new(ASN1_VALUE **pval, const ASN1_ITEM *it)
 
 static void bn_free(ASN1_VALUE **pval, const ASN1_ITEM *it)
 {
-    if (!*pval)
+    if (*pval == NULL)
         return;
     if (it->size & BN_SENSITIVE)
         BN_clear_free((BIGNUM *)*pval);
@@ -91,12 +90,12 @@ static void bn_free(ASN1_VALUE **pval, const ASN1_ITEM *it)
     *pval = NULL;
 }
 
-static int bn_i2c(ASN1_VALUE **pval, unsigned char *cont, int *putype,
-                  const ASN1_ITEM *it)
+static int bn_i2c(const ASN1_VALUE **pval, unsigned char *cont, int *putype,
+    const ASN1_ITEM *it)
 {
     BIGNUM *bn;
     int pad;
-    if (!*pval)
+    if (*pval == NULL)
         return -1;
     bn = (BIGNUM *)*pval;
     /* If MSB set in an octet we need a padding byte */
@@ -113,32 +112,44 @@ static int bn_i2c(ASN1_VALUE **pval, unsigned char *cont, int *putype,
 }
 
 static int bn_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
-                  int utype, char *free_cont, const ASN1_ITEM *it)
+    int utype, char *free_cont, const ASN1_ITEM *it)
 {
+    int allocated = 0;
     BIGNUM *bn;
 
-    if (*pval == NULL && !bn_new(pval, it))
+    /* Reject encodings that imply a negative number. */
+    if (len == 0 || (*cont & 0x80) != 0) {
+        ERR_raise(ERR_LIB_ASN1, ASN1_R_INVALID_VALUE);
+        return 0;
+    }
+
+    if (*pval == NULL && (allocated = bn_new(pval, it)) == 0)
         return 0;
     bn = (BIGNUM *)*pval;
     if (!BN_bin2bn(cont, len, bn)) {
-        bn_free(pval, it);
+        if (allocated != 0)
+            bn_free(pval, it);
         return 0;
     }
     return 1;
 }
 
 static int bn_secure_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
-                         int utype, char *free_cont, const ASN1_ITEM *it)
+    int utype, char *free_cont, const ASN1_ITEM *it)
 {
-    int ret;
+    int ret, allocated = 0;
     BIGNUM *bn;
 
-    if (!*pval && !bn_secure_new(pval, it))
+    if (*pval == NULL && (allocated = bn_secure_new(pval, it)) == 0)
         return 0;
 
     ret = bn_c2i(pval, cont, len, utype, free_cont, it);
-    if (!ret)
+    if (!ret) {
+        if (allocated != 0)
+            bn_free(pval, it);
+
         return 0;
+    }
 
     /* Set constant-time flag for all secure BIGNUMS */
     bn = (BIGNUM *)*pval;
@@ -146,8 +157,8 @@ static int bn_secure_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
     return ret;
 }
 
-static int bn_print(BIO *out, ASN1_VALUE **pval, const ASN1_ITEM *it,
-                    int indent, const ASN1_PCTX *pctx)
+static int bn_print(BIO *out, const ASN1_VALUE **pval, const ASN1_ITEM *it,
+    int indent, const ASN1_PCTX *pctx)
 {
     if (!BN_print(out, *(BIGNUM **)pval))
         return 0;

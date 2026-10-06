@@ -1,7 +1,7 @@
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -9,11 +9,8 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include "internal/cryptlib.h"
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
-#include "internal/evp_int.h"
-#include "evp_locl.h"
 #include "internal/bio.h"
 
 /*
@@ -31,13 +28,11 @@ static long md_callback_ctrl(BIO *h, int cmd, BIO_info_cb *fp);
 static const BIO_METHOD methods_md = {
     BIO_TYPE_MD,
     "message digest",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     md_write,
-    /* TODO: Convert to new style read function */
     bread_conv,
     md_read,
-    NULL,                       /* md_puts, */
+    NULL, /* md_puts, */
     md_gets,
     md_ctrl,
     md_new,
@@ -94,7 +89,8 @@ static int md_read(BIO *b, char *out, int outl)
     if (BIO_get_init(b)) {
         if (ret > 0) {
             if (EVP_DigestUpdate(ctx, (unsigned char *)out,
-                                 (unsigned int)ret) <= 0)
+                    (unsigned int)ret)
+                <= 0)
                 return -1;
         }
     }
@@ -120,7 +116,7 @@ static int md_write(BIO *b, const char *in, int inl)
     if (BIO_get_init(b)) {
         if (ret > 0) {
             if (!EVP_DigestUpdate(ctx, (const unsigned char *)in,
-                                  (unsigned int)ret)) {
+                    (unsigned int)ret)) {
                 BIO_clear_retry_flags(b);
                 return 0;
             }
@@ -141,14 +137,13 @@ static long md_ctrl(BIO *b, int cmd, long num, void *ptr)
     long ret = 1;
     BIO *dbio, *next;
 
-
     ctx = BIO_get_data(b);
     next = BIO_next(b);
 
     switch (cmd) {
     case BIO_CTRL_RESET:
         if (BIO_get_init(b))
-            ret = EVP_DigestInit_ex(ctx, ctx->digest, NULL);
+            ret = EVP_DigestInit_ex(ctx, EVP_MD_CTX_get0_md(ctx), NULL);
         else
             ret = 0;
         if (ret > 0)
@@ -157,7 +152,7 @@ static long md_ctrl(BIO *b, int cmd, long num, void *ptr)
     case BIO_C_GET_MD:
         if (BIO_get_init(b)) {
             ppmd = ptr;
-            *ppmd = ctx->digest;
+            *ppmd = EVP_MD_CTX_get0_md(ctx);
         } else
             ret = 0;
         break;
@@ -172,12 +167,22 @@ static long md_ctrl(BIO *b, int cmd, long num, void *ptr)
         else
             ret = 0;
         break;
+    case BIO_CTRL_EOF:
+        /*
+         * If there is no ctx or no next BIO, BIO_read() returns 0, which means
+         * EOF, BIO_eof() should return 1 in this case.
+         */
+        if (ctx == NULL || next == NULL)
+            ret = 1;
+        else
+            ret = BIO_ctrl(next, cmd, num, ptr);
+        break;
+    case BIO_CTRL_FLUSH:
     case BIO_C_DO_STATE_MACHINE:
         BIO_clear_retry_flags(b);
         ret = BIO_ctrl(next, cmd, num, ptr);
         BIO_copy_next_retry(b);
         break;
-
     case BIO_C_SET_MD:
         md = ptr;
         ret = EVP_DigestInit_ex(ctx, md, NULL);
@@ -200,7 +205,6 @@ static long md_ctrl(BIO *b, int cmd, long num, void *ptr)
 
 static long md_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
 {
-    long ret = 1;
     BIO *next;
 
     next = BIO_next(b);
@@ -208,12 +212,7 @@ static long md_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
     if (next == NULL)
         return 0;
 
-    switch (cmd) {
-    default:
-        ret = BIO_callback_ctrl(next, cmd, fp);
-        break;
-    }
-    return ret;
+    return BIO_callback_ctrl(next, cmd, fp);
 }
 
 static int md_gets(BIO *bp, char *buf, int size)
@@ -223,7 +222,7 @@ static int md_gets(BIO *bp, char *buf, int size)
 
     ctx = BIO_get_data(bp);
 
-    if (size < ctx->digest->md_size)
+    if (size < EVP_MD_CTX_get_size(ctx))
         return 0;
 
     if (EVP_DigestFinal_ex(ctx, (unsigned char *)buf, &ret) <= 0)

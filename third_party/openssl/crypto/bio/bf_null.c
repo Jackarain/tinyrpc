@@ -1,7 +1,7 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include "bio_lcl.h"
+#include "bio_local.h"
 #include "internal/cryptlib.h"
 
 /*
@@ -25,10 +25,8 @@ static long nullf_callback_ctrl(BIO *h, int cmd, BIO_info_cb *fp);
 static const BIO_METHOD methods_nullf = {
     BIO_TYPE_NULL_FILTER,
     "NULL filter",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     nullf_write,
-    /* TODO: Convert to new style read function */
     bread_conv,
     nullf_read,
     nullf_puts,
@@ -76,9 +74,14 @@ static long nullf_ctrl(BIO *b, int cmd, long num, void *ptr)
 {
     long ret;
 
+    /*
+     * If there is no next BIO, BIO_read() returns 0, which means EOF.
+     * BIO_eof() should return 1 in this case.
+     */
     if (b->next_bio == NULL)
-        return 0;
+        return cmd == BIO_CTRL_EOF;
     switch (cmd) {
+    case BIO_CTRL_FLUSH:
     case BIO_C_DO_STATE_MACHINE:
         BIO_clear_retry_flags(b);
         ret = BIO_ctrl(b->next_bio, cmd, num, ptr);
@@ -95,28 +98,31 @@ static long nullf_ctrl(BIO *b, int cmd, long num, void *ptr)
 
 static long nullf_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
 {
-    long ret = 1;
-
     if (b->next_bio == NULL)
         return 0;
-    switch (cmd) {
-    default:
-        ret = BIO_callback_ctrl(b->next_bio, cmd, fp);
-        break;
-    }
-    return ret;
+    return BIO_callback_ctrl(b->next_bio, cmd, fp);
 }
 
 static int nullf_gets(BIO *bp, char *buf, int size)
 {
+    int ret = 0;
+
     if (bp->next_bio == NULL)
         return 0;
-    return BIO_gets(bp->next_bio, buf, size);
+    ret = BIO_gets(bp->next_bio, buf, size);
+    BIO_clear_retry_flags(bp);
+    BIO_copy_next_retry(bp);
+    return ret;
 }
 
 static int nullf_puts(BIO *bp, const char *str)
 {
+    int ret = 0;
+
     if (bp->next_bio == NULL)
         return 0;
-    return BIO_puts(bp->next_bio, str);
+    ret = BIO_puts(bp->next_bio, str);
+    BIO_clear_retry_flags(bp);
+    BIO_copy_next_retry(bp);
+    return ret;
 }

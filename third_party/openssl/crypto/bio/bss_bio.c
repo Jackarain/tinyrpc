@@ -1,7 +1,7 @@
 /*
- * Copyright 1999-2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1999-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -15,13 +15,13 @@
  * See ssl/ssltest.c for some hints on how this can be used.
  */
 
-#include "e_os.h"
+#include "internal/e_os.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "bio_lcl.h"
+#include "bio_local.h"
 #include <openssl/err.h>
 #include <openssl/crypto.h>
 
@@ -38,18 +38,16 @@ static void bio_destroy_pair(BIO *bio);
 static const BIO_METHOD methods_biop = {
     BIO_TYPE_BIO,
     "BIO pair",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     bio_write,
-    /* TODO: Convert to new style read function */
     bread_conv,
     bio_read,
     bio_puts,
-    NULL /* no bio_gets */ ,
+    NULL /* no bio_gets */,
     bio_ctrl,
     bio_new,
     bio_free,
-    NULL                        /* no bio_callback_ctrl */
+    NULL /* no bio_callback_ctrl */
 };
 
 const BIO_METHOD *BIO_s_bio(void)
@@ -58,21 +56,21 @@ const BIO_METHOD *BIO_s_bio(void)
 }
 
 struct bio_bio_st {
-    BIO *peer;                  /* NULL if buf == NULL. If peer != NULL, then
-                                 * peer->ptr is also a bio_bio_st, and its
-                                 * "peer" member points back to us. peer !=
-                                 * NULL iff init != 0 in the BIO. */
+    BIO *peer; /* NULL if buf == NULL. If peer != NULL, then
+                * peer->ptr is also a bio_bio_st, and its
+                * "peer" member points back to us. peer !=
+                * NULL iff init != 0 in the BIO. */
     /* This is for what we write (i.e. reading uses peer's struct): */
-    int closed;                 /* valid iff peer != NULL */
-    size_t len;                 /* valid iff buf != NULL; 0 if peer == NULL */
-    size_t offset;              /* valid iff buf != NULL; 0 if len == 0 */
+    int closed; /* valid iff peer != NULL */
+    size_t len; /* valid iff buf != NULL; 0 if peer == NULL */
+    size_t offset; /* valid iff buf != NULL; 0 if len == 0 */
     size_t size;
-    char *buf;                  /* "size" elements (if != NULL) */
-    size_t request;             /* valid iff peer != NULL; 0 if len != 0,
-                                 * otherwise set by peer to number of bytes
-                                 * it (unsuccessfully) tried to read, never
-                                 * more than buffer space (size-len)
-                                 * warrants. */
+    char *buf; /* "size" elements (if != NULL) */
+    size_t request; /* valid iff peer != NULL; 0 if len != 0,
+                     * otherwise set by peer to number of bytes
+                     * it (unsuccessfully) tried to read, never
+                     * more than buffer space (size-len)
+                     * warrants. */
 };
 
 static int bio_new(BIO *bio)
@@ -114,6 +112,9 @@ static int bio_read(BIO *bio, char *buf, int size_)
     size_t rest;
     struct bio_bio_st *b, *peer_b;
 
+    if (buf == NULL || size_ <= 0)
+        return 0;
+
     BIO_clear_retry_flags(bio);
 
     if (!bio->init)
@@ -126,14 +127,11 @@ static int bio_read(BIO *bio, char *buf, int size_)
     assert(peer_b != NULL);
     assert(peer_b->buf != NULL);
 
-    peer_b->request = 0;        /* will be set in "retry_read" situation */
-
-    if (buf == NULL || size == 0)
-        return 0;
+    peer_b->request = 0; /* will be set in "retry_read" situation */
 
     if (peer_b->len == 0) {
         if (peer_b->closed)
-            return 0;           /* writer has closed, and no data is left */
+            return 0; /* writer has closed, and no data is left */
         else {
             BIO_set_retry_read(bio); /* buffer is empty */
             if (size <= peer_b->size)
@@ -156,7 +154,7 @@ static int bio_read(BIO *bio, char *buf, int size_)
     rest = size;
 
     assert(rest > 0);
-    do {                        /* one or two iterations */
+    do { /* one or two iterations */
         size_t chunk;
 
         assert(rest <= peer_b->len);
@@ -182,10 +180,9 @@ static int bio_read(BIO *bio, char *buf, int size_)
             peer_b->offset = 0;
         }
         rest -= chunk;
-    }
-    while (rest);
+    } while (rest);
 
-    return size;
+    return (int)size;
 }
 
 /*-
@@ -244,7 +241,7 @@ static ossl_ssize_t bio_nread(BIO *bio, char **buf, size_t num_)
     if (num_ > OSSL_SSIZE_MAX)
         num = OSSL_SSIZE_MAX;
     else
-        num = (ossl_ssize_t) num_;
+        num = (ossl_ssize_t)num_;
 
     available = bio_nread0(bio, buf);
     if (num > available)
@@ -275,7 +272,7 @@ static int bio_write(BIO *bio, const char *buf, int num_)
 
     BIO_clear_retry_flags(bio);
 
-    if (!bio->init || buf == NULL || num == 0)
+    if (!bio->init || buf == NULL || num_ <= 0)
         return 0;
 
     b = bio->ptr;
@@ -286,7 +283,7 @@ static int bio_write(BIO *bio, const char *buf, int num_)
     b->request = 0;
     if (b->closed) {
         /* we already closed */
-        BIOerr(BIO_F_BIO_WRITE, BIO_R_BROKEN_PIPE);
+        ERR_raise(ERR_LIB_BIO, BIO_R_BROKEN_PIPE);
         return -1;
     }
 
@@ -306,7 +303,7 @@ static int bio_write(BIO *bio, const char *buf, int num_)
     rest = num;
 
     assert(rest > 0);
-    do {                        /* one or two iterations */
+    do { /* one or two iterations */
         size_t write_offset;
         size_t chunk;
 
@@ -331,10 +328,9 @@ static int bio_write(BIO *bio, const char *buf, int num_)
 
         rest -= chunk;
         buf += chunk;
-    }
-    while (rest);
+    } while (rest);
 
-    return num;
+    return (int)num;
 }
 
 /*-
@@ -362,7 +358,7 @@ static ossl_ssize_t bio_nwrite0(BIO *bio, char **buf)
 
     b->request = 0;
     if (b->closed) {
-        BIOerr(BIO_F_BIO_NWRITE0, BIO_R_BROKEN_PIPE);
+        ERR_raise(ERR_LIB_BIO, BIO_R_BROKEN_PIPE);
         return -1;
     }
 
@@ -400,7 +396,7 @@ static ossl_ssize_t bio_nwrite(BIO *bio, char **buf, size_t num_)
     if (num_ > OSSL_SSIZE_MAX)
         num = OSSL_SSIZE_MAX;
     else
-        num = (ossl_ssize_t) num_;
+        num = (ossl_ssize_t)num_;
 
     space = bio_nwrite0(bio, buf);
     if (num > space)
@@ -427,10 +423,10 @@ static long bio_ctrl(BIO *bio, int cmd, long num, void *ptr)
 
     case BIO_C_SET_WRITE_BUF_SIZE:
         if (b->peer) {
-            BIOerr(BIO_F_BIO_CTRL, BIO_R_IN_USE);
+            ERR_raise(ERR_LIB_BIO, BIO_R_IN_USE);
             ret = 0;
         } else if (num == 0) {
-            BIOerr(BIO_F_BIO_CTRL, BIO_R_INVALID_ARGUMENT);
+            ERR_raise(ERR_LIB_BIO, BIO_R_INVALID_ARGUMENT);
             ret = 0;
         } else {
             size_t new_size = num;
@@ -448,16 +444,14 @@ static long bio_ctrl(BIO *bio, int cmd, long num, void *ptr)
         ret = (long)b->size;
         break;
 
-    case BIO_C_MAKE_BIO_PAIR:
-        {
-            BIO *other_bio = ptr;
+    case BIO_C_MAKE_BIO_PAIR: {
+        BIO *other_bio = ptr;
 
-            if (bio_make_pair(bio, other_bio))
-                ret = 1;
-            else
-                ret = 0;
-        }
-        break;
+        if (bio_make_pair(bio, other_bio))
+            ret = 1;
+        else
+            ret = 0;
+    } break;
 
     case BIO_C_DESTROY_BIO_PAIR:
         /*
@@ -476,7 +470,7 @@ static long bio_ctrl(BIO *bio, int cmd, long num, void *ptr)
         if (b->peer == NULL || b->closed)
             ret = 0;
         else
-            ret = (long)b->size - b->len;
+            ret = (long)(b->size - b->len);
         break;
 
     case BIO_C_GET_READ_REQUEST:
@@ -602,7 +596,11 @@ static long bio_ctrl(BIO *bio, int cmd, long num, void *ptr)
 
 static int bio_puts(BIO *bio, const char *str)
 {
-    return bio_write(bio, str, strlen(str));
+    size_t len = strlen(str);
+
+    if (len > INT_MAX)
+        return -1;
+    return bio_write(bio, str, (int)len);
 }
 
 static int bio_make_pair(BIO *bio1, BIO *bio2)
@@ -616,26 +614,22 @@ static int bio_make_pair(BIO *bio1, BIO *bio2)
     b2 = bio2->ptr;
 
     if (b1->peer != NULL || b2->peer != NULL) {
-        BIOerr(BIO_F_BIO_MAKE_PAIR, BIO_R_IN_USE);
+        ERR_raise(ERR_LIB_BIO, BIO_R_IN_USE);
         return 0;
     }
 
     if (b1->buf == NULL) {
         b1->buf = OPENSSL_malloc(b1->size);
-        if (b1->buf == NULL) {
-            BIOerr(BIO_F_BIO_MAKE_PAIR, ERR_R_MALLOC_FAILURE);
+        if (b1->buf == NULL)
             return 0;
-        }
         b1->len = 0;
         b1->offset = 0;
     }
 
     if (b2->buf == NULL) {
         b2->buf = OPENSSL_malloc(b2->size);
-        if (b2->buf == NULL) {
-            BIOerr(BIO_F_BIO_MAKE_PAIR, ERR_R_MALLOC_FAILURE);
+        if (b2->buf == NULL)
             return 0;
-        }
         b2->len = 0;
         b2->offset = 0;
     }
@@ -683,11 +677,14 @@ static void bio_destroy_pair(BIO *bio)
 
 /* Exported convenience functions */
 int BIO_new_bio_pair(BIO **bio1_p, size_t writebuf1,
-                     BIO **bio2_p, size_t writebuf2)
+    BIO **bio2_p, size_t writebuf2)
 {
     BIO *bio1 = NULL, *bio2 = NULL;
     long r;
     int ret = 0;
+
+    if (writebuf1 > LONG_MAX || writebuf2 > LONG_MAX)
+        goto err;
 
     bio1 = BIO_new(BIO_s_bio());
     if (bio1 == NULL)
@@ -697,12 +694,12 @@ int BIO_new_bio_pair(BIO **bio1_p, size_t writebuf1,
         goto err;
 
     if (writebuf1) {
-        r = BIO_set_write_buf_size(bio1, writebuf1);
+        r = BIO_set_write_buf_size(bio1, (long)writebuf1);
         if (!r)
             goto err;
     }
     if (writebuf2) {
-        r = BIO_set_write_buf_size(bio2, writebuf2);
+        r = BIO_set_write_buf_size(bio2, (long)writebuf2);
         if (!r)
             goto err;
     }
@@ -712,7 +709,7 @@ int BIO_new_bio_pair(BIO **bio1_p, size_t writebuf1,
         goto err;
     ret = 1;
 
- err:
+err:
     if (ret == 0) {
         BIO_free(bio1);
         bio1 = NULL;
@@ -750,7 +747,7 @@ int BIO_nread0(BIO *bio, char **buf)
     long ret;
 
     if (!bio->init) {
-        BIOerr(BIO_F_BIO_NREAD0, BIO_R_UNINITIALIZED);
+        ERR_raise(ERR_LIB_BIO, BIO_R_UNINITIALIZED);
         return -2;
     }
 
@@ -766,7 +763,7 @@ int BIO_nread(BIO *bio, char **buf, int num)
     int ret;
 
     if (!bio->init) {
-        BIOerr(BIO_F_BIO_NREAD, BIO_R_UNINITIALIZED);
+        ERR_raise(ERR_LIB_BIO, BIO_R_UNINITIALIZED);
         return -2;
     }
 
@@ -781,7 +778,7 @@ int BIO_nwrite0(BIO *bio, char **buf)
     long ret;
 
     if (!bio->init) {
-        BIOerr(BIO_F_BIO_NWRITE0, BIO_R_UNINITIALIZED);
+        ERR_raise(ERR_LIB_BIO, BIO_R_UNINITIALIZED);
         return -2;
     }
 
@@ -797,7 +794,7 @@ int BIO_nwrite(BIO *bio, char **buf, int num)
     int ret;
 
     if (!bio->init) {
-        BIOerr(BIO_F_BIO_NWRITE, BIO_R_UNINITIALIZED);
+        ERR_raise(ERR_LIB_BIO, BIO_R_UNINITIALIZED);
         return -2;
     }
 

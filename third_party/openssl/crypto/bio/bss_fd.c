@@ -1,7 +1,7 @@
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "bio_lcl.h"
+#include "bio_local.h"
 
 #if defined(OPENSSL_NO_POSIX_IO)
 /*
@@ -60,10 +60,8 @@ int BIO_fd_should_retry(int s);
 static const BIO_METHOD methods_fdp = {
     BIO_TYPE_FD,
     "file descriptor",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     fd_write,
-    /* TODO: Convert to new style read function */
     bread_conv,
     fd_read,
     fd_puts,
@@ -71,7 +69,7 @@ static const BIO_METHOD methods_fdp = {
     fd_ctrl,
     fd_new,
     fd_free,
-    NULL,                       /* fd_callback_ctrl */
+    NULL, /* fd_callback_ctrl */
 };
 
 const BIO_METHOD *BIO_s_fd(void)
@@ -94,7 +92,7 @@ static int fd_new(BIO *bi)
     bi->init = 0;
     bi->num = -1;
     bi->ptr = NULL;
-    bi->flags = BIO_FLAGS_UPLINK; /* essentially redundant */
+    bi->flags = BIO_FLAGS_UPLINK_INTERNAL; /* essentially redundant */
     return 1;
 }
 
@@ -107,7 +105,7 @@ static int fd_free(BIO *a)
             UP_close(a->num);
         }
         a->init = 0;
-        a->flags = BIO_FLAGS_UPLINK;
+        a->flags = BIO_FLAGS_UPLINK_INTERNAL;
     }
     return 1;
 }
@@ -116,13 +114,16 @@ static int fd_read(BIO *b, char *out, int outl)
 {
     int ret = 0;
 
-    if (out != NULL) {
+    if (out != NULL && outl > 0) {
         clear_sys_error();
-        ret = UP_read(b->num, out, outl);
+        b->flags &= ~BIO_FLAGS_IN_EOF;
+        ret = (int)UP_read(b->num, out, outl);
         BIO_clear_retry_flags(b);
         if (ret <= 0) {
             if (BIO_fd_should_retry(ret))
                 BIO_set_retry_read(b);
+            else if (ret == 0)
+                b->flags |= BIO_FLAGS_IN_EOF;
         }
     }
     return ret;
@@ -132,7 +133,7 @@ static int fd_write(BIO *b, const char *in, int inl)
 {
     int ret;
     clear_sys_error();
-    ret = UP_write(b->num, in, inl);
+    ret = (int)UP_write(b->num, in, inl);
     BIO_clear_retry_flags(b);
     if (ret <= 0) {
         if (BIO_fd_should_retry(ret))
@@ -149,7 +150,7 @@ static long fd_ctrl(BIO *b, int cmd, long num, void *ptr)
     switch (cmd) {
     case BIO_CTRL_RESET:
         num = 0;
-        /* fall thru */
+        /* fall through */
     case BIO_C_FILE_SEEK:
         ret = (long)UP_lseek(b->num, num, 0);
         break;
@@ -186,6 +187,9 @@ static long fd_ctrl(BIO *b, int cmd, long num, void *ptr)
     case BIO_CTRL_FLUSH:
         ret = 1;
         break;
+    case BIO_CTRL_EOF:
+        ret = (b->flags & BIO_FLAGS_IN_EOF) != 0;
+        break;
     default:
         ret = 0;
         break;
@@ -195,10 +199,12 @@ static long fd_ctrl(BIO *b, int cmd, long num, void *ptr)
 
 static int fd_puts(BIO *bp, const char *str)
 {
-    int n, ret;
+    int ret;
+    size_t n = strlen(str);
 
-    n = strlen(str);
-    ret = fd_write(bp, str, n);
+    if (n > INT_MAX)
+        return -1;
+    ret = fd_write(bp, str, (int)n);
     return ret;
 }
 
@@ -210,13 +216,13 @@ static int fd_gets(BIO *bp, char *buf, int size)
 
     while (ptr < end && fd_read(bp, ptr, 1) > 0) {
         if (*ptr++ == '\n')
-           break;
+            break;
     }
 
     ptr[0] = '\0';
 
     if (buf[0] != '\0')
-        ret = strlen(buf);
+        ret = (int)strlen(buf);
     return ret;
 }
 
@@ -236,41 +242,41 @@ int BIO_fd_non_fatal_error(int err)
 {
     switch (err) {
 
-# ifdef EWOULDBLOCK
-#  ifdef WSAEWOULDBLOCK
-#   if WSAEWOULDBLOCK != EWOULDBLOCK
+#ifdef EWOULDBLOCK
+#ifdef WSAEWOULDBLOCK
+#if WSAEWOULDBLOCK != EWOULDBLOCK
     case EWOULDBLOCK:
-#   endif
-#  else
+#endif
+#else
     case EWOULDBLOCK:
-#  endif
-# endif
+#endif
+#endif
 
-# if defined(ENOTCONN)
+#if defined(ENOTCONN)
     case ENOTCONN:
-# endif
+#endif
 
-# ifdef EINTR
+#ifdef EINTR
     case EINTR:
-# endif
+#endif
 
-# ifdef EAGAIN
-#  if EWOULDBLOCK != EAGAIN
+#ifdef EAGAIN
+#if EWOULDBLOCK != EAGAIN
     case EAGAIN:
-#  endif
-# endif
+#endif
+#endif
 
-# ifdef EPROTO
+#ifdef EPROTO
     case EPROTO:
-# endif
+#endif
 
-# ifdef EINPROGRESS
+#ifdef EINPROGRESS
     case EINPROGRESS:
-# endif
+#endif
 
-# ifdef EALREADY
+#ifdef EALREADY
     case EALREADY:
-# endif
+#endif
         return 1;
     default:
         break;
